@@ -336,6 +336,7 @@ body {
 }
 .pool-tag.A { background: #e8f1fc; color: #0a4d99; border-color: #b6d4fe; }
 .pool-tag.B { background: #fff3cd; color: #664d03; border-color: #ffe69c; }
+.pool-tag.Stress { background: #fce4ec; color: #880e4f; border-color: #f48fb1; }
 
 /* === Chart container === */
 .chart-container {
@@ -1989,6 +1990,8 @@ function renderChapterReport(name, attempts) {
   const poolA = attempts.filter(a => a.poolName === 'A');
   const poolB = attempts.filter(a => a.poolName === 'B');
   const retentionDelta = (poolA.length && poolB.length) ? (getAvgPct(poolB) - getAvgPct(poolA)) : null;
+  const stress = attempts.filter(a => a.poolName === 'Stress');
+  const stressDelta = (poolA.length && stress.length) ? (getAvgPct(stress) - getAvgPct(poolA)) : null;
 
   // OT vs MTQ
   const latestQs = latest.questions || [];
@@ -2019,6 +2022,7 @@ function renderChapterReport(name, attempts) {
       ${otPct !== null ? `<div class="metric"><div class="metric-label">OT (Section A)</div><div class="metric-value">${otPct.toFixed(0)}%</div></div>` : ''}
       ${mtqPct !== null ? `<div class="metric"><div class="metric-label">MTQ (Section B)</div><div class="metric-value">${mtqPct.toFixed(0)}%</div></div>` : ''}
       ${retentionDelta !== null ? `<div class="metric"><div class="metric-label">Pool A→B</div><div class="metric-value" style="color:${retentionDelta >= 0 ? 'var(--success)' : 'var(--danger)'}">${retentionDelta > 0 ? '+' : ''}${retentionDelta.toFixed(0)}%</div></div>` : ''}
+      ${stressDelta !== null ? `<div class="metric"><div class="metric-label">Stress vs A</div><div class="metric-value" style="color:${stressDelta >= 0 ? 'var(--success)' : 'var(--danger)'}">${stressDelta > 0 ? '+' : ''}${stressDelta.toFixed(0)}%</div></div>` : ''}
     </div>
 
     ${attempts.length >= 2 ? `<div class="chart-container" style="height:180px;margin-bottom:14px"><canvas id="chartChapter_${safe}"></canvas></div>` : ''}
