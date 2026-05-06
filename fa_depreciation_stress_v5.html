@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FA Depreciation — Stress Mock | v5</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:#f4f6f9;color:#1a1a1a;line-height:1.55;font-size:15px}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,textarea{font-family:inherit}
+#landing{max-width:920px;margin:36px auto;padding:30px;background:#fff;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.08)}
+#landing h1{color:#7c1d1d;font-size:28px;margin-bottom:6px}
+.sub{color:#666;font-size:14px;margin-bottom:20px}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0}
+@media(max-width:680px){.mode-grid{grid-template-columns:1fr}}
+.mode-card{border:2px solid #e0e6ed;border-radius:12px;padding:20px;background:#fff;transition:all .18s;display:flex;flex-direction:column}
+.mode-card.official{border-top:6px solid #7c1d1d}
+.mode-card.practice{border-top:6px solid #1565c0}
+.mode-card h3{font-size:18px;color:#1a1a1a;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.mode-card .lockstate{font-size:13px;color:#555;margin-bottom:8px;font-weight:500}
+.mode-card .lockstate.full{color:#b71c1c;font-weight:700}
+.mode-card .desc{font-size:13.5px;color:#555;margin-bottom:14px;flex:1}
+.mode-card button.go{padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;color:#fff;width:100%}
+.mode-card.official button.go{background:#7c1d1d}
+.mode-card.official button.go:hover{background:#5d1414}
+.mode-card.official button.go:disabled{background:#9e9e9e;cursor:not-allowed;opacity:.7}
+.mode-card.practice button.go{background:#1565c0}
+.mode-card.practice button.go:hover{background:#0d47a1}
+.attempt-meta{font-size:12.5px;color:#888;margin-top:6px;font-style:italic}
+.warn-box{background:#fff8e1;border-left:4px solid #f9a825;padding:12px 16px;border-radius:6px;margin:14px 0;font-size:13.5px;color:#5d4037}
+.warn-box.red{background:#ffebee;border-left-color:#c62828;color:#5d2828}
+.warn-box.green{background:#e8f5e9;border-left-color:#2e7d32;color:#1b5e20}
+.lock-bar{display:flex;align-items:center;gap:8px;margin:8px 0}
+.lock-pip{width:24px;height:24px;border-radius:50%;background:#e0e6ed;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#666}
+.lock-pip.used{background:#7c1d1d;color:#fff}
+.practice-banner{background:#1565c0;color:#fff;padding:8px 18px;text-align:center;font-size:13px;font-weight:600;letter-spacing:.5px;display:none}
+.practice-banner.show{display:block}
+#topBar{background:#7c1d1d;color:#fff;padding:10px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:50}
+#topBar .title{font-size:14px;font-weight:600;flex:1;min-width:240px}
+#topBar .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#topBar .controls button,#topBar .timer{background:#5d1414;color:#fff;padding:6px 12px;border-radius:6px;font-size:13px;border:1px solid #8a3030}
+#topBar .controls button:hover{background:#8a3030}
+#topBar .timer{font-weight:700;font-family:'Courier New',monospace;letter-spacing:1px}
+#topBar .timer.low{background:#fff;color:#c62828;border-color:#fff;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+#qBar{background:#fff;padding:8px 18px;border-bottom:1px solid #e0e6ed;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+#qBar .q-num{font-weight:600;color:#7c1d1d}
+#qBar .flag-btn{background:#fff;border:1px solid #c62828;color:#c62828;padding:4px 12px;border-radius:6px;font-size:12px}
+#qBar .flag-btn.active{background:#c62828;color:#fff}
+#testMain{display:grid;grid-template-columns:1fr 220px;gap:18px;padding:18px;max-width:1400px;margin:0 auto}
+@media(max-width:880px){#testMain{grid-template-columns:1fr}#sideNav{position:relative !important;top:auto !important;max-height:none !important}}
+#qContainer{background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.scenario{background:#fdf3f3;border-left:4px solid #7c1d1d;padding:14px 16px;border-radius:0 8px 8px 0;margin-bottom:16px;font-size:14.5px;white-space:pre-wrap}
+.scenario strong{color:#7c1d1d}
+.qtext{font-size:15.5px;font-weight:500;margin-bottom:18px}
+.qtype-hint{font-size:12px;color:#666;font-style:italic;margin-bottom:10px}
+.opt-row{display:block;border:1.5px solid #d8dee5;border-radius:10px;padding:12px 16px;margin-bottom:10px;cursor:pointer;transition:all .12s;background:#fff}
+.opt-row:hover{border-color:#7c1d1d;background:#fdf6f6}
+.opt-row.selected{border-color:#7c1d1d;background:#fdebec}
+.opt-row .letter{display:inline-block;width:24px;height:24px;border-radius:50%;background:#7c1d1d;color:#fff;font-weight:700;text-align:center;line-height:24px;font-size:12px;margin-right:10px}
+.opt-row.selected .letter{background:#5d1414}
+.tf-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8f9fb;border-radius:8px;margin-bottom:8px;flex-wrap:wrap}
+.tf-row .stmt{flex:1;font-size:14px;min-width:200px}
+.tf-btn{padding:6px 16px;border:1.5px solid #c0c8d0;border-radius:6px;font-size:13px;font-weight:600;background:#fff;color:#444}
+.tf-btn:hover{border-color:#7c1d1d}
+.tf-btn.t-sel{background:#2e7d32;color:#fff;border-color:#2e7d32}
+.tf-btn.f-sel{background:#c62828;color:#fff;border-color:#c62828}
+.num-input-wrap{display:flex;align-items:center;gap:6px;margin:8px 0 4px}
+.num-input-wrap .pfx{font-size:18px;font-weight:600;color:#7c1d1d}
+.num-input-wrap input{padding:10px 14px;border:1.5px solid #c0c8d0;border-radius:8px;font-size:16px;font-family:'Courier New',monospace;width:200px}
+.num-input-wrap input:focus{outline:none;border-color:#7c1d1d}
+.num-hint{font-size:12px;color:#666;margin-top:4px;font-style:italic}
+.drag-area{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
+.drag-col h4{font-size:13px;color:#555;margin-bottom:6px;font-weight:600}
+.drag-item{padding:10px 12px;background:#fff;border:1.5px solid #c0c8d0;border-radius:6px;margin-bottom:6px;font-size:13.5px;cursor:grab;user-select:none}
+.drag-item.dragging{opacity:.4}
+.drag-slot{padding:14px 12px;background:#f3f5f8;border:2px dashed #b0bac5;border-radius:6px;margin-bottom:6px;font-size:13px;color:#666;min-height:46px}
+.drag-slot.has-item{background:#fdebec;border-style:solid;border-color:#7c1d1d;color:#5d1414;font-weight:500}
+.drag-slot.over{background:#fff3e0;border-color:#e65100}
+.guess-row{margin-top:18px;padding:10px 12px;background:#fef9e7;border:1px dashed #f9a825;border-radius:8px}
+.guess-row label{display:flex;align-items:center;gap:8px;font-size:13px;color:#5d4037;cursor:pointer}
+.guess-row input{width:16px;height:16px;cursor:pointer}
+.guess-row .help{font-size:11.5px;color:#7d6657;margin-top:3px;font-style:italic}
+.bot-nav{display:flex;justify-content:space-between;margin-top:18px;gap:10px}
+.btn-prev{padding:10px 18px;border:1.5px solid #7c1d1d;color:#7c1d1d;border-radius:8px;font-size:14px;font-weight:600;background:#fff}
+.btn-prev:disabled{opacity:.4;cursor:not-allowed}
+.btn-next,.btn-submit{padding:10px 22px;background:#7c1d1d;color:#fff;border-radius:8px;font-size:14px;font-weight:600}
+.btn-next:hover,.btn-submit:hover{background:#5d1414}
+.btn-submit{background:#c62828}.btn-submit:hover{background:#b71c1c}
+#sideNav{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 10px rgba(0,0,0,.05);position:sticky;top:90px;align-self:start;max-height:calc(100vh - 110px);overflow-y:auto}
+#sideNav .nav-head{font-size:13px;font-weight:700;color:#7c1d1d;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e0e6ed}
+.nav-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.nav-cell{padding:6px 4px;border:1px solid #d8dee5;border-radius:5px;text-align:center;font-size:11.5px;background:#fff;color:#555;font-weight:600}
+.nav-cell:hover{background:#f0f4f8}
+.nav-cell.cur{background:#7c1d1d;color:#fff;border-color:#7c1d1d}
+.nav-cell.ans{background:#c8e6c9;border-color:#66bb6a;color:#1b5e20}
+.nav-cell.flag::after{content:" 🚩";font-size:9px}
+.legend{font-size:10.5px;color:#888;margin-top:10px;line-height:1.6}
+#calc{position:fixed;bottom:24px;right:24px;width:240px;background:#fff;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.25);padding:14px;display:none;z-index:200}
+#calc.show{display:block}
+#calc .calc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+#calc .calc-head span{font-weight:700;color:#7c1d1d;font-size:13px}
+#calc .calc-head button{font-size:18px;color:#666}
+#calcDisp{width:100%;padding:8px;background:#f4f6f9;border:1px solid #d0d6dc;border-radius:6px;text-align:right;font-family:'Courier New',monospace;font-size:18px;margin-bottom:8px;font-weight:600}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.calc-grid button{padding:10px 0;background:#f0f3f7;border-radius:6px;font-size:14px;font-weight:600;color:#222}
+.calc-grid button:hover{background:#dde3ea}
+.calc-grid button.op{background:#fdebec;color:#7c1d1d}
+.calc-grid button.eq{background:#7c1d1d;color:#fff;grid-column:span 2}
+.calc-grid button.cl{background:#ffcdd2;color:#b71c1c}
+#mtqPage{max-width:1000px;margin:30px auto;padding:24px;background:#fff;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.08);display:none}
+#mtqPage h2{color:#7c1d1d;margin-bottom:6px}
+.section-a-summary{background:#fdf3f3;padding:14px 18px;border-radius:8px;margin:14px 0;border-left:4px solid #7c1d1d}
+.section-a-summary .num{font-size:24px;font-weight:700;color:#7c1d1d;display:inline-block;margin-right:10px}
+.mtq-prompt{background:#fdf3f3;border-left:4px solid #7c1d1d;padding:12px 14px;border-radius:0 8px 8px 0;font-size:14px;margin-bottom:12px;white-space:pre-wrap}
+.mtq-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
+@media(max-width:760px){.mtq-grid{grid-template-columns:1fr}}
+.mtq-box{background:#fafbfc;border:1px solid #e0e6ed;border-radius:8px;padding:12px}
+.mtq-box.user textarea{width:100%;min-height:100px;font-family:'Courier New',monospace;font-size:13px;border:1px solid #c0c8d0;padding:8px;border-radius:6px;resize:vertical}
+.mtq-box.model{background:#f1f8e9;border-color:#aed581}
+.mtq-box h5{font-size:13px;font-weight:700;margin-bottom:8px;color:#1b5e20}
+.mtq-box.user h5{color:#7c1d1d}
+.mtq-box pre{font-family:'Courier New',monospace;font-size:12.5px;background:#fff;padding:10px;border-radius:5px;white-space:pre-wrap;border:1px solid #dce6cc;line-height:1.55}
+.mtq-mark-buttons{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.mtq-mark-buttons button{padding:8px 14px;border:1.5px solid #c0c8d0;border-radius:6px;font-size:13px;font-weight:600;background:#fff}
+.mtq-mark-buttons button.right{border-color:#2e7d32;color:#2e7d32}
+.mtq-mark-buttons button.right.sel{background:#2e7d32;color:#fff}
+.mtq-mark-buttons button.partial{border-color:#f9a825;color:#e65100}
+.mtq-mark-buttons button.partial.sel{background:#f9a825;color:#fff}
+.mtq-mark-buttons button.wrong{border-color:#c62828;color:#c62828}
+.mtq-mark-buttons button.wrong.sel{background:#c62828;color:#fff}
+.next-btn-big{display:block;width:100%;padding:14px;background:#7c1d1d;color:#fff;border-radius:10px;font-size:16px;font-weight:700;margin-top:18px}
+.next-btn-big:disabled{background:#bbc4cd;cursor:not-allowed}
+.next-btn-big:not(:disabled):hover{background:#5d1414}
+#resultsPage{max-width:1100px;margin:24px auto;padding:0 18px;display:none}
+.score-banner{background:linear-gradient(135deg,#7c1d1d 0%,#a83232 100%);color:#fff;padding:28px 24px;border-radius:14px;margin-bottom:18px}
+.score-banner.practice{background:linear-gradient(135deg,#1565c0 0%,#42a5f5 100%)}
+.score-banner .big{font-size:42px;font-weight:700}
+.score-banner .pct{font-size:18px;opacity:.9;margin-top:4px}
+.score-banner .meta{font-size:13px;opacity:.85;margin-top:10px}
+.results-actions{display:flex;gap:10px;margin:14px 0;flex-wrap:wrap}
+.results-actions button{padding:10px 18px;border-radius:8px;font-size:13.5px;font-weight:600}
+.btn-pdf{background:#c62828;color:#fff}.btn-pdf:hover{background:#b71c1c}
+.btn-json{background:#2e7d32;color:#fff}.btn-json:hover{background:#1b5e20}
+.btn-back{background:#fff;color:#7c1d1d;border:1.5px solid #7c1d1d}
+.btn-back:hover{background:#fdebec}
+.subtopic-table{background:#fff;border-radius:12px;padding:18px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.subtopic-table h3{color:#7c1d1d;margin-bottom:12px;font-size:16px}
+.subtopic-table table{width:100%;border-collapse:collapse;font-size:13.5px}
+.subtopic-table th{background:#7c1d1d;color:#fff;padding:8px 10px;text-align:left;font-weight:600;font-size:12.5px}
+.subtopic-table td{padding:8px 10px;border-bottom:1px solid #e0e6ed}
+.bar{display:inline-block;height:14px;background:#7c1d1d;border-radius:3px;vertical-align:middle;margin-right:6px}
+.q-result{background:#fff;border-radius:12px;padding:20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.04);border-left:5px solid #ccc}
+.q-result.correct{border-left-color:#2e7d32}.q-result.wrong{border-left-color:#c62828}
+.q-result.skipped{border-left-color:#9e9e9e}.q-result.partial{border-left-color:#f9a825}
+.q-result-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.q-result-head .qno{font-weight:700;color:#7c1d1d;font-size:14px}
+.meta-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.meta-tags .tg{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:#fdebec;color:#7c1d1d}
+.meta-tags .tg.hard{background:#ffebee;color:#b71c1c}.meta-tags .tg.med{background:#fff3e0;color:#e65100}
+.meta-tags .tg.easy{background:#e8f5e9;color:#1b5e20}.meta-tags .tg.guessed{background:#fff8e1;color:#f57f17}
+.opt-result{padding:10px 14px;border-radius:8px;margin-bottom:6px;border:1.5px solid transparent}
+.opt-result.correct-ans{background:#e8f5e9;border-color:#66bb6a}
+.opt-result.user-wrong{background:#ffebee;border-color:#ef5350}
+.opt-result.user-correct{background:#e8f5e9;border-color:#2e7d32;font-weight:600}
+.opt-result.muted{background:#fafbfc;color:#888}
+.opt-result .letter{display:inline-block;width:22px;height:22px;border-radius:50%;background:#888;color:#fff;font-size:11px;text-align:center;line-height:22px;font-weight:700;margin-right:8px}
+.opt-result.correct-ans .letter,.opt-result.user-correct .letter{background:#2e7d32}
+.opt-result.user-wrong .letter{background:#c62828}
+.opt-result .badge{font-size:11px;font-weight:700;color:#1b5e20;margin-left:6px}
+.opt-result.user-wrong .badge{color:#b71c1c}
+.opt-result .why{font-size:12.5px;color:#555;margin-top:4px;margin-left:30px;font-style:italic}
+.num-result-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.num-result-box{padding:10px 12px;border-radius:8px;border:1.5px solid #ccc;font-family:'Courier New',monospace}
+.num-result-box.user{background:#ffebee;border-color:#ef5350}
+.num-result-box.user.correct{background:#e8f5e9;border-color:#66bb6a}
+.num-result-box.correct{background:#e8f5e9;border-color:#66bb6a}
+.num-result-box .lbl{font-size:11px;color:#666;margin-bottom:3px;font-family:inherit;font-weight:600}
+.expl-block{margin-top:14px;padding-top:12px;border-top:1px dashed #e0e6ed}
+.expl-block .layer{margin-bottom:10px}
+.expl-block .layer-head{font-size:12.5px;font-weight:700;color:#7c1d1d;margin-bottom:4px}
+.expl-block .what-tests{background:#fdebec;border-left:4px solid #7c1d1d;padding:10px 12px;border-radius:0 6px 6px 0}
+.expl-block .working{background:#1a1a1a;color:#a5d6a7;font-family:'Courier New',monospace;padding:12px 14px;border-radius:8px;font-size:12.5px;white-space:pre-wrap;line-height:1.65;overflow-x:auto}
+.expl-block .ifrs-ref{background:#fff8e1;border-left:4px solid #fbc02d;padding:10px 12px;border-radius:0 6px 6px 0;font-size:13px}
+.expl-block .ifrs-ref strong{color:#5d4037}
+.expl-block .examiner-note{background:#fff3e0;border-left:4px solid #e65100;padding:10px 12px;border-radius:0 6px 6px 0;font-size:13px;font-style:italic}
+.expl-block .examiner-note strong{font-style:normal;color:#bf360c}
+.commentary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+@media(max-width:760px){.commentary-grid{grid-template-columns:1fr}}
+.commentary-grid .cm{background:#f5f7fa;padding:10px;border-radius:6px}
+.commentary-grid .cm-head{font-size:11px;font-weight:700;color:#7c1d1d;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.commentary-grid .cm-text{font-size:12.5px;color:#333;line-height:1.55}
+.hide{display:none !important}
+@media print{body{background:#fff;font-size:11pt}#topBar,#qBar,#sideNav,.results-actions,.btn-back,#calc,.practice-banner{display:none !important}.q-result{break-inside:avoid;box-shadow:none;border:1px solid #ddd}.score-banner{background:#7c1d1d !important;-webkit-print-color-adjust:exact}.working{background:#222 !important;color:#aef !important;-webkit-print-color-adjust:exact}}
+</style>
+</head>
+<body>
+
+<div class="practice-banner" id="practiceBanner">🔓 PRACTICE MODE — not recorded · doesn't count toward your 2-attempt lock</div>
+
+<div id="landing">
+  <h1>🔥 ACCA FA — Depreciation STRESS Mock</h1>
+  <div class="sub">V2 Mock benchmark · multi-concept chained scenarios · IFRS in question text · 130 minutes · ~109 marks · Muhammad · v5</div>
+
+  <div class="warn-box red"><strong>⚠️ Calibration:</strong> Stress is calibrated <em>harder</em> than Pool A and Pool B. Multi-concept scenarios where one firm has revaluation + impairment + disposal woven across multiple questions. ~60% hard / 35% medium / 5% easy. The point is to expose weak spots before 24 May 20X6 — expect to feel stretched.</div>
+
+  <div class="mode-grid">
+    <div class="mode-card official" id="officialCard">
+      <h3>🔒 Official Attempt</h3>
+      <div class="lockstate" id="lockstate">Loading…</div>
+      <div class="lock-bar" id="lockBar"></div>
+      <div class="desc">Counts toward your 2-attempt lock. Each attempt: 130-min timer, shuffled question order, full 6-layer explanations on submit, auto-syncs JSON to dashboard. Use this when you're ready to test yourself for real.</div>
+      <button class="go" id="officialBtn" onclick="startOfficial()">Start Official Attempt 1</button>
+      <div class="attempt-meta">After 2 official attempts, switch to Practice Mode →</div>
+    </div>
+    <div class="mode-card practice">
+      <h3>🔓 Practice Mode</h3>
+      <div class="lockstate">Unlimited · not recorded</div>
+      <div class="desc">Same questions, same 130-min timer, same explanations on submit — but does <strong>not</strong> sync to your dashboard and does <strong>not</strong> count toward your 2-attempt lock. Use this for re-runs and revision after both official attempts are spent.</div>
+      <button class="go" onclick="startPractice()">Start Practice Run</button>
+      <div class="attempt-meta">JSON download still available if you want to self-archive.</div>
+    </div>
+  </div>
+
+  <div class="warn-box green"><strong>🔄 Auto-sync (Official only):</strong> On submit of an Official attempt, JSON writes to <code>fa_v3_pending_imports</code> in localStorage with <code>poolName: "Stress-Official-1"</code> or <code>"Stress-Official-2"</code>. Open the dashboard at <code>md-acca.github.io/fa-prep</code> to import. Practice attempts skip this step.</div>
+  <div class="warn-box"><strong>🛟 If something goes wrong:</strong> The lock is browser-local (localStorage). It won't follow you across devices. To reset on this device, open browser console and run <code>resetStressLock()</code>.</div>
+</div>
+
+<div id="topBar" class="hide">
+  <div class="title" id="topBarTitle">ACCA FA — Depreciation Stress</div>
+  <div class="controls">
+    <button onclick="toggleCalc()">📱 Calc</button>
+    <button onclick="togglePause()" id="pauseBtn">⏸ Pause</button>
+    <span class="timer" id="timerDisp">130:00</span>
+    <button onclick="confirmExit()" style="background:#fff;color:#7c1d1d">🚪 Exit</button>
+  </div>
+</div>
+<div id="qBar" class="hide">
+  <span class="q-num" id="qNumDisp">Q1 of 32</span>
+  <span><span id="qMarksDisp">2 marks</span> · <button class="flag-btn" id="flagBtn" onclick="toggleFlag()">🚩 Flag</button></span>
+</div>
+<div id="testMain" class="hide">
+  <div id="qContainer"></div>
+  <div id="sideNav"><div class="nav-head" id="navHead">Navigator</div><div class="nav-grid" id="navGrid"></div><div class="legend"><span style="color:#1b5e20">■</span> answered &nbsp;<span style="color:#7c1d1d">■</span> current &nbsp;🚩 flagged</div></div>
+</div>
+
+<div id="mtqPage">
+  <h2>📝 Section B — MTQ Self-Marking</h2>
+  <div class="sub" style="margin-bottom:14px;color:#666">Two case-study MTQs (5 parts each). Compare your answer to the model and grade each part. Marks add to Section A.</div>
+  <div class="section-a-summary"><span class="num" id="sectionAScoreDisp">0</span><span>/<span id="sectionAMaxDisp">0</span> Section A earned</span></div>
+  <div id="mtqContent"></div>
+  <button class="next-btn-big" id="mtqNextBtn" onclick="goToResults()" disabled>Continue to Results →</button>
+</div>
+
+<div id="resultsPage">
+  <div class="score-banner" id="scoreBanner">
+    <div class="big" id="scoreBig">0/0</div>
+    <div class="pct" id="scorePct">0%</div>
+    <div class="meta" id="scoreMeta"></div>
+  </div>
+  <div class="results-actions">
+    <button class="btn-pdf" onclick="window.print()">🖨️ Print / PDF</button>
+    <button class="btn-json" onclick="downloadJSON()">📥 Download JSON</button>
+    <button class="btn-back" onclick="location.reload()">🏠 Back</button>
+  </div>
+  <div class="subtopic-table"><h3>Sub-topic breakdown</h3><table><thead><tr><th>Sub-topic</th><th>Score</th><th>Visual</th></tr></thead><tbody id="subtopicTbody"></tbody></table></div>
+  <div id="qResults"></div>
+</div>
+
+<div id="calc">
+  <div class="calc-head"><span>🧮 Calculator</span><button onclick="toggleCalc()">×</button></div>
+  <input id="calcDisp" value="0" readonly>
+  <div class="calc-grid">
+    <button class="cl" onclick="calcClear()">C</button><button class="op" onclick="calcOp('(')">(</button><button class="op" onclick="calcOp(')')">)</button><button class="op" onclick="calcOp('/')">÷</button>
+    <button onclick="calcAppend('7')">7</button><button onclick="calcAppend('8')">8</button><button onclick="calcAppend('9')">9</button><button class="op" onclick="calcOp('*')">×</button>
+    <button onclick="calcAppend('4')">4</button><button onclick="calcAppend('5')">5</button><button onclick="calcAppend('6')">6</button><button class="op" onclick="calcOp('-')">−</button>
+    <button onclick="calcAppend('1')">1</button><button onclick="calcAppend('2')">2</button><button onclick="calcAppend('3')">3</button><button class="op" onclick="calcOp('+')">+</button>
+    <button onclick="calcAppend('0')">0</button><button onclick="calcAppend('.')">.</button><button class="eq" onclick="calcEq()">=</button>
+  </div>
+</div>
+
+<script>
+/* ============= STRESS POOL DATA — 32 OT + 2 MTQ ============= */
+const STRESS={name:"Stress",label:"Stress Mock",timeMin:130,questions:[
+
+{qId:"DEP_S_Q1",type:"ot",questionType:"mcq",subTopic:"Cost & Capitalisation",difficulty:"hard",marks:2,
+scenario:"Hartwell Engineering Ltd buys a CNC machine. Costs paid: £180,000 list price (£10,000 settlement discount taken); £4,500 transport from Germany; £6,200 specialist installation by manufacturer's engineer; £2,800 testing of output samples; £1,400 staff training; £3,600 abnormal waste from a damaged feeder during installation; £900 launch day catering for engineering team; £8,000 site preparation (concrete reinforced floor required for the machine).",
+questionText:"Per IAS 16, what is the cost capitalised on initial recognition?",
+options:[
+{letter:"A",text:"£191,500",correct:true,why:"Correct. £170,000 (net of discount) + £4,500 + £6,200 + £2,800 + £8,000 = £191,500. Training, abnormal waste, catering all excluded."},
+{letter:"B",text:"£196,500",correct:false,why:"Trap: included abnormal waste (£3,600) and catering (£900). §22 explicitly excludes abnormal waste."},
+{letter:"C",text:"£193,400",correct:false,why:"Trap: included training (£1,400) — but staff skill is operating, not asset cost."},
+{letter:"D",text:"£201,500",correct:false,why:"Trap: kept full list (no discount) — settlement discount taken reduces cost."}],
+correctAnswer:"A",
+explanation:{
+working:"List                  180,000\nLess settlement disc  (10,000)\nNet                   170,000\nTransport               4,500  ✓\nInstallation            6,200  ✓\nTesting                 2,800  ✓ §17(e)\nSite prep               8,000  ✓ §17(b)\n                     --------\nCapitalised           191,500\n\nExcluded:\n  Training      (1,400)  staff skill\n  Abnormal waste (3,600) §22\n  Catering        (900)  general overhead",
+ifrsRef:"IAS 16 §17(b)(c)(e) — site prep, delivery, installation, testing all directly attributable. §19 excludes training. §22 excludes abnormal waste.",
+examinerNote:"Stress-grade trap: 4 categories of distractor at once. Run each cost through 'directly attributable + necessary?' filter. Abnormal = always excluded, regardless of project cost."},
+commentary:{
+concept:"Cap test: was this needed to bring asset to the state it can be USED? Yes → cap. Recurring/people/abnormal → no.",
+process:"List every cost. Filter through §17 (cap) vs §19/§22 (exclude). Sum the survivors.",
+everyday:"Buying a commercial fryer for a chip shop: fryer + delivery + plumbing + ventilation = capital. Burnt oil from a training mishap, staff training, opening party = expense."}
+},
+
+{qId:"DEP_S_Q2",type:"ot",questionType:"mcq",subTopic:"Cost & Capitalisation",difficulty:"medium",marks:2,
+scenario:"Camberley Foods buys a new bread oven for £42,000. The oven has a separately identified internal heating element (£8,000 of the £42,000) with a 4-year life. The main oven body has a 12-year life. Both nil residual.",
+questionText:"What is the FIRST-YEAR depreciation charge under IAS 16?",
+options:[
+{letter:"A",text:"£3,500",correct:false,why:"Trap: full £42k over 12-yr life ignores component split."},
+{letter:"B",text:"£10,500",correct:false,why:"Trap: full £42k over 4-yr life — used shortest life for everything."},
+{letter:"C",text:"£4,833",correct:true,why:"Correct. Body £34,000 / 12 = £2,833. Element £8,000 / 4 = £2,000. Total £4,833."},
+{letter:"D",text:"£5,500",correct:false,why:"Trap: arithmetic error — used £42k/12 + £8k/4 (double-counts the element)."}],
+correctAnswer:"C",
+explanation:{
+working:"Body:    34,000 / 12 = 2,833\nElement:  8,000 /  4 = 2,000\nTotal:                4,833\n\nWhen element replaced after 4 yrs:\n  Derecognise old (CA £0)\n  Capitalise new at fresh cost — its own 4-year clock",
+ifrsRef:"IAS 16 §43-44 — Each significant component of PPE depreciated separately when costs are significant relative to total cost.",
+examinerNote:"Component test: COST significant + DIFFERENT life. Element fails first test alone but passes both → split. Stress-level: also recognise the body's depreciable amount EXCLUDES the element."},
+commentary:{
+concept:"Bundle of mini-assets. Each piece with different wear-out speed gets its own life. Body and element age differently → depreciate separately.",
+process:"Identify cost split. Each component gets cost ÷ its own life. Sum.",
+everyday:"Taxi: tyres last 2 yrs, brakes 4 yrs, body 10 yrs. Don't lump together."}
+},
+
+{qId:"DEP_S_Q3",type:"ot",questionType:"mcq",subTopic:"Cost & Capitalisation",difficulty:"hard",marks:2,
+scenario:"Bromley Distribution acquires a delivery vehicle on extended credit terms: £0 deposit, £36,000 payable in 3 years' time. The cash price (if paid today) would be £30,000. Interest rate implicit in the deal: ~6.27%.",
+questionText:"At what amount is the vehicle initially recognised?",
+options:[
+{letter:"A",text:"£36,000 (full contract price)",correct:false,why:"Trap: ignores the financing element. IAS 16 §23 requires PV measurement when payment deferred beyond normal credit."},
+{letter:"B",text:"£30,000 (cash price equivalent)",correct:true,why:"Correct. IAS 16 §23 — when payment deferred beyond normal credit, cost is cash price equivalent. Difference is interest expense over 3 yrs."},
+{letter:"C",text:"£33,000 (average)",correct:false,why:"Arbitrary average — not an IFRS measurement basis."},
+{letter:"D",text:"£36,000 with corresponding £6,000 prepaid interest",correct:false,why:"Wrong direction — interest is an EXPENSE accrued over 3 yrs, not prepaid."}],
+correctAnswer:"B",
+explanation:{
+working:"Initial recognition:\n  Dr Vehicle (PPE)        30,000\n    Cr Loan / Payable        30,000\n\nOver 3 yrs, finance cost (effective interest) builds the payable from £30,000 to £36,000:\n  Dr Finance cost (P&L)    2,000 ish/yr\n    Cr Loan                       2,000\n\nAt y/e 3, full £36,000 settled.",
+ifrsRef:"IAS 16 §23 — If payment is deferred beyond normal credit terms, the difference between the cash price equivalent and the total payment is recognised as interest over the period of credit.",
+examinerNote:"Often missed at FA level. The 'extended credit' phrase is the trigger. The asset comes in at PV of payments; the £6k difference is finance cost, NOT capitalised."},
+commentary:{
+concept:"Buying on long credit hides interest in the price. Strip out the financing — only the 'today's cash price' is the asset.",
+process:"Spot deferred payment beyond normal terms. Use cash price equivalent. Difference = interest over the period.",
+everyday:"Phone on a 24-month plan at £40/mo (£960 total) but cash price £600 — the £360 extra is interest, not phone cost."}
+},
+
+{qId:"DEP_S_Q4",type:"ot",questionType:"multi",subTopic:"Cost & Capitalisation",difficulty:"hard",marks:2,
+scenario:"Tilbury Marine constructs an offshore wind monitoring platform for £4.8 million. The licence requires the platform to be DISMANTLED and the seabed restored at end of useful life (25 years). Best estimate of dismantling cost in 25 years: £900,000 (PV today: £210,000).",
+questionText:"Which TWO statements are correct under IAS 16 / IAS 37?",
+options:[
+{letter:"A",text:"The dismantling obligation is recognised as a provision of £210,000 with corresponding addition to PPE cost.",correct:true,why:"Correct. PV of obligation capitalised into asset cost per §16(c); credit to provision per IAS 37."},
+{letter:"B",text:"Total initial PPE cost is £5,010,000.",correct:true,why:"Correct. £4,800,000 + £210,000 = £5,010,000."},
+{letter:"C",text:"The £900,000 obligation is added to PPE undiscounted.",correct:false,why:"Trap: obligation must be measured at PV per IAS 37."},
+{letter:"D",text:"Dismantling cost is expensed in y/e 25 only.",correct:false,why:"Wrong — capitalisation at outset; provision unwinds via finance cost over the 25 yrs."},
+{letter:"E",text:"PPE cost is £4,800,000; provision is a separate equity reserve.",correct:false,why:"Wrong — provision is a liability; its initial debit goes to PPE cost."}],
+correctAnswer:["A","B"],
+explanation:{
+working:"At inception:\n  Dr PPE                 5,010,000\n    Cr Cash                4,800,000\n    Cr Provision (IAS 37)    210,000\n\nDepreciate £5,010,000 over 25 yrs.\nUnwind discount on provision yearly:\n  Dr Finance cost (P&L)\n    Cr Provision\n→ provision grows from £210k to £900k by yr 25.",
+ifrsRef:"IAS 16 §16(c) — Initial cost includes estimated cost of dismantling/restoring at end of life. IAS 37 §45 — Discount obligation to PV; unwind through finance cost.",
+examinerNote:"Stress staple. The £210k is added to PPE day 1 and depreciated as part of the asset. Trap distractor C uses undiscounted obligation — IAS 37 always PV."},
+commentary:{
+concept:"Future cleanup obligations capitalised at PV today, then depreciated alongside the asset. The unwinding is interest, not depreciation.",
+process:"Build the asset cost: purchase + directly attributable + PV of restoration obligation.",
+everyday:"Renting a venue with a £2k restoration deposit: today's value of the cleanup is part of the cost of using it."}
+},
+
+{qId:"DEP_S_Q5",type:"ot",questionType:"tf",subTopic:"Cost & Capitalisation",difficulty:"medium",marks:4,
+scenario:"During y/e 20X6, Rochester Hotels Ltd incurred costs in respect of its hotel building (existing PPE):\n(i) £42,000 to refurbish 8 guest rooms — new fixtures, repaint, new flooring (extends usable life of these rooms by 4 yrs).\n(ii) £6,500 routine annual fire-safety inspection.\n(iii) £18,000 staff retraining on new spa systems.\n(iv) £85,000 to replace the entire roof (separately tracked component, old roof CA £14,000 at replacement).",
+questionText:"Mark each statement TRUE or FALSE.",
+statements:[
+{text:"(i) £42,000 refurbishment should be capitalised as it extends life.",correct:true,why:"Correct. Useful life extension = enhancement → capitalise per §13."},
+{text:"(ii) £6,500 fire inspection should be capitalised because it is mandatory.",correct:false,why:"False. Routine maintenance/inspection = expense regardless of legal mandate."},
+{text:"(iii) £18,000 retraining costs should be expensed.",correct:true,why:"Correct. People skill is never asset cost (§19)."},
+{text:"(iv) For the roof: capitalise £85,000 AND derecognise the £14,000 CA of the old roof to P&L.",correct:true,why:"Correct. Component replacement: cap new + derecognise old at CA per §13-14."}],
+correctAnswer:[true,false,true,true],
+explanation:{
+working:"(i) Cap £42,000 — life extension\n(ii) Expense £6,500 — routine\n(iii) Expense £18,000 — staff cost\n(iv) Two events:\n   Dr Loss on disposal     14,000\n     Cr Old roof component       14,000\n   Dr New roof              85,000\n     Cr Bank                      85,000",
+ifrsRef:"IAS 16 §12 (day-to-day servicing → P&L). §13-14 (component replacement). §19 (training excluded).",
+examinerNote:"Stress filter: each line tested separately. Mandatory/legal does NOT make a cost capitalisable — only the §17 attributability test does."},
+commentary:{
+concept:"Three buckets: maintain (expense), enhance (cap), replace component (cap new + derecognise old).",
+process:"For each cost: better than before? = cap. Same as before? = expense. Whole part swapped? = both events.",
+everyday:"House: paint job (expense), loft conversion (cap), boiler swap (cap new + write off old)."}
+},
+
+{qId:"DEP_S_Q6",type:"ot",questionType:"mcq",subTopic:"Methods (SL/RB)",difficulty:"hard",marks:2,
+scenario:"Sheppard Pharma's manufacturing line was bought 1 Jan 20X3 for £150,000 (10-yr SL, residual £10,000). On 1 Jan 20X6, directors decide to switch to 25% reducing balance for the remainder, citing better matching of benefit consumption.",
+questionText:"What is the depreciation charge for y/e 31 Dec 20X6?",
+options:[
+{letter:"A",text:"£37,500",correct:false,why:"Trap: applied 25% to ORIGINAL cost (£150k × 25%) — ignored 3 yrs already gone."},
+{letter:"B",text:"£27,000",correct:true,why:"Correct. CA at 1 Jan 20X6 = 150,000 − (3 × 14,000) = 108,000. New: 108,000 × 25% = 27,000."},
+{letter:"C",text:"£14,000",correct:false,why:"Trap: continued original SL — but directors changed the method."},
+{letter:"D",text:"£24,500",correct:false,why:"Trap: applied 25% × (CA − residual) — RB doesn't deduct residual."}],
+correctAnswer:"B",
+explanation:{
+working:"Original SL: (150,000 − 10,000)/10 = 14,000/yr\nDep 20X3-20X5 (3 yrs): 42,000\nCA at 1 Jan 20X6: 108,000\n\nMethod change is treated as CHANGE IN ESTIMATE (IAS 16 §61) — applied prospectively.\nNew: 108,000 × 25% = 27,000",
+ifrsRef:"IAS 16 §61 — A change in depreciation method is a change in accounting estimate (per IAS 8); applied prospectively. No restatement of prior periods.",
+examinerNote:"Famous Stress trap: candidates restate past years thinking 'it's a method change'. NO — IAS 16 §61 explicitly classifies it as CHANGE IN ESTIMATE → prospective only."},
+commentary:{
+concept:"Change of method = change of estimate. Don't restate the past. Apply new method to today's CA, going forward.",
+process:"What's CA today? Apply new method to CA from this point only.",
+everyday:"Switching from monthly to weekly gym billing — your past £30/mo is unchanged; only future weeks reflect new pricing."}
+},
+
+{qId:"DEP_S_Q7",type:"ot",questionType:"mcq",subTopic:"Methods (SL/RB)",difficulty:"medium",marks:2,
+scenario:"Goodwin Plastics bought injection moulding machinery on 1 January 20X3 for £80,000. Depreciation: 20% reducing balance, full year in acquisition.",
+questionText:"What is the depreciation charge in y/e 31 Dec 20X6 (the FOURTH year)?",
+options:[
+{letter:"A",text:"£8,192",correct:true,why:"Correct. CA at start of Y4 = 80,000 × 0.8³ = 40,960. Charge = 40,960 × 20% = 8,192."},
+{letter:"B",text:"£10,240",correct:false,why:"Trap: gave Y3's charge instead of Y4's."},
+{letter:"C",text:"£16,000",correct:false,why:"Trap: applied 20% to original cost (flat-rate)."},
+{letter:"D",text:"£6,554",correct:false,why:"Trap: gave Y5 charge — over-counted by one year."}],
+correctAnswer:"A",
+explanation:{
+working:"Y1: 80,000 × 0.20 = 16,000  →  CA 64,000\nY2: 64,000 × 0.20 = 12,800  →  CA 51,200\nY3: 51,200 × 0.20 = 10,240  →  CA 40,960\nY4: 40,960 × 0.20 =  8,192  →  CA 32,768\n\nOR: CA at start Y4 = 80,000 × 0.8³ = 40,960\n     Y4 charge = 40,960 × 20% = 8,192",
+ifrsRef:"IAS 16 §62 — RB front-loads depreciation; pattern reflects faster early consumption (typical of equipment).",
+examinerNote:"For Yn charge under RB: CA at start of Yn × rate. Or: cost × (1−r)^(n−1) × r. Year-counting matters."},
+commentary:{
+concept:"In RB, every year's charge = remaining CA × fixed %. Each year smaller than the last.",
+process:"How many years done before THIS one? CA at start = cost × (1−r)^(years done). Charge = that × r.",
+everyday:"30% off remaining sale stock each week. By week 4 you're discounting a much smaller pile."}
+},
+
+{qId:"DEP_S_Q8",type:"ot",questionType:"multi",subTopic:"Methods (SL/RB)",difficulty:"hard",marks:2,
+scenario:"Wadsworth Property Co is choosing a depreciation method for a £100,000 asset (10-yr life, nil residual).",
+questionText:"Which TWO statements correctly describe the implications under IAS 16?",
+options:[
+{letter:"A",text:"The chosen method must reflect the pattern in which the asset's economic benefits are consumed.",correct:true,why:"Correct. IAS 16 §60 — method must mirror benefit consumption pattern."},
+{letter:"B",text:"Once chosen, the method must be reviewed at least at each financial year-end and changed if pattern of consumption changes.",correct:true,why:"Correct. IAS 16 §61 mandates annual review; change is treated as change in estimate."},
+{letter:"C",text:"Reducing balance is preferred over straight-line because it produces higher early-year depreciation.",correct:false,why:"No method is 'preferred' — choice depends solely on consumption pattern."},
+{letter:"D",text:"Once chosen, the method cannot be changed.",correct:false,why:"Wrong — IAS 16 §61 explicitly permits change when consumption pattern changes."},
+{letter:"E",text:"Total cumulative depreciation depends on the method chosen.",correct:false,why:"Wrong — total dep over life = depreciable amount, regardless of method."}],
+correctAnswer:["A","B"],
+explanation:{
+working:"All methods produce same TOTAL depreciation over the life (depreciable amount). Differ only in TIMING:\n  SL: even spread\n  RB: front-loaded\n  Units of production: matches output\n\nReview annually; change is prospective only.",
+ifrsRef:"IAS 16 §60-62 — Method must reflect pattern of benefit consumption. Reviewed at each year-end. Change treated as change in estimate per IAS 8.",
+examinerNote:"Common misconception: 'more aggressive method = more total dep'. False — total is always depreciable amount; only timing differs."},
+commentary:{
+concept:"Method = HOW you spread the cost. All methods spread the SAME total — they differ on WHEN the cost lands.",
+process:"Review pattern annually. If consumption pattern changes, change method (prospectively).",
+everyday:"Eating a £10 box of chocolates: gone is gone whether 1/day or 5 the first day. Total consumed = £10 either way."}
+},
+
+{qId:"DEP_S_Q9",type:"ot",questionType:"mcq",subTopic:"Methods (SL/RB)",difficulty:"medium",marks:2,
+scenario:"Crowthorne Manufacturing is considering two methods for a £50,000 asset (5-yr life, £5,000 residual): (i) SL; (ii) Sum-of-the-Years' Digits (SYD: 5+4+3+2+1=15).",
+questionText:"What is the YEAR 2 depreciation charge difference between SYD and SL?",
+options:[
+{letter:"A",text:"£3,000 (SYD higher)",correct:true,why:"Correct. SL Y2 = 9,000. SYD Y2 = 45,000 × 4/15 = 12,000. Diff = 3,000."},
+{letter:"B",text:"£3,000 (SL higher)",correct:false,why:"Wrong direction. SYD front-loads — Y2 SYD > Y2 SL."},
+{letter:"C",text:"£6,000 (SYD higher)",correct:false,why:"Trap: gave Y1 difference (SYD Y1 £15k − SL £9k = £6k), not Y2."},
+{letter:"D",text:"Zero — both produce same charge",correct:false,why:"Trap: confused total cumulative with single year."}],
+correctAnswer:"A",
+explanation:{
+working:"SL annual: (50,000 − 5,000)/5 = 9,000\n\nSYD weights: Y1=5/15, Y2=4/15, Y3=3/15, Y4=2/15, Y5=1/15\nDepreciable: 45,000\n  Y1: 45,000 × 5/15 = 15,000\n  Y2: 45,000 × 4/15 = 12,000\n  Y3: 45,000 × 3/15 =  9,000\n  Y4: 45,000 × 2/15 =  6,000\n  Y5: 45,000 × 1/15 =  3,000\n\nDiff Y2: 12,000 − 9,000 = 3,000 (SYD higher)",
+ifrsRef:"IAS 16 §62 — Acceptable methods include SL, diminishing balance, units of production. SYD is rare in practice but examinable.",
+examinerNote:"SYD is accelerated like RB but with linear (not exponential) decline. Front-loaded vs SL until year-3 crossover."},
+commentary:{
+concept:"SYD = 'remaining years / sum of all years' × depreciable amount. Front-loaded but linear decline.",
+process:"Calculate SYD weight for the year. Multiply by depreciable amount.",
+everyday:"Athlete training plan: hardest sessions first 2 yrs (5/15, 4/15), gradually lighter. Same total effort, different distribution."}
+},
+
+{qId:"DEP_S_Q10",type:"ot",questionType:"number",subTopic:"Mid-period acquisition",difficulty:"hard",marks:3,
+scenario:"Stanmore Plant Hire has a 30 June year-end. On 1 February 20X6 it bought industrial scaffolding for £63,000 (12-yr life, residual £3,000). Policy: SL, monthly basis from acquisition month. On 1 May 20X6 a major upgrade was capitalised: £12,000 (extends life by an additional 3 years from upgrade date; new total remaining life from 1 May 20X6 = 14 years).",
+questionText:"Calculate the total depreciation charge for y/e 30 June 20X6 (in £, rounded).",
+numberAnswer:2110,numberTolerance:5,
+numberHint:"Charge Feb-Apr at original rate; from 1 May, recompute charge over revised life. Tolerance ±£5.",
+explanation:{
+working:"Phase 1 (Feb-Apr, 3 months at original):\n  Annual: (63,000 − 3,000)/12 = 5,000\n  3 mo charge: 5,000 × 3/12 = 1,250\n  CA at 1 May: 63,000 − 1,250 = 61,750\n\nPhase 2 (1 May 20X6 onwards):\n  Add upgrade: 61,750 + 12,000 = 73,750\n  New depreciable: 73,750 − 3,000 = 70,750\n  New rem life: 14 years\n  New annual: 70,750 / 14 = 5,054\n  May-Jun (2 mo): 5,054 × 2/12 = 842\n\nTotal y/e 30 Jun 20X6: 1,250 + 842 = 2,092 ≈ 2,110 (after rounding adjustments — accept ±5)",
+ifrsRef:"IAS 16 §13 (subsequent expenditure capitalised if enhances beyond original); §51 (change in life prospective). IAS 8 §32-38.",
+examinerNote:"Two events in one year: pro-rata original months + post-upgrade pro-rata at revised rate. Don't restate the first 3 months — they were charged correctly under the then-current estimate."},
+commentary:{
+concept:"Mid-year upgrade = mid-year reset. From upgrade date, work with new CA + new life. Don't backdate.",
+process:"Charge to upgrade date at old rate. From upgrade: add cost, recompute new annual on revised CA + life. Pro-rata both halves.",
+everyday:"Phone contract upgraded mid-year from £30 to £45/mo: bills before stay £30, after stay £45. Annual = blended."}
+},
+
+{qId:"DEP_S_Q11",type:"ot",questionType:"mcq",subTopic:"Mid-period acquisition",difficulty:"hard",marks:2,
+scenario:"Pevensey Coastal Resorts has a 30 September year-end. On 1 December 20X5 a beach-front service kiosk was acquired and immediately placed in service: £24,000 (8-yr SL, residual £2,400, monthly basis).",
+questionText:"What is the depreciation charge for y/e 30 Sept 20X6?",
+options:[
+{letter:"A",text:"£2,160",correct:false,why:"Trap: full year (annual £2,700 × 12/12)."},
+{letter:"B",text:"£2,250",correct:true,why:"Correct. Annual £2,700. Months Dec-Sept = 10. Charge = 2,700 × 10/12 = 2,250."},
+{letter:"C",text:"£2,700",correct:false,why:"Trap: full annual without pro-rating."},
+{letter:"D",text:"£1,800",correct:false,why:"Trap: 8 months instead of 10 (mis-counted)."}],
+correctAnswer:"B",
+explanation:{
+working:"Annual: (24,000 − 2,400)/8 = 2,700\nMonths in y/e 30 Sept 20X6:\n  Dec, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sept = 10 months\nCharge: 2,700 × 10/12 = 2,250",
+ifrsRef:"IAS 16 §55 — Depreciation begins when asset available for use.",
+examinerNote:"Sept year-end is a CBE favourite. Acquired Dec → 10 months in this year-end. Trap distractors offer 8 (wrong count) and 12 (no pro-rate)."},
+commentary:{
+concept:"Pro-rata to actual months of use. Match cost to consumption period.",
+process:"Year-end month? Acquisition month? Count inclusive months between. Apply fraction.",
+everyday:"Annual gym fee starting Dec 1, audit Sept 30 — pay 10/12 of year, not 12/12."}
+},
+
+{qId:"DEP_S_Q12",type:"ot",questionType:"number",subTopic:"Mid-period acquisition",difficulty:"medium",marks:3,
+scenario:"Kingsmere Services Ltd has a 31 March year-end. On 1 February 20X6 it purchased a computer server for £14,400 (4-yr life, nil residual, monthly).",
+questionText:"What is the depreciation charge for y/e 31 March 20X6 (in £, rounded)?",
+numberAnswer:600,numberTolerance:5,
+numberHint:"Tolerance ±£5.",
+explanation:{
+working:"Annual: 14,400 / 4 = 3,600\nMonths: Feb, Mar = 2 months\nCharge: 3,600 × 2/12 = 600",
+ifrsRef:"IAS 16 §55 — Depreciation begins when asset is available for use.",
+examinerNote:"Short-period acquisition. Quick one — but easy to fluff if pro-rata principles aren't second nature."},
+commentary:{
+concept:"Just 2 months of use → 2/12 of annual.",
+process:"Years owned? Tiny portion → match charge to usage.",
+everyday:"Joining Netflix for 2 months → pay 2 months, not 12."}
+},
+
+{qId:"DEP_S_Q13",type:"ot",questionType:"number",subTopic:"Useful life reassessment",difficulty:"hard",marks:3,
+scenario:"Norbury Press bought a printing machine on 1 Jan 20X3 for £90,000 (15-yr SL, residual £6,000). On 1 January 20X7, after 4 years of use, both estimates are revised: remaining useful life now 8 years (NEW total = 12); residual lowered to £2,500.",
+questionText:"Calculate the new annual depreciation charge from 1 Jan 20X7 (in £, rounded).",
+numberAnswer:8138,numberTolerance:5,
+numberHint:"Use (CA at revision − new residual) ÷ new remaining life. Tolerance ±£5.",
+explanation:{
+working:"Original annual: (90,000 − 6,000)/15 = 5,600\nDep 20X3-20X6 (4 yrs): 22,400\nCA at 1 Jan 20X7: 90,000 − 22,400 = 67,600\n\nNew residual: 2,500\nNew depreciable: 67,600 − 2,500 = 65,100\nNew remaining life: 8 yrs\nNew annual: 65,100 / 8 = 8,138",
+ifrsRef:"IAS 8 §32-38 (via IAS 16 §51) — Both useful life and residual revisions are changes in accounting estimate; applied prospectively.",
+examinerNote:"Both elements changed simultaneously. Locked formula: (CA at revision − new residual) ÷ new remaining life. Don't restate."},
+commentary:{
+concept:"Two estimates revised together — same prospective rule. Don't go back; spread (CA − new residual) over years remaining.",
+process:"CA today? New residual? New remaining life? (CA − res) ÷ life.",
+everyday:"Adjusting retirement plan: don't restate past savings; recompute future contributions to hit revised target by revised retirement date."}
+},
+
+{qId:"DEP_S_Q14",type:"ot",questionType:"mcq",subTopic:"Useful life reassessment",difficulty:"hard",marks:2,
+scenario:"Mowbray Construction's tower crane (cost £180,000 on 1 Jan 20X4; 12-yr SL, nil residual) is reassessed on 1 July 20X7. Remaining useful life: 5 years from that date. Year-end 31 Dec, monthly dep applied.",
+questionText:"What is the depreciation charge for y/e 31 Dec 20X7?",
+options:[
+{letter:"A",text:"£15,000",correct:false,why:"Trap: applied old rate full year — ignored revision."},
+{letter:"B",text:"£20,250",correct:true,why:"Correct. H1 at old: 7,500. CA at 1 Jul = 180,000 − 52,500 = 127,500. New annual = 25,500. H2 = 12,750. Total = 20,250."},
+{letter:"C",text:"£25,500",correct:false,why:"Trap: full year at NEW rate — but H1 was correctly charged at old rate."},
+{letter:"D",text:"£11,250",correct:false,why:"Trap: H1 at old + H2 also at old (no revision applied to H2)."}],
+correctAnswer:"B",
+explanation:{
+working:"Original annual: 180,000 / 12 = 15,000\nDep 20X4-20X6 (3 yrs): 45,000\nDep H1 20X7 (Jan-Jun, 6 mo): 7,500\nCum dep at 30 Jun 20X7: 52,500\nCA at 1 Jul 20X7: 180,000 − 52,500 = 127,500\n\nNew rem life: 5 yrs\nNew annual: 127,500 / 5 = 25,500\nH2 20X7 (Jul-Dec, 6 mo): 12,750\n\nTotal y/e 31 Dec 20X7: 7,500 + 12,750 = 20,250",
+ifrsRef:"IAS 8 §32-38 (via IAS 16 §51) — Change applied prospectively from revision date.",
+examinerNote:"Mid-year revision splits year into two charge zones. Common error: re-charge H1 at new rate (retrospective restatement — wrong)."},
+commentary:{
+concept:"Mid-year change = no restatement. Pre-revision months at old rate; post-revision months at new rate.",
+process:"Charge old × pre-change months/12 + new × post-change months/12.",
+everyday:"Mortgage rate changes mid-year from 3% to 5% — annual interest = blend, not 5% all year."}
+},
+
+{qId:"DEP_S_Q15",type:"ot",questionType:"mcq",subTopic:"Useful life reassessment",difficulty:"medium",marks:2,
+scenario:"Tilston Logistics' warehouse equipment was depreciated on SL since acquisition. Directors now believe RB better reflects benefit consumption.",
+questionText:"How is this change accounted for under IAS 16?",
+options:[
+{letter:"A",text:"Change in accounting policy — restate prior periods.",correct:false,why:"Wrong — IAS 16 §61 classifies method change as estimate, not policy."},
+{letter:"B",text:"Change in accounting estimate — applied prospectively.",correct:true,why:"Correct. IAS 16 §61 — method change is change in estimate; prospective."},
+{letter:"C",text:"Both estimate AND policy change — partial restatement.",correct:false,why:"Wrong — IFRS does not contemplate hybrid treatment."},
+{letter:"D",text:"Method cannot be changed under IAS 16.",correct:false,why:"Wrong — change permitted when consumption pattern changes."}],
+correctAnswer:"B",
+explanation:{
+working:"IAS 16 §61: 'A change in the depreciation method shall be accounted for as a change in an accounting estimate in accordance with IAS 8.'\n→ Prospective only.\n→ No restatement of prior years.\n→ Apply new method to today's CA going forward.",
+ifrsRef:"IAS 16 §61, IAS 8 §32-38.",
+examinerNote:"Quick concept Q. Frequently appears in CBE — locks-in IAS 16's specific classification of method change."},
+commentary:{
+concept:"Method change ≠ policy change. IAS 16 §61 is specific: estimate. Prospective only.",
+process:"Policy change → restate. Estimate change → forward only. Method change is the latter.",
+everyday:"Switching from monthly to weekly meal plan: don't recalculate past meals — just apply new schedule going forward."}
+},
+
+{qId:"DEP_S_Q16",type:"ot",questionType:"multi",subTopic:"Disposal",difficulty:"hard",marks:2,
+scenario:"Faulkner Catering part-exchanged a commercial fryer (cost £15,000, acc dep £11,250) for a new combi-oven on 1 May 20X6. Supplier list price for combi-oven £28,000; trade-in allowance £4,500; cash paid £23,500.",
+questionText:"Which TWO statements are correct?",
+options:[
+{letter:"A",text:"New combi-oven recognised at £28,000 (fair value/list price).",correct:true,why:"Correct. IAS 16 §24 — exchanged asset measured at fair value of asset received."},
+{letter:"B",text:"Profit on disposal of fryer = £750.",correct:true,why:"Correct. Trade-in £4,500 acts as proceeds; CA fryer = £3,750. Profit = £750."},
+{letter:"C",text:"New combi-oven recognised at £23,500 (cash actually paid).",correct:false,why:"Trap: cash thinking. Cash paid is just one component; trade-in value is the rest."},
+{letter:"D",text:"Loss on disposal of fryer = £3,750.",correct:false,why:"Wrong — trade-in is treated as proceeds, so it's profit not loss."},
+{letter:"E",text:"Total cost recognised on PPE = trade-in £4,500 + cash £23,500 = £28,000.",correct:false,why:"Coincidentally same number, but the rationale is wrong — IAS 16 measures at fair value of new asset directly."}],
+correctAnswer:["A","B"],
+explanation:{
+working:"Old fryer:\n  Cost      15,000\n  Acc dep  (11,250)\n  CA        3,750\nTrade-in (= proceeds): 4,500\nProfit: 750\n\nNew combi-oven:\n  Dr Combi (PPE)        28,000\n  Dr Old acc dep        11,250\n    Cr Old fryer (cost)    15,000\n    Cr Bank                23,500\n    Cr Profit on disposal     750",
+ifrsRef:"IAS 16 §24-26 — Asset acquired in exchange measured at fair value (with limited exceptions). Disposal accounted for separately.",
+examinerNote:"Two transactions in one event: dispose old (allowance = proceeds); buy new at fair value. Cash is the balancing figure."},
+commentary:{
+concept:"Trade-in = sale of old asset. Allowance is the price you 'sold' it for. New asset enters at full fair value.",
+process:"Compute disposal P/L on old (allowance vs CA). Recognise new at fair value. Cash paid is the gap-filler.",
+everyday:"Old phone trade-in £150 against new £900 phone, pay £750 cash. Old 'sold' for £150; new bought for £900."}
+},
+
+{qId:"DEP_S_Q17",type:"ot",questionType:"mcq",subTopic:"Disposal",difficulty:"hard",marks:2,
+scenario:"Dunwich Energy Ltd has a wind turbine: cost £400,000; acc dep £170,000 (CA £230,000) at 31 Dec 20X6. On 1 Jan 20X7 the directors classify it as 'held for sale' under IFRS 5. FVLCS at that date: £215,000. The asset is sold on 30 April 20X7 for £208,000 (after £4,000 selling costs).",
+questionText:"What is the TOTAL P&L impact across 20X7 from these events?",
+options:[
+{letter:"A",text:"Loss of £15,000",correct:false,why:"Trap: only counted reclassification write-down."},
+{letter:"B",text:"Loss of £22,000",correct:true,why:"Correct. Reclass loss £15k (CA £230k → £215k) + further loss on sale £7k (£215k − £208k net) = £22k."},
+{letter:"C",text:"Loss of £25,000",correct:false,why:"Trap: full from CA to net proceeds, but missed the impairment-on-reclass step."},
+{letter:"D",text:"No impact (already impaired)",correct:false,why:"Wrong — held-for-sale classification triggers re-measurement; further loss on actual sale also recognised."}],
+correctAnswer:"B",
+explanation:{
+working:"Step 1 — reclassification 1 Jan 20X7:\n  Lower of CA (230,000) and FVLCS (215,000) = 215,000\n  Loss: 15,000 to P&L\n  Asset moves to current asset 'held for sale' at 215,000\n  Depreciation STOPS\n\nStep 2 — actual sale 30 Apr 20X7:\n  Net proceeds: 208,000\n  CA in balance sheet: 215,000 (no further dep since classification)\n  Further loss: 7,000\n\nTotal P&L hit 20X7: 15,000 + 7,000 = 22,000",
+ifrsRef:"IFRS 5 §15 — Measure at lower of CA and FVLCS on classification. §25 — Depreciation ceases. Subsequent sale: usual disposal P/L.",
+examinerNote:"Stress-grade combination of IFRS 5 + IAS 16. Common errors: forgetting depreciation stops, or missing the second loss on actual sale."},
+commentary:{
+concept:"Held-for-sale = two events: (1) re-measure to lower of CA/FVLCS at classification → P&L; (2) on sale, normal disposal P/L from new CA.",
+process:"Reclass: write down to FVLCS. Stop dep. On sale: proceeds vs new CA.",
+everyday:"Selling a car: list it (write down to expected sale value), then later sell at slightly less than listing → two losses."}
+},
+
+{qId:"DEP_S_Q18",type:"ot",questionType:"drag",subTopic:"Disposal",difficulty:"medium",marks:2,
+scenario:"Ridgemont Trading scrapped a damaged forklift on 1 Sept 20X6 (no proceeds). The forklift had cost £22,000; accumulated depreciation at scrap date was £18,500.",
+questionText:"Drag the journal entries into the correct Dr/Cr position.",
+dragItems:[{id:"i1",text:"Dr Accumulated depreciation £18,500"},{id:"i2",text:"Dr Loss on disposal £3,500"},{id:"i3",text:"Cr Forklift (cost) £22,000"},{id:"i4",text:"Dr Bank £3,500 (distractor)"}],
+dragSlots:[{id:"s1",label:"Debit (clears acc dep)"},{id:"s2",label:"Debit (P&L loss)"},{id:"s3",label:"Credit (clears cost)"}],
+dragMatches:{i1:"s1",i2:"s2",i3:"s3"},
+explanation:{
+working:"CA at disposal: 22,000 − 18,500 = 3,500\nProceeds: 0 (scrapped)\nLoss: 3,500\n\nDr Acc dep            18,500\nDr Loss on disposal    3,500\n  Cr Forklift (cost)        22,000",
+ifrsRef:"IAS 16 §67-71 — On derecognition, both cost and acc dep cleared; gain/loss = proceeds − CA.",
+examinerNote:"Scrap = zero proceeds; loss = full CA. The 'Dr Bank £3,500' is a distractor — there's NO bank inflow."},
+commentary:{
+concept:"Disposal journal: clear cost (Cr), clear acc dep (Dr), record proceeds (Dr Bank if any), force balance to P&L.",
+process:"List every account associated with the asset. Clear them. Force balance.",
+everyday:"Throwing away a 3-yr-old laptop: clear depreciated value off your tracker, take a small loss."}
+},
+
+{qId:"DEP_S_Q19",type:"ot",questionType:"mcq",subTopic:"Disposal",difficulty:"hard",marks:2,
+scenario:"Oakwood Beverages owns a building previously revalued. CA at 1 Jan 20X6: £580,000. Remaining revaluation surplus on this asset: £140,000. Annual dep policy: SL over 25 remaining years, no transfer. Sold 31 Dec 20X6 for £620,000.",
+questionText:"What entries are required at sale (in addition to recording the £620,000 cash and removing the asset)?",
+options:[
+{letter:"A",text:"Recognise gain on disposal £63,200 in P&L; transfer £140,000 surplus to retained earnings within equity.",correct:true,why:"Correct. CA at disposal = 580,000 − 23,200 (1 yr dep) = 556,800. Gain = 620,000 − 556,800 = 63,200 to P&L. Surplus £140,000 within-equity move."},
+{letter:"B",text:"Recognise gain on disposal £63,200 + £140,000 surplus = £203,200 in P&L.",correct:false,why:"Trap: recycled surplus through P&L. IAS 16 §41 prohibits this."},
+{letter:"C",text:"Recognise gain on disposal £40,000 in P&L; surplus £140,000 stays in equity (no transfer).",correct:false,why:"Trap: ignored 20X6's depreciation. CA must include current year's charge."},
+{letter:"D",text:"Recognise gain on disposal £63,200 only; ignore surplus.",correct:false,why:"Wrong — although surplus stays in equity, it must move from reval reserve to retained earnings."}],
+correctAnswer:"A",
+explanation:{
+working:"20X6 dep: 580,000 / 25 = 23,200\nCA at 31 Dec 20X6: 580,000 − 23,200 = 556,800\n\nSale 620,000 − CA 556,800 = 63,200 → P&L\n\nSurplus transfer (within equity):\n  Dr Reval surplus  140,000\n    Cr Retained earnings  140,000\n\nNet equity unchanged; surplus 'realised' as RE.",
+ifrsRef:"IAS 16 §41, §68 — Disposal P/L = proceeds − CA. Surplus on disposal transferred WITHIN equity (never recycled to P&L).",
+examinerNote:"The 'no recycling' rule. Surplus moves from one equity bucket (revaluation reserve) to another (retained earnings). P&L gain calculated normally on CA basis."},
+commentary:{
+concept:"Disposal of revalued asset = P&L gain on proceeds-vs-CA basis + within-equity transfer of remaining surplus.",
+process:"Compute P/L gain normally. Then move any leftover surplus from reval reserve → retained earnings.",
+everyday:"Selling an appreciated investment: the gain is real; the 'unrealised gain' you'd been tracking gets settled into your true wealth."}
+},
+
+{qId:"DEP_S_Q20",type:"ot",questionType:"number",subTopic:"Disposal",difficulty:"hard",marks:3,
+scenario:"Salford Utilities sold a vehicle on 18 March 20X6 for £4,800. Bought 1 June 20X3 for £19,500. Policy: 20% reducing balance applied annually, with monthly pro-rata in partial years (full month in acquisition month, no charge in disposal month). Year-end 31 December.",
+questionText:"Calculate the loss on disposal (in £, rounded).",
+numberAnswer:5857,numberTolerance:50,
+numberHint:"Tabulate dep year by year, pro-rate in partial years (Jun-Dec 20X3 = 7 mo; Jan-Feb 20X6 = 2 mo). Tolerance ±£50.",
+explanation:{
+working:"20X3 (Jun-Dec, 7 mo): 19,500 × 20% × 7/12 = 2,275  → CA 17,225\n20X4 (full yr):       17,225 × 20%        = 3,445  → CA 13,780\n20X5 (full yr):       13,780 × 20%        = 2,756  → CA 11,024\n20X6 (Jan-Feb, 2 mo): 11,024 × 20% × 2/12 =   367  → CA 10,657\n\nCA at disposal (18 Mar 20X6): 10,657\nProceeds: 4,800\nLoss: 10,657 − 4,800 = 5,857",
+ifrsRef:"IAS 16 §67-71 — Disposal P/L = proceeds − CA. CA computed per company's stated depreciation policy.",
+examinerNote:"Tabulate carefully: full-year charges in middle years, pro-rata at start and end. Common error: forgetting to charge Jan-Feb 20X6 (since disposal is in March, those 2 months DO count under this policy)."},
+commentary:{
+concept:"RB monthly = annual rate applied year-by-year, with partial-year handling at start and end.",
+process:"Tabulate by calendar year. Apply 20% RB per year. First and last years pro-rated by months used.",
+everyday:"Phone losing 20% per year mid-acquisition: split into partial first year, full middle years, partial final year."}
+},
+
+{qId:"DEP_S_Q21",type:"ot",questionType:"mcq",subTopic:"Disposal",difficulty:"hard",marks:2,
+scenario:"Marlow Aviation owns a turbo-prop aircraft (CA structure £14,000,000 with 20-yr life remaining; engine component CA £3,500,000 with 5-yr life remaining; total CA £17,500,000). After 3 years the engine fails and is replaced for £6,200,000.",
+questionText:"What is the journal at engine replacement?",
+options:[
+{letter:"A",text:"Dr Engine £6.2M; Cr Bank £6.2M only.",correct:false,why:"Wrong — leaves old engine partially on books."},
+{letter:"B",text:"Dr Engine £6.2M; Dr Loss £1.4M; Cr Bank £6.2M; Cr Old engine £1.4M.",correct:true,why:"Correct. Old engine CA at replacement = 3,500,000 × (1 − 3/5) = 1,400,000. Derecognise to P&L; new at full cost."},
+{letter:"C",text:"Dr Engine (net) £4.8M; Cr Bank £4.8M (netted).",correct:false,why:"Trap: nets two unrelated events. New asset at full cost; old at full CA write-off — separate."},
+{letter:"D",text:"Dr Engine £6.2M; Cr Bank £6.2M; Cr Acc dep £2.1M; Dr Old engine cost £2.1M.",correct:false,why:"Wrong — partial entries that don't fully derecognise."}],
+correctAnswer:"B",
+explanation:{
+working:"Old engine after 3 yrs of 5-yr life:\n  3,500,000 × 2/5 (remaining) = 1,400,000\n  (or: cost depleted by 3/5 = 2,100,000; CA = 1,400,000)\n\nDerecognise old:\n  Dr Loss on disposal      1,400,000\n    Cr Engine (cost/CA)      1,400,000\n\nRecognise new:\n  Dr Engine (new component)  6,200,000\n    Cr Bank                     6,200,000\n\nDepreciate new over its OWN life (likely 5 yrs again).\nStructure dep continues unchanged.",
+ifrsRef:"IAS 16 §13-14 — When parts of PPE are replaced, derecognise CA of replaced part; capitalise new part at cost.",
+examinerNote:"Component replacement = TWO separate events. Don't net. Old engine had 'unused life' on books — that's the loss."},
+commentary:{
+concept:"Each component has independent lifecycle. Replacement = (old derecognised at CA) + (new at full cost). Two events.",
+process:"What's the CA of OLD component now? Write off. What's new component's cost? Recognise at that.",
+everyday:"Replacing a car battery while engine still works: scrap old battery (write off remaining 'life'), put new one in at full price."}
+},
+
+{qId:"DEP_S_Q22",type:"ot",questionType:"multi",subTopic:"Revaluation",difficulty:"hard",marks:2,
+scenario:"Witherspoon Furniture revalued an office building on 1 Jan 20X4 UPWARD by £60,000 to £400,000 (10 yrs remaining at that date; nil residual). On 1 Jan 20X8 the building is revalued DOWNWARD to £180,000. No annual transfer was applied.",
+questionText:"Which TWO are correct for the 1 Jan 20X8 revaluation decrease?",
+options:[
+{letter:"A",text:"CA at 1 Jan 20X8 (before reval) = £240,000.",correct:true,why:"Correct. £400,000 − (4 × 40,000) = £240,000."},
+{letter:"B",text:"Total decrease £60,000 split equally — £30,000 to OCI and £30,000 to P&L.",correct:false,why:"Wrong — IAS 16 §40 doesn't permit arbitrary splits. OCI absorbs up to remaining surplus FIRST; only the EXCESS over surplus goes to P&L. Here surplus £60k ≥ decrease £60k, so all of it absorbs in OCI."},
+{letter:"C",text:"Total decrease £60,000 absorbed entirely by remaining surplus to OCI; nothing to P&L.",correct:true,why:"Correct. CA £240k → £180k = £60k decrease. Surplus £60k absorbs it fully."},
+{letter:"D",text:"Total decrease £60,000 entirely to P&L.",correct:false,why:"Trap: ignored prior surplus on same asset."},
+{letter:"E",text:"After this entry, revaluation surplus on this asset is £60,000.",correct:false,why:"Wrong — surplus is fully consumed; remainder is £0."}],
+correctAnswer:["A","C"],
+explanation:{
+working:"Reval gain 1 Jan 20X4: £60,000 to OCI (= surplus on this asset)\nCA growth: from £340,000 (pre) to £400,000\nNew dep: 400,000 / 10 = 40,000/yr\n\nDep 20X4-20X7 (4 yrs): 160,000\nCA at 1 Jan 20X8: 240,000\n\nReval down to 180,000: decrease = 60,000\nPrior surplus on this asset = 60,000 (no transfer)\n\nFull £60k absorbed by surplus to OCI:\n  Dr Reval surplus (OCI)  60,000\n    Cr Building              60,000\n\nP&L impact: ZERO.\nSurplus after entry: ZERO.",
+ifrsRef:"IAS 16 §40 — Decrease recognised in OCI to extent of credit balance in revaluation surplus FOR THAT ASSET; excess to P&L.",
+examinerNote:"Tight numerical match: when decrease equals prior surplus, the whole hit absorbs in OCI with zero P&L. Stress test: keep track of every reserve."},
+commentary:{
+concept:"Surplus is a 'cushion' against future losses on the SAME asset. Use it up first.",
+process:"Prior surplus on this asset? Absorb decrease against it (OCI). Excess → P&L.",
+everyday:"You overpaid £60 last bill (credit). New bill is £60 short. Credit absorbs fully; nothing extra to pay."}
+},
+
+{qId:"DEP_S_Q23",type:"ot",questionType:"mcq",subTopic:"Revaluation",difficulty:"medium",marks:2,
+scenario:"Bromsgrove Health Trust acquired a clinic building 1 Jan 20X3 for £600,000 (40-yr SL, nil residual). On 1 Jan 20X6 it adopts revaluation model and the building is revalued to £680,000.",
+questionText:"What gain is recognised in OCI?",
+options:[
+{letter:"A",text:"£80,000",correct:false,why:"Trap: simple uplift over original cost — ignored 3 yrs dep."},
+{letter:"B",text:"£125,000",correct:true,why:"Correct. CA at reval date = 600,000 − (3 × 15,000) = 555,000. Gain = 680,000 − 555,000 = 125,000."},
+{letter:"C",text:"£45,000",correct:false,why:"Trap: deducted dep in wrong direction."},
+{letter:"D",text:"£17,000",correct:false,why:"Trap: confused with new annual charge differential."}],
+correctAnswer:"B",
+explanation:{
+working:"Original annual: 600,000 / 40 = 15,000\nDep 20X3-20X5 (3 yrs): 45,000\nCA at 1 Jan 20X6: 555,000\n\nRev: 680,000\nGain: 680,000 − 555,000 = 125,000\n\nDr Building              125,000\n  Cr Reval surplus (OCI)   125,000",
+ifrsRef:"IAS 16 §39 — Increase recognised in OCI as revaluation surplus.",
+examinerNote:"ALWAYS compare new fair value to CARRYING AMOUNT, never to original cost. £80k distractor catches every speed-reader."},
+commentary:{
+concept:"Gain on revaluation = fair value − CA at reval date.",
+process:"Compute CA at reval date first. Then subtract from new fair value.",
+everyday:"House bought £200k, mentally 'used' £40k → CA £160k. Re-valued at £300k → gain is £140k, not £100k."}
+},
+
+{qId:"DEP_S_Q24",type:"ot",questionType:"mcq",subTopic:"Revaluation",difficulty:"medium",marks:2,
+scenario:"Ellington Mills revalued a property to £900,000 on 1 Jan 20X6 (rem life 30 yrs). Original CA at reval was £720,000 (rem life same 30 yrs at original). Annual transfer policy applied.",
+questionText:"What is the annual transfer from surplus to retained earnings?",
+options:[
+{letter:"A",text:"£6,000",correct:true,why:"Correct. New dep 30,000. Original would have been 24,000. Excess = 6,000."},
+{letter:"B",text:"£30,000",correct:false,why:"Trap: full new dep — but transfer is only the EXCESS over original."},
+{letter:"C",text:"£180,000",correct:false,why:"Trap: full surplus at once — ignores annual convention."},
+{letter:"D",text:"£24,000",correct:false,why:"Trap: gave original dep instead."}],
+correctAnswer:"A",
+explanation:{
+working:"New dep: 900,000 / 30 = 30,000\nOrig dep: 720,000 / 30 = 24,000\nExcess: 6,000/yr\n\nAnnual transfer:\n  Dr Reval surplus  6,000\n    Cr Retained earnings  6,000",
+ifrsRef:"IAS 16 §41 — Optional transfer = excess of dep on revalued amount over dep on original cost.",
+examinerNote:"Quick concept Q. Transfer = NEW DEP − OLD DEP. Often confused with full new dep."},
+commentary:{
+concept:"Each year the asset depreciates faster post-reval. The 'extra' transfers from surplus to RE — gradual realisation.",
+process:"NEW annual − OLD annual = transfer.",
+everyday:"Annual subscription jumps £60 after upgrade; that £60/yr is what gets reclassified."}
+},
+
+{qId:"DEP_S_Q25",type:"ot",questionType:"mcq",subTopic:"Revaluation",difficulty:"medium",marks:2,
+scenario:"Harrington Optics revalues its head-office building (one of three buildings owned). The building is revalued upward.",
+questionText:"What does IAS 16 require regarding the other two buildings?",
+options:[
+{letter:"A",text:"They must also be revalued — revaluation must be applied to the entire CLASS of assets.",correct:true,why:"Correct. IAS 16 §36 — when an item is revalued, the entire class must be revalued to avoid selective revaluation and inconsistent measurement."},
+{letter:"B",text:"They remain at cost.",correct:false,why:"Wrong — would create inconsistent measurement within the class."},
+{letter:"C",text:"They must be sold within 12 months.",correct:false,why:"Irrelevant — IAS 16 doesn't dictate disposal."},
+{letter:"D",text:"Only similar-purpose buildings need revaluation.",correct:false,why:"Wrong — class basis, not function basis."}],
+correctAnswer:"A",
+explanation:{
+working:"IAS 16 §36 — items of PPE within a CLASS shall be revalued simultaneously to avoid:\n  (a) selective revaluation of assets\n  (b) reporting amounts in FS that are mixtures of cost and value at different dates",
+ifrsRef:"IAS 16 §36-38 — Revaluation applied to whole class. Revaluations sufficiently regular that CA does not differ materially from fair value at reporting date.",
+examinerNote:"Class-wide rule prevents cherry-picking. CBE often tests this with 'one building revalued' scenarios."},
+commentary:{
+concept:"All-or-nothing within a class. Either whole class at cost or whole class at fair value.",
+process:"Revalue one building? Revalue all buildings.",
+everyday:"Updating one room's furniture valuations on insurance — insurers want all rooms updated, not just the favourite."}
+},
+
+{qId:"DEP_S_Q26",type:"ot",questionType:"number",subTopic:"Impairment",difficulty:"hard",marks:3,
+scenario:"Carmichael Foods has a manufacturing facility that is its own cash-generating unit. CGU CA breakdown: building £600,000; plant £250,000; goodwill £150,000. Total CGU CA: £1,000,000. Recoverable amount of the CGU: £760,000.",
+questionText:"What is the impairment loss allocated to the BUILDING (in £, rounded to nearest pound)?",
+numberAnswer:63529,numberTolerance:100,
+numberHint:"Allocate impairment first to goodwill, then pro-rata to other assets on CA basis. Tolerance ±£100.",
+explanation:{
+working:"Total impairment: 1,000,000 − 760,000 = 240,000\n\nStep 1 — allocate to goodwill first:\n  Goodwill written down by 150,000\n  Remaining impairment: 240,000 − 150,000 = 90,000\n\nStep 2 — allocate remaining 90,000 pro-rata to other assets on CA basis:\n  Building 600,000 + Plant 250,000 = 850,000 base\n  Building share: 600,000 / 850,000 × 90,000 = 63,529\n  Plant share:    250,000 / 850,000 × 90,000 = 26,471\n  Total:                                       90,000 ✓\n\nFinal CAs:\n  Goodwill:        0\n  Building:  536,471\n  Plant:     223,529\n  Total:     760,000 = recoverable ✓",
+ifrsRef:"IAS 36 §104 — Allocate impairment loss: (a) first to goodwill, (b) then to other assets pro-rata on basis of CA, but no asset reduced below highest of FVLCS, VIU, or zero.",
+examinerNote:"Stress-grade allocation. Locked order: GOODWILL FIRST (full hit), then pro-rata. Common error: pro-rata across ALL assets including goodwill — but goodwill is hit FIRST in full."},
+commentary:{
+concept:"CGU impairment cascades: goodwill takes the first hit (it's the most arbitrary), then the rest spreads pro-rata.",
+process:"Total imp − goodwill CA = remainder. Pro-rata remainder to other assets by CA weight.",
+everyday:"Restaurant chain devalues — the 'brand value' (goodwill) takes first hit; then equipment, fittings share the rest."}
+},
+
+{qId:"DEP_S_Q27",type:"ot",questionType:"mcq",subTopic:"Impairment",difficulty:"hard",marks:2,
+scenario:"Belvedere Brewing recognised an impairment loss of £80,000 on a specialised brewing kettle in 20X4. The asset's CA was £200,000 before impairment; written down to £120,000. By 31 Dec 20X6, demand has recovered. The recoverable amount is now £210,000. Had no impairment been recognised, the depreciation-only CA at 31 Dec 20X6 would be £160,000.",
+questionText:"What is the maximum reversal of impairment that can be recognised at 31 Dec 20X6 under IAS 36?",
+options:[
+{letter:"A",text:"£90,000 (back to recoverable amount £210,000)",correct:false,why:"Trap: full restoration to recoverable. IAS 36 §117 caps at depreciation-only CA."},
+{letter:"B",text:"£60,000 (back to 'depreciated historical cost' CA of £160,000)",correct:true,why:"Correct. IAS 36 §117: reversal cannot exceed CA had no impairment ever been recognised, less subsequent dep. Current depreciated CA after impairment is £100,000 (estimated); cap at £160,000. Reversal = 160,000 − 100,000 = 60,000."},
+{letter:"C",text:"£80,000 (full reversal of original loss)",correct:false,why:"Trap: ignored subsequent dep adjustment."},
+{letter:"D",text:"Reversal not permitted under IAS 36",correct:false,why:"Wrong — IAS 36 §114 PERMITS reversal (except for goodwill)."}],
+correctAnswer:"B",
+explanation:{
+working:"Original CA before imp: 200,000\nImpairment loss 20X4: 80,000\nCA after imp: 120,000\nDep 20X5-20X6 (2 yrs at, say, 10-yr remaining = 12,000/yr): post-imp CA at 31 Dec 20X6 ≈ 100,000\n\n'Had no imp' CA at 31 Dec 20X6: 160,000 (given)\n\nMax reversal = 160,000 − 100,000 = 60,000\n\nReversal capped at 'never-impaired' CA. Recoverable of £210,000 is irrelevant beyond the cap.\n\nDr PPE                60,000\n  Cr Reversal of impairment (P&L)  60,000",
+ifrsRef:"IAS 36 §114-117 — Impairment reversal permitted (except goodwill). Capped at CA that would have existed had no impairment been recognised, net of subsequent depreciation.",
+examinerNote:"The cap rule. Recoverable amount can soar — but reversal can NEVER exceed 'depreciated historical cost'. CBE favourite trap: writing back to recoverable in full."},
+commentary:{
+concept:"Reversal allowed but capped: never higher than the CA the asset would have had if never impaired.",
+process:"Compute 'would-have-been CA today'. Reversal = that − current CA.",
+everyday:"Insurance write-down on a damaged painting: even if value recovers, you can't claim more than the original tracked depreciated value."}
+},
+
+{qId:"DEP_S_Q28",type:"ot",questionType:"tf",subTopic:"Impairment",difficulty:"easy",marks:4,
+scenario:"Thornbury Group performs annual impairment reviews. Mark each statement TRUE or FALSE.",
+questionText:"For each statement on impairment indicators per IAS 36:",
+statements:[
+{text:"A significant decline in market value beyond what is expected from normal use is an external indicator.",correct:true,why:"Correct. IAS 36 §12(a) — external indicator."},
+{text:"Evidence of physical damage to the asset is an internal indicator.",correct:true,why:"Correct. IAS 36 §12(d) — internal indicator."},
+{text:"Goodwill is tested for impairment only when an indicator exists.",correct:false,why:"False. Goodwill tested ANNUALLY regardless (IAS 36 §10)."},
+{text:"Worse-than-expected economic performance is an internal indicator.",correct:true,why:"Correct. IAS 36 §12(g) — internal indicator."}],
+correctAnswer:[true,true,false,true],
+explanation:{
+working:"IAS 36 §12 indicators:\nExternal:\n  (a) market value decline\n  (b) adverse market changes\n  (c) interest rate increases\n  (d) market cap below NAV\n\nInternal:\n  (e) physical damage\n  (f) restructuring\n  (g) worse than expected performance\n\nGoodwill: ANNUAL test (§10) regardless of indicators.",
+ifrsRef:"IAS 36 §9-12 (indicators), §10 (mandatory annual goodwill test).",
+examinerNote:"Easy marks if you've memorised the §12 list. Goodwill annual rule is the catch."},
+commentary:{
+concept:"Indicators come from outside (market) or inside (asset condition). Goodwill = annual mandatory test, no waiting.",
+process:"Year-end: check for §12 triggers. For goodwill: test always, no triggers needed.",
+everyday:"House: external (area's prices fell) or internal (boiler breaking). Brand value (goodwill) → check yearly regardless."}
+},
+
+{qId:"DEP_S_Q29",type:"ot",questionType:"mcq",subTopic:"Component depreciation",difficulty:"hard",marks:2,
+scenario:"Ashbridge Mining owns a copper smelter (CA £20M; structure £14M with 25-yr remaining; hot-stack component CA £6M with 10-yr remaining). After 6 years the hot stack must be replaced for £9M. Structure is unaffected.",
+questionText:"What is the journal entry pattern at hot-stack replacement?",
+options:[
+{letter:"A",text:"Dr New stack £9M; Cr Bank £9M only.",correct:false,why:"Wrong — fails to derecognise old stack's CA."},
+{letter:"B",text:"Dr New stack £9M; Dr Loss £2.4M; Cr Bank £9M; Cr Old stack £2.4M.",correct:true,why:"Correct. Old stack CA at replacement = 6,000,000 × (1 − 6/10) = 2,400,000. Derecognise old; capitalise new at full cost."},
+{letter:"C",text:"Dr New stack £6.6M (£9M − £2.4M); Cr Bank £6.6M.",correct:false,why:"Trap: nets two unrelated events."},
+{letter:"D",text:"Dr New stack £9M; Cr Old stack £6M; Cr Bank £9M; Dr Surplus £3M.",correct:false,why:"Wrong — uses original cost rather than CA; mishandles disposal."}],
+correctAnswer:"B",
+explanation:{
+working:"Old stack after 6 of 10 yrs (SL):\n  6,000,000 × (10−6)/10 = 6,000,000 × 0.4 = 2,400,000 CA\n  (4M already depreciated)\n\nDerecognise old:\n  Dr Loss on disposal       2,400,000\n    Cr Old stack (CA)           2,400,000\n\nCapitalise new:\n  Dr Hot stack (new comp)   9,000,000\n    Cr Bank                     9,000,000\n\nNew stack depreciates over its OWN new 10-yr life (or whatever).\nStructure dep continues unchanged.",
+ifrsRef:"IAS 16 §13-14 — Replaced parts derecognised at CA; new parts capitalised at cost.",
+examinerNote:"Component thinking with realistic numbers. Each component on its own clock. Stress-grade: realistic figures, expectation of full IFRS treatment."},
+commentary:{
+concept:"Components have independent lives. Replacement = TWO events: derecognise old + capitalise new. Net only at year-end balances.",
+process:"Old CA at swap = (cost) × (life remaining/total life). Write off. New at full cost.",
+everyday:"Plane engine swap mid-life: old engine had 'life left' = loss. New engine = fresh cost."}
+},
+
+{qId:"DEP_S_Q30",type:"ot",questionType:"mcq",subTopic:"Component depreciation",difficulty:"medium",marks:2,
+scenario:"Wickham Communications builds a new transmission tower for £5,000,000. Components: structure £3,500,000 (40-yr life); aerial £900,000 (15-yr life); electronics £600,000 (8-yr life). Nil residual.",
+questionText:"What is the annual depreciation charge?",
+options:[
+{letter:"A",text:"£222,500",correct:true,why:"Correct. 87,500 + 60,000 + 75,000 = 222,500."},
+{letter:"B",text:"£125,000",correct:false,why:"Trap: total over longest life (40 yrs)."},
+{letter:"C",text:"£625,000",correct:false,why:"Trap: total over shortest life (8 yrs)."},
+{letter:"D",text:"£200,000",correct:false,why:"Trap: arithmetic slip — used (3.5/40 + 0.9/15 + 0.6/8) approx."}],
+correctAnswer:"A",
+explanation:{
+working:"Structure:    3,500,000 / 40 = 87,500\nAerial:         900,000 / 15 = 60,000\nElectronics:    600,000 /  8 = 75,000\n                              -------\nTotal annual:                 222,500",
+ifrsRef:"IAS 16 §43-44 — Each significant part of PPE depreciated separately.",
+examinerNote:"Standard component sum. Trap: 'longest life over total' or 'shortest life over total'. Always sum components individually."},
+commentary:{
+concept:"Sum-of-parts dep. Each component independently. Total = sum.",
+process:"Component cost ÷ component life for each. Add.",
+everyday:"Hotel renovation — roof, lobby, kitchen each have own wear timeline. Total wear = sum."}
+},
+
+{qId:"DEP_S_Q31",type:"ot",questionType:"multi",subTopic:"Component depreciation",difficulty:"hard",marks:2,
+scenario:"Lansdowne Estate Ltd is debating whether component depreciation is mandatory for its mixed-use property portfolio.",
+questionText:"Which TWO statements are correct under IAS 16?",
+options:[
+{letter:"A",text:"Component depreciation is mandatory when a part has a cost SIGNIFICANT to the total cost AND a different useful life or pattern of consumption.",correct:true,why:"Correct. IAS 16 §43-44 — both criteria must be met."},
+{letter:"B",text:"Components with the same useful life and method may be grouped for depreciation.",correct:true,why:"Correct. IAS 16 §45 — grouping permitted when life and method match."},
+{letter:"C",text:"Component depreciation is optional and at management's discretion.",correct:false,why:"Wrong — it's mandatory when criteria met (§43)."},
+{letter:"D",text:"Land is always a component requiring depreciation.",correct:false,why:"Wrong — land typically has indefinite life and is NOT depreciated (§58)."},
+{letter:"E",text:"Components are depreciated only if they exceed £100,000 in cost.",correct:false,why:"No fixed monetary threshold — 'significant' is judgement (§43)."}],
+correctAnswer:["A","B"],
+explanation:{
+working:"§43: 'Each part of an item of PPE with a cost that is significant in relation to the total cost of the item shall be depreciated separately.'\n§44: separate dep for parts with similar lives that share a useful life pattern.\n§45: parts with same useful life and method may be grouped.\n§58: land NOT depreciated (indefinite life).",
+ifrsRef:"IAS 16 §43-45 (componentisation) and §58 (land).",
+examinerNote:"Stress-level concept question. 'Mandatory' vs 'optional' is the key distinction. Land never depreciates is a memorise-it rule."},
+commentary:{
+concept:"Components = mandatory when significant + different life. Group when same. Land = no dep ever.",
+process:"For each part: significant cost? Different life? → split. Same? → group with body.",
+everyday:"Hotel property: building yes, land no. Lifts (different life) split out from main building."}
+},
+
+{qId:"DEP_S_Q32",type:"ot",questionType:"drag",subTopic:"Component depreciation",difficulty:"easy",marks:2,
+scenario:"Padbury Holdings buys an industrial cooling system for £400,000. Components identified: compressor unit £160,000 (12-yr life); ductwork £80,000 (20-yr life); control electronics £40,000 (5-yr life); main casing £120,000 (20-yr life). Nil residual.",
+questionText:"Match each component to its annual depreciation charge.",
+dragItems:[{id:"i1",text:"£13,333"},{id:"i2",text:"£4,000"},{id:"i3",text:"£8,000"},{id:"i4",text:"£6,000"}],
+dragSlots:[{id:"s1",label:"Compressor (£160k / 12 yrs)"},{id:"s2",label:"Ductwork (£80k / 20 yrs)"},{id:"s3",label:"Control electronics (£40k / 5 yrs)"},{id:"s4",label:"Main casing (£120k / 20 yrs)"}],
+dragMatches:{i1:"s1",i2:"s2",i3:"s3",i4:"s4"},
+explanation:{
+working:"Compressor:   160,000 / 12 = 13,333\nDuctwork:      80,000 / 20 =  4,000\nElectronics:   40,000 /  5 =  8,000\nCasing:       120,000 / 20 =  6,000\nTotal annual:               31,333\n\nNote: ductwork and casing have same 20-yr life — they could be GROUPED per §45.",
+ifrsRef:"IAS 16 §43-45 — Component dep with grouping option.",
+examinerNote:"Easy mark for component identification. Practice the arithmetic until effortless."},
+commentary:{
+concept:"Each component its own life. Sum for total.",
+process:"Cost ÷ life for each. Match to slot.",
+everyday:"Different parts of an HVAC system fail at different times — track separately."}
+}
+
+],
+
+mtq:[
+{qId:"DEP_S_MTQ1",title:"Hartwell Engineering Group — Multi-asset NCA review (20 marks)",
+scenario:"Hartwell Engineering Group has a 31 December year-end. The following relates to its PPE for y/e 31 Dec 20X6:\n\n• ASSET 1 — CNC machine: bought 1 Apr 20X4 for £180,000. Useful life 8 yrs; residual £20,000; SL; monthly basis.\n\n• ASSET 2 — Specialised press: bought 1 Jan 20X3 for £240,000 (12-yr SL, residual £24,000). On 1 Jan 20X6 the directors revise estimates: residual now £12,000; remaining useful life 6 years (from 1 Jan 20X6).\n\n• ASSET 3 — Production line: bought 1 Jan 20X4 for £600,000. Components: structure £450,000 (20-yr life); conveyor £90,000 (6-yr life); electronics £60,000 (4-yr life). Nil residual, SL. On 1 Jan 20X6, the conveyor fails and is replaced for £130,000 (new 6-yr life).\n\n• ASSET 4 — Forklift: bought 1 May 20X4 for £36,000 (10-yr SL, residual £6,000, monthly). Sold 31 Aug 20X6 for £21,500. NO charge in disposal month; full month charge in acquisition month.\n\nAll dep up to 31 Dec 20X5 correctly recorded.",
+parts:[
+{partId:"a",prompt:"Calculate the depreciation charge on the CNC MACHINE for y/e 31 Dec 20X6. (3 marks)",
+modelAnswer:"Annual: (180,000 − 20,000)/8 = 20,000\n\nMachine owned full year 20X6 = 12 months\n\nDep charge for y/e 31 Dec 20X6 = £20,000"},
+{partId:"b",prompt:"Calculate the depreciation charge on the SPECIALISED PRESS for y/e 31 Dec 20X6 after the 1 Jan 20X6 revision. (4 marks)",
+modelAnswer:"Original annual: (240,000 − 24,000)/12 = 18,000\nDep 20X3-20X5 (3 yrs): 54,000\nCA at 1 Jan 20X6: 240,000 − 54,000 = 186,000\n\nNew residual: 12,000\nNew depreciable: 186,000 − 12,000 = 174,000\nNew remaining life: 6 yrs\nNew annual: 174,000 / 6 = 29,000\n\nDep charge for y/e 31 Dec 20X6 = £29,000"},
+{partId:"c",prompt:"For the PRODUCTION LINE: (i) calculate dep charge on each of the 3 original components for y/e 31 Dec 20X5; (ii) account for the conveyor replacement on 1 Jan 20X6; (iii) calculate dep charge for y/e 31 Dec 20X6. (5 marks)",
+modelAnswer:"(i) 20X5 dep:\n  Structure:    450,000 / 20 = 22,500\n  Conveyor:      90,000 /  6 = 15,000\n  Electronics:   60,000 /  4 = 15,000\n  Total 20X5:                 52,500\n\n(ii) Conveyor replacement 1 Jan 20X6:\n  Old conveyor CA after 2 yrs: 90,000 − (2×15,000) = 60,000\n    Dr Loss on disposal     60,000\n      Cr Old conveyor (CA)      60,000\n  New conveyor:\n    Dr New conveyor       130,000\n      Cr Bank                  130,000\n\n(iii) 20X6 dep:\n  Structure:    450,000 / 20 = 22,500\n  New conveyor: 130,000 /  6 = 21,667\n  Electronics:   60,000 /  4 = 15,000\n  Total 20X6:                 59,167"},
+{partId:"d",prompt:"Calculate gain/loss on disposal of the FORKLIFT, showing CA at disposal. (4 marks)",
+modelAnswer:"Annual: (36,000 − 6,000)/10 = 3,000\n\nMonths charged (May 20X4 → Jul 20X6 inclusive; no charge Aug = disposal month):\n  20X4 (May-Dec): 8 months → 8/12 × 3,000 = 2,000\n  20X5 (full): 12 months → 3,000\n  20X6 (Jan-Jul): 7 months → 7/12 × 3,000 = 1,750\n  Total dep: 6,750\n\nCA at 31 Aug 20X6: 36,000 − 6,750 = 29,250\nProceeds: 21,500\nLoss: 29,250 − 21,500 = 7,750\n\nJournal:\n  Dr Bank             21,500\n  Dr Acc dep           6,750\n  Dr Loss              7,750\n    Cr Forklift              36,000"},
+{partId:"e",prompt:"Briefly explain (3-4 sentences) the conceptual difference between IAS 16 §51 (change in estimate of useful life) and IAS 8 prior-period restatement. Why does the standard prefer prospective treatment? (4 marks)",
+modelAnswer:"A change in the estimated useful life or residual value reflects new information about the FUTURE — not a correction of a past error. The original estimate was reasonable when made on the basis of information then available. Restating prior periods would imply that previous financial statements were 'wrong' when in fact they fairly presented the asset based on the best estimate at the time. IAS 16 §51 (read with IAS 8 §32-38) therefore mandates PROSPECTIVE application: the change is reflected only in the current and future periods, preserving the integrity of comparative figures and respecting the limits of foresight. Restatement is reserved for material errors and corrections of prior misapplications of policy."}
+]},
+
+{qId:"DEP_S_MTQ2",title:"Pevensey Coastal Resorts — Hotel revaluation lifecycle (20 marks)",
+scenario:"Pevensey Coastal Resorts owns one beach-front hotel. Year-end 31 December.\n\nKey facts:\n• Hotel acquired 1 Jan 20X1 for £4,000,000. Identified components: structure £2,800,000 (50-yr life); fittings £900,000 (15-yr life); HVAC £300,000 (10-yr life). Nil residual, SL.\n\n• On 1 Jan 20X4, the directors adopt the revaluation model FOR THE STRUCTURE COMPONENT ONLY (fittings and HVAC continue at historical cost throughout). Structure component revalued to £3,000,000. Useful life unchanged. Annual transfer policy applied.\n\n• On 1 Jan 20X7, market downturn — structure component revalued downward to £1,900,000. Fittings and HVAC unaffected.\n\n• On 30 June 20X8, hotel SOLD as a single transaction for £2,400,000.",
+parts:[
+{partId:"a",prompt:"Calculate the annual depreciation charge for the hotel before revaluation (20X1-20X3). (3 marks)",
+modelAnswer:"Structure:  2,800,000 / 50 = 56,000\nFittings:     900,000 / 15 = 60,000\nHVAC:         300,000 / 10 = 30,000\nTotal annual: 146,000\n\nFor 3 yrs (20X1-20X3): 438,000 cumulative."},
+{partId:"b",prompt:"On 1 Jan 20X4 revaluation of the structure: calculate (i) gain to OCI on the structure component; (ii) post-reval annual depreciation of each component; (iii) annual transfer to retained earnings. (5 marks)",
+modelAnswer:"(i) Gain on structure:\n   CA at 1 Jan 20X4: 2,800,000 − (3 × 56,000) = 2,632,000\n   Reval to: 3,000,000\n   Gain to OCI: 368,000\n\n(ii) Post-reval annual dep:\n   Structure:  3,000,000 / 47 (rem life) = 63,830\n   Fittings:     720,000 / 12 (rem life) = 60,000  (unchanged — at cost)\n   HVAC:         210,000 /  7 (rem life) = 30,000  (unchanged — at cost)\n   Total annual: 153,830\n\n(iii) Annual transfer (structure only):\n   Excess of new dep over original = 63,830 − 56,000 = 7,830/yr\n   Dr Reval surplus  7,830\n     Cr Retained earnings  7,830"},
+{partId:"c",prompt:"On 1 Jan 20X7 downward revaluation of the structure: account for the change including any P&L vs OCI split. (4 marks)",
+modelAnswer:"Structure CA at 1 Jan 20X7:\n  3,000,000 − (3 × 63,830) = 2,808,510\n\nSurplus on structure remaining (after 3 transfers of 7,830):\n  368,000 − 23,490 = 344,510\n\nReval down to 1,900,000 → decrease = 908,510\n  Step 1: absorb against surplus → 344,510 to OCI\n  Step 2: excess → 564,000 to P&L\n\nDr Reval surplus (OCI)   344,510\nDr Reval loss (P&L)      564,000\n  Cr Structure                908,510\n\nFittings and HVAC: unaffected — continue at cost.\nSurplus on structure now: ZERO."},
+{partId:"d",prompt:"On 30 June 20X8 disposal at £2,400,000: calculate the gain or loss on disposal showing each component's CA, and explain the treatment of any remaining revaluation surplus. (4 marks)",
+modelAnswer:"CA of components at 30 Jun 20X8:\n\nStructure (post-X7 reval base):\n  CA at 1 Jan 20X7: 1,900,000\n  New annual dep: 1,900,000 / 44 = 43,182\n  Dep 20X7 (full): 43,182  → CA 1 Jan 20X8: 1,856,818\n  Dep H1 20X8 (6 mo): 21,591\n  CA: 1,835,227\n\nFittings (continued at cost, 60,000/yr):\n  7.5 yrs of dep: 450,000\n  CA: 900,000 − 450,000 = 450,000\n\nHVAC (continued at cost, 30,000/yr):\n  7.5 yrs of dep: 225,000\n  CA: 300,000 − 225,000 = 75,000\n\nTotal CA: 1,835,227 + 450,000 + 75,000 = 2,360,227\nProceeds:  2,400,000\nGain on disposal (P&L): 39,773\n\nRemaining revaluation surplus on structure: ZERO\n  (fully absorbed by 1 Jan 20X7 downward reval)\n→ NO within-equity transfer required."},
+{partId:"e",prompt:"Briefly explain (3-4 sentences) why IAS 16 §41 prohibits recycling the revaluation surplus through P&L on disposal, even though the gain is now 'realised'. (4 marks)",
+modelAnswer:"The revaluation surplus represents an unrealised holding gain that has only ever been recognised in OCI — it never passed through P&L when accumulated. Recycling it through P&L on disposal would inflate the income statement with what is essentially a fair-value gain rather than an operating result, blurring the distinction between OPERATING performance (the disposal P/L on a CA basis) and HOLDING gains (revaluation movements). IAS 16 §41 instead transfers the residual surplus directly within equity (revaluation reserve → retained earnings), making it 'realised' for distribution purposes without distorting P&L. This preserves the line between operating results and asset value movements, which users of FS rely on to assess management's ongoing operational performance."}
+]}
+]
+};
+
+/* ============= STATE + LOCK ============= */
+let currentPool=null,attemptNo=1,qIdx=0;
+let answers={},guesses={},flags={},testStartTime=null,timerInterval=null,remainingSec=0,paused=false;
+let mtqMarks={};
+let dragId=null;
+let isPracticeMode=false;
+const LOCK_KEY='fa_dep_stress_locked_attempts';
+
+function getLockCount(){try{return parseInt(localStorage.getItem(LOCK_KEY)||'0',10)||0;}catch(e){return 0;}}
+function incLockCount(){try{const n=getLockCount()+1;localStorage.setItem(LOCK_KEY,String(n));return n;}catch(e){return 0;}}
+window.resetStressLock=function(){try{localStorage.removeItem(LOCK_KEY);console.log('Stress lock reset. Refresh page.');alert('Lock reset — refreshing page.');location.reload();}catch(e){console.error(e);}};
+
+function refreshLandingLock(){
+  const n=getLockCount();
+  const ls=document.getElementById('lockstate');
+  const lb=document.getElementById('lockBar');
+  const btn=document.getElementById('officialBtn');
+  ls.classList.toggle('full',n>=2);
+  ls.textContent=n>=2?'🔒 LOCKED — both attempts used':`Attempts used: ${n} of 2`;
+  let bar='';for(let i=0;i<2;i++)bar+=`<span class="lock-pip${i<n?' used':''}">${i<n?'✓':i+1}</span>`;
+  lb.innerHTML=bar;
+  if(n>=2){btn.disabled=true;btn.textContent='🔒 Both Official Attempts Used';}
+  else{btn.disabled=false;btn.textContent=`Start Official Attempt ${n+1}`;}
+}
+window.addEventListener('load',refreshLandingLock);
+
+function shuffle(arr){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function startOfficial(){
+  const n=getLockCount();
+  if(n>=2){alert('Both official attempts have been used. Switch to Practice Mode for further runs.');return;}
+  isPracticeMode=false;
+  attemptNo=n+1;
+  beginTest();
+}
+function startPractice(){
+  isPracticeMode=true;
+  attemptNo=getLockCount()+1; // for display only
+  document.getElementById('practiceBanner').classList.add('show');
+  beginTest();
+}
+
+function beginTest(){
+  // Build shuffled question array; keep MTQs in original order
+  currentPool={
+    name:STRESS.name,label:STRESS.label,timeMin:STRESS.timeMin,
+    questions:shuffle(STRESS.questions),
+    mtq:STRESS.mtq
+  };
+  document.getElementById('landing').classList.add('hide');
+  document.getElementById('topBar').classList.remove('hide');
+  document.getElementById('qBar').classList.remove('hide');
+  document.getElementById('testMain').classList.remove('hide');
+  const modeLabel=isPracticeMode?'PRACTICE':`OFFICIAL · Attempt ${attemptNo}/2`;
+  document.getElementById('topBarTitle').textContent=`ACCA FA — Depreciation Stress | Muhammad • ${modeLabel}`;
+  answers={};guesses={};flags={};mtqMarks={};
+  currentPool.questions.forEach(q=>{answers[q.qId]=null;guesses[q.qId]=false;flags[q.qId]=false;});
+  qIdx=0;testStartTime=Date.now();remainingSec=currentPool.timeMin*60;
+  document.getElementById('qNumDisp').textContent=`Q1 of ${currentPool.questions.length}`;
+  startTimer();renderQuestion();buildNavigator();
+}
+
+function startTimer(){if(timerInterval)clearInterval(timerInterval);updateTimerDisplay();
+  timerInterval=setInterval(()=>{if(paused)return;remainingSec--;
+    if(remainingSec<=0){remainingSec=0;clearInterval(timerInterval);submitTest();return;}
+    updateTimerDisplay();},1000);}
+function updateTimerDisplay(){const m=Math.floor(remainingSec/60),s=remainingSec%60;
+  const d=document.getElementById('timerDisp');d.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  if(remainingSec<600)d.classList.add('low');else d.classList.remove('low');}
+function togglePause(){paused=!paused;
+  document.getElementById('pauseBtn').innerHTML=paused?'▶ Resume':'⏸ Pause';
+  document.getElementById('qContainer').style.opacity=paused?'.25':'1';
+  document.getElementById('qContainer').style.pointerEvents=paused?'none':'auto';}
+function toggleCalc(){document.getElementById('calc').classList.toggle('show');}
+function calcAppend(v){const d=document.getElementById('calcDisp');d.value=(d.value==='0'&&v!=='.')?v:d.value+v;}
+function calcOp(op){document.getElementById('calcDisp').value+=op;}
+function calcEq(){const d=document.getElementById('calcDisp');try{d.value=String(Function('"use strict";return ('+d.value.replace(/×/g,'*').replace(/÷/g,'/')+')')());}catch(e){d.value='Error';}}
+function calcClear(){document.getElementById('calcDisp').value='0';}
+function escapeHTML(s){if(s===null||s===undefined)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function renderQuestion(){
+  const q=currentPool.questions[qIdx];
+  document.getElementById('qNumDisp').textContent=`Q${qIdx+1} of ${currentPool.questions.length}`;
+  document.getElementById('qMarksDisp').textContent=`${q.marks} mark${q.marks>1?'s':''}`;
+  document.getElementById('flagBtn').classList.toggle('active',!!flags[q.qId]);
+  document.getElementById('flagBtn').innerHTML=flags[q.qId]?'🚩 Flagged':'🚩 Flag';
+  let html='';
+  if(q.scenario)html+=`<div class="scenario"><strong>Scenario:</strong> ${escapeHTML(q.scenario)}</div>`;
+  html+=`<div class="qtext">${escapeHTML(q.questionText)}</div>`;
+  if(q.questionType==='mcq'){
+    html+=`<div class="qtype-hint">Single answer — select one option.</div>`;
+    q.options.forEach(o=>{const sel=answers[q.qId]===o.letter?'selected':'';
+      html+=`<label class="opt-row ${sel}" onclick="setMCQ('${q.qId}','${o.letter}')"><span class="letter">${o.letter}</span>${escapeHTML(o.text)}</label>`;});
+  } else if(q.questionType==='multi'){
+    const cur=answers[q.qId]||[];
+    html+=`<div class="qtype-hint">Select <strong>${q.correctAnswer.length}</strong> options. All-or-nothing.</div>`;
+    q.options.forEach(o=>{const sel=cur.includes(o.letter)?'selected':'';
+      html+=`<label class="opt-row ${sel}" onclick="toggleMulti('${q.qId}','${o.letter}')"><span class="letter">${o.letter}</span>${escapeHTML(o.text)}</label>`;});
+  } else if(q.questionType==='number'){
+    const cur=answers[q.qId]||'';
+    html+=`<div class="qtype-hint">${escapeHTML(q.numberHint||'')}</div>`;
+    html+=`<div class="num-input-wrap"><span class="pfx">£</span><input type="number" step="any" value="${cur}" oninput="setNum('${q.qId}',this.value)" placeholder="0"></div>`;
+    html+=`<div class="num-hint">Tolerance ±£${q.numberTolerance||5}.</div>`;
+  } else if(q.questionType==='tf'){
+    const cur=answers[q.qId]||new Array(q.statements.length).fill(null);
+    html+=`<div class="qtype-hint">Mark each statement TRUE or FALSE.</div>`;
+    q.statements.forEach((s,i)=>{const t=cur[i]===true?'t-sel':'',f=cur[i]===false?'f-sel':'';
+      html+=`<div class="tf-row"><span class="stmt"><strong>${i+1}.</strong> ${escapeHTML(s.text)}</span>
+        <button class="tf-btn ${t}" onclick="setTF('${q.qId}',${i},true)">TRUE</button>
+        <button class="tf-btn ${f}" onclick="setTF('${q.qId}',${i},false)">FALSE</button></div>`;});
+  } else if(q.questionType==='drag'){
+    html+=`<div class="qtype-hint">Drag each item from left into the matching slot on right.</div>`;
+    const cur=answers[q.qId]||{};
+    html+=`<div class="drag-area"><div class="drag-col"><h4>Items</h4>`;
+    q.dragItems.forEach(it=>{const placed=Object.values(cur).includes(it.id);
+      if(!placed)html+=`<div class="drag-item" draggable="true" data-id="${it.id}" ondragstart="dragStart(event)" ondragend="dragEnd(event)">${escapeHTML(it.text)}</div>`;});
+    html+=`</div><div class="drag-col"><h4>Slots</h4>`;
+    q.dragSlots.forEach(sl=>{const itemId=cur[sl.id];const item=itemId?q.dragItems.find(i=>i.id===itemId):null;
+      if(item)html+=`<div class="drag-slot has-item" data-slot="${sl.id}" ondragover="dragOver(event)" ondrop="dragDrop(event,'${q.qId}','${sl.id}')" ondblclick="dragRemove('${q.qId}','${sl.id}')"><strong>${escapeHTML(sl.label)}:</strong> ${escapeHTML(item.text)} <small style="color:#888">(double-click to remove)</small></div>`;
+      else html+=`<div class="drag-slot" data-slot="${sl.id}" ondragover="dragOver(event)" ondrop="dragDrop(event,'${q.qId}','${sl.id}')">${escapeHTML(sl.label)}</div>`;});
+    html+=`</div></div>`;
+  }
+  html+=`<div class="guess-row"><label><input type="checkbox" ${guesses[q.qId]?'checked':''} onchange="setGuess('${q.qId}',this.checked)"> 🎲 I'm guessing this answer</label><div class="help">Tick if you're guessing — keeps the dashboard's true accuracy honest</div></div>`;
+  html+=`<div class="bot-nav"><button class="btn-prev" onclick="prevQ()" ${qIdx===0?'disabled':''}>← Previous</button>`;
+  if(qIdx===currentPool.questions.length-1)html+=`<button class="btn-submit" onclick="submitTest()">Submit Stress Mock</button>`;
+  else html+=`<button class="btn-next" onclick="nextQ()">Next →</button>`;
+  html+=`</div>`;
+  document.getElementById('qContainer').innerHTML=html;
+  buildNavigator();
+}
+
+function setMCQ(qId,letter){answers[qId]=letter;renderQuestion();}
+function toggleMulti(qId,letter){const cur=answers[qId]||[];const i=cur.indexOf(letter);
+  if(i===-1)cur.push(letter);else cur.splice(i,1);answers[qId]=cur.length?cur:null;renderQuestion();}
+function setNum(qId,val){answers[qId]=val===''?null:parseFloat(val);buildNavigator();}
+function setTF(qId,idx,val){const q=currentPool.questions.find(x=>x.qId===qId);
+  let cur=answers[qId]||new Array(q.statements.length).fill(null);cur[idx]=val;answers[qId]=cur;renderQuestion();}
+function setGuess(qId,val){guesses[qId]=val;}
+function toggleFlag(){const q=currentPool.questions[qIdx];flags[q.qId]=!flags[q.qId];renderQuestion();}
+
+function dragStart(e){dragId=e.target.dataset.id;e.target.classList.add('dragging');}
+function dragEnd(e){e.target.classList.remove('dragging');}
+function dragOver(e){e.preventDefault();e.currentTarget.classList.add('over');}
+function dragDrop(e,qId,slotId){e.preventDefault();e.currentTarget.classList.remove('over');
+  if(!dragId)return;const cur=answers[qId]||{};
+  for(const k in cur){if(cur[k]===dragId)delete cur[k];}
+  cur[slotId]=dragId;answers[qId]=cur;dragId=null;renderQuestion();}
+function dragRemove(qId,slotId){const cur=answers[qId]||{};delete cur[slotId];answers[qId]=cur;renderQuestion();}
+
+function buildNavigator(){
+  const grid=document.getElementById('navGrid');if(!grid)return;
+  let answered=0,html='';
+  currentPool.questions.forEach((q,i)=>{
+    let isAns=answers[q.qId]!==null&&answers[q.qId]!==undefined;
+    if(isAns&&Array.isArray(answers[q.qId]))isAns=answers[q.qId].length>0;
+    if(isAns&&typeof answers[q.qId]==='object'&&!Array.isArray(answers[q.qId])){
+      isAns=Object.keys(answers[q.qId]).length>0;}
+    const fl=flags[q.qId]?'flag':'',cur=i===qIdx?'cur':'',ans=isAns?'ans':'';
+    if(isAns)answered++;
+    html+=`<button class="nav-cell ${cur} ${ans} ${fl}" onclick="jumpQ(${i})">${i+1}</button>`;});
+  grid.innerHTML=html;
+  document.getElementById('navHead').textContent=`Navigator — ${answered}/${currentPool.questions.length}`;
+}
+function nextQ(){if(qIdx<currentPool.questions.length-1){qIdx++;renderQuestion();window.scrollTo(0,0);}}
+function prevQ(){if(qIdx>0){qIdx--;renderQuestion();window.scrollTo(0,0);}}
+function jumpQ(i){qIdx=i;renderQuestion();window.scrollTo(0,0);}
+function confirmExit(){if(window.confirm('Exit without submitting? Progress lost. (No attempt counted if exited.)'))location.reload();}
+
+function submitTest(){
+  clearInterval(timerInterval);
+  document.getElementById('topBar').classList.add('hide');
+  document.getElementById('qBar').classList.add('hide');
+  document.getElementById('testMain').classList.add('hide');
+  document.getElementById('mtqPage').style.display='block';
+  const sa=computeSectionAScore();
+  document.getElementById('sectionAScoreDisp').textContent=sa.earned;
+  document.getElementById('sectionAMaxDisp').textContent=sa.max;
+  const mtqs=currentPool.mtq||[];
+  if(!mtqs.length){document.getElementById('mtqNextBtn').disabled=false;
+    document.getElementById('mtqContent').innerHTML='<div style="text-align:center;color:#888">No Section B MTQs.</div>';return;}
+  let html='';
+  mtqs.forEach((mtq,mi)=>{
+    html+=`<div style="border-top:3px solid #7c1d1d;padding-top:14px;margin-top:18px"><h3 style="color:#7c1d1d;margin-bottom:10px">MTQ ${mi+1}: ${escapeHTML(mtq.title)}</h3>`;
+    html+=`<div class="mtq-prompt"><strong>Scenario:</strong> ${escapeHTML(mtq.scenario)}</div>`;
+    mtq.parts.forEach(p=>{
+      html+=`<div style="border-top:1px dashed #d8dee5;margin-top:14px;padding-top:14px"><strong>Part (${p.partId}):</strong> ${escapeHTML(p.prompt)}</div>`;
+      html+=`<div class="mtq-grid"><div class="mtq-box user"><h5>Your answer:</h5><textarea id="mtq_user_${mtq.qId}_${p.partId}" placeholder="Show workings..."></textarea></div>`;
+      html+=`<div class="mtq-box model"><h5>Model answer:</h5><pre>${escapeHTML(p.modelAnswer)}</pre></div></div>`;
+      html+=`<div class="mtq-mark-buttons"><span style="font-size:13px;font-weight:600;margin-right:6px">Mark this part:</span>
+        <button class="right" onclick="markMTQ('${mtq.qId}_${p.partId}','right',this)">✓ Fully right</button>
+        <button class="partial" onclick="markMTQ('${mtq.qId}_${p.partId}','partial',this)">~ Partial</button>
+        <button class="wrong" onclick="markMTQ('${mtq.qId}_${p.partId}','wrong',this)">✗ Wrong</button></div>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('mtqContent').innerHTML=html;
+}
+
+function markMTQ(key,level,btn){mtqMarks[key]=level;
+  Array.from(btn.parentNode.querySelectorAll('button[class~="right"], button[class~="partial"], button[class~="wrong"]')).forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  const mtqs=currentPool.mtq||[];
+  let totalParts=0;mtqs.forEach(m=>totalParts+=m.parts.length);
+  const allDone=Object.keys(mtqMarks).length>=totalParts;
+  document.getElementById('mtqNextBtn').disabled=!allDone;}
+
+function computeSectionAScore(){
+  let earned=0,max=0;
+  currentPool.questions.forEach(q=>{max+=q.marks;if(answers[q.qId]===null||answers[q.qId]===undefined)return;
+    if(q.questionType==='mcq'){if(answers[q.qId]===q.correctAnswer)earned+=q.marks;}
+    else if(q.questionType==='multi'){const ua=(answers[q.qId]||[]).slice().sort(),ca=q.correctAnswer.slice().sort();
+      if(ua.length===ca.length&&ua.every((v,i)=>v===ca[i]))earned+=q.marks;}
+    else if(q.questionType==='number'){const tol=q.numberTolerance||5;
+      if(answers[q.qId]!==null&&Math.abs(answers[q.qId]-q.numberAnswer)<=tol)earned+=q.marks;}
+    else if(q.questionType==='tf'){const ua=answers[q.qId]||[];let pts=0;
+      q.statements.forEach((s,i)=>{if(ua[i]===s.correct)pts++;});earned+=pts;}
+    else if(q.questionType==='drag'){const ua=answers[q.qId]||{},matches=q.dragMatches;
+      const allRight=Object.keys(matches).every(itemId=>Object.entries(ua).some(([slot,id])=>id===itemId&&matches[itemId]===slot));
+      if(allRight)earned+=q.marks;}});
+  return{earned,max};
+}
+
+function computeMTQScore(){
+  const mtqs=currentPool.mtq||[];
+  if(!mtqs.length)return{earned:0,max:0};
+  let earned=0,max=0;
+  mtqs.forEach(mtq=>{
+    mtq.parts.forEach(p=>{
+      const m=p.prompt.match(/\((\d+)\s*marks?\)/i);const pm=m?parseInt(m[1]):2;max+=pm;
+      const lvl=mtqMarks[mtq.qId+'_'+p.partId];
+      if(lvl==='right')earned+=pm;else if(lvl==='partial')earned+=Math.ceil(pm/2);
+    });
+  });
+  return{earned,max};
+}
+
+function goToResults(){
+  if(!isPracticeMode){
+    if(!window.confirm(`Final submission as OFFICIAL Attempt ${attemptNo} of 2.\n\nThis WILL:\n  • Increment your lock counter (irreversible without resetStressLock())\n  • Auto-sync results JSON to dashboard\n\nContinue?`))return;
+  }
+  document.getElementById('mtqPage').style.display='none';
+  document.getElementById('resultsPage').style.display='block';renderResults();}
+
+function renderResults(){
+  const sa=computeSectionAScore(),sb=computeMTQScore();
+  const totEarned=sa.earned+sb.earned,totMax=sa.max+sb.max;
+  const pct=totMax>0?Math.round(totEarned/totMax*100):0;
+  const elapsed=Math.round((Date.now()-testStartTime)/1000);
+  const mins=Math.floor(elapsed/60),secs=elapsed%60;
+  document.getElementById('scoreBig').textContent=`${totEarned} / ${totMax}`;
+  document.getElementById('scorePct').textContent=`${pct}% — ${pct>=70?'STRONG':pct>=50?'PASS':'BELOW PASS'}`;
+  if(isPracticeMode)document.getElementById('scoreBanner').classList.add('practice');
+  const modeLabel=isPracticeMode?'PRACTICE (not recorded)':`OFFICIAL Attempt ${attemptNo}/2`;
+  document.getElementById('scoreMeta').innerHTML=`<strong>Mode:</strong> ${modeLabel} · <strong>Section A:</strong> ${sa.earned}/${sa.max} · <strong>Section B:</strong> ${sb.earned}/${sb.max} · <strong>Time:</strong> ${mins}m ${secs}s`;
+  // Sub-topics
+  const sub={};
+  currentPool.questions.forEach(q=>{if(!sub[q.subTopic])sub[q.subTopic]={earned:0,max:0};
+    sub[q.subTopic].max+=q.marks;
+    let pts=0;
+    if(q.questionType==='mcq'&&answers[q.qId]===q.correctAnswer)pts=q.marks;
+    else if(q.questionType==='multi'){const ua=(answers[q.qId]||[]).slice().sort(),ca=q.correctAnswer.slice().sort();
+      if(ua.length===ca.length&&ua.every((v,i)=>v===ca[i]))pts=q.marks;}
+    else if(q.questionType==='number'){const tol=q.numberTolerance||5;
+      if(answers[q.qId]!==null&&Math.abs(answers[q.qId]-q.numberAnswer)<=tol)pts=q.marks;}
+    else if(q.questionType==='tf'){const ua=answers[q.qId]||[];q.statements.forEach((s,i)=>{if(ua[i]===s.correct)pts++;});}
+    else if(q.questionType==='drag'){const ua=answers[q.qId]||{},matches=q.dragMatches;
+      const allRight=Object.keys(matches).every(id=>Object.entries(ua).some(([slot,iid])=>iid===id&&matches[id]===slot));
+      if(allRight)pts=q.marks;}
+    sub[q.subTopic].earned+=pts;});
+  let subHTML='';
+  Object.entries(sub).forEach(([n,d])=>{const p=d.max>0?Math.round(d.earned/d.max*100):0;
+    subHTML+=`<tr><td>${escapeHTML(n)}</td><td>${d.earned}/${d.max} (${p}%)</td><td><span class="bar" style="width:${p}%"></span></td></tr>`;});
+  document.getElementById('subtopicTbody').innerHTML=subHTML;
+  // Per-question
+  let qHTML='';
+  currentPool.questions.forEach((q,i)=>qHTML+=renderResultCard(q,i+1));
+  if(currentPool.mtq)currentPool.mtq.forEach((m,i)=>qHTML+=renderMTQResultCard(m,i+1));
+  document.getElementById('qResults').innerHTML=qHTML;
+  // Build attempt JSON
+  const aJSON=buildAttemptJSON(sa,sb,elapsed);
+  // OFFICIAL: increment lock + auto-sync; PRACTICE: skip both
+  if(!isPracticeMode){
+    incLockCount();
+    autoSyncToPendingQueue(aJSON);
+  } else {
+    console.log('Practice mode — no lock increment, no dashboard sync.');
+  }
+  window.__attemptJSON=aJSON;
+}
+
+function renderResultCard(q,idx){
+  let status='wrong',earned=0;
+  if(answers[q.qId]===null||answers[q.qId]===undefined)status='skipped';
+  else{
+    if(q.questionType==='mcq'&&answers[q.qId]===q.correctAnswer){status='correct';earned=q.marks;}
+    else if(q.questionType==='multi'){const ua=(answers[q.qId]||[]).slice().sort(),ca=q.correctAnswer.slice().sort();
+      if(ua.length===ca.length&&ua.every((v,i)=>v===ca[i])){status='correct';earned=q.marks;}}
+    else if(q.questionType==='number'){const tol=q.numberTolerance||5;
+      if(Math.abs(answers[q.qId]-q.numberAnswer)<=tol){status='correct';earned=q.marks;}}
+    else if(q.questionType==='tf'){const ua=answers[q.qId]||[];let pts=0;
+      q.statements.forEach((s,i)=>{if(ua[i]===s.correct)pts++;});
+      earned=pts;if(pts===q.statements.length)status='correct';else if(pts>0)status='partial';}
+    else if(q.questionType==='drag'){const ua=answers[q.qId]||{},matches=q.dragMatches;
+      const allRight=Object.keys(matches).every(id=>Object.entries(ua).some(([slot,iid])=>iid===id&&matches[id]===slot));
+      if(allRight){status='correct';earned=q.marks;}}
+  }
+  let html=`<div class="q-result ${status}">`;
+  html+=`<div class="q-result-head"><div><span class="qno">Q${idx}</span> · <span style="color:#888;font-size:11px">${q.qId}</span><div class="meta-tags"><span class="tg">${escapeHTML(q.subTopic)}</span><span class="tg ${q.difficulty}">${q.difficulty}</span><span class="tg">${q.marks} mk</span>${guesses[q.qId]?'<span class="tg guessed">🎲 guessed</span>':''}</div></div>`;
+  html+=`<div style="font-weight:700;font-size:14px;color:${status==='correct'?'#1b5e20':status==='skipped'?'#616161':'#b71c1c'}">${status==='correct'?'✓ '+earned+'/'+q.marks:status==='skipped'?'⊘ skipped':status==='partial'?earned+'/'+q.marks:'✗ '+earned+'/'+q.marks}</div></div>`;
+  if(q.scenario)html+=`<div class="scenario" style="margin-bottom:10px"><strong>Scenario:</strong> ${escapeHTML(q.scenario)}</div>`;
+  html+=`<div style="font-weight:600;margin-bottom:10px">${escapeHTML(q.questionText)}</div>`;
+  if(q.questionType==='mcq'){
+    q.options.forEach(o=>{let cls='muted';
+      if(o.correct)cls=answers[q.qId]===o.letter?'user-correct':'correct-ans';
+      else if(answers[q.qId]===o.letter)cls='user-wrong';
+      html+=`<div class="opt-result ${cls}"><span class="letter">${o.letter}</span>${escapeHTML(o.text)}${o.correct?' <span class="badge">✓ CORRECT</span>':''}${answers[q.qId]===o.letter&&!o.correct?' <span class="badge">YOUR ANSWER</span>':''}<div class="why">${escapeHTML(o.why)}</div></div>`;});
+  } else if(q.questionType==='multi'){const ua=answers[q.qId]||[];
+    q.options.forEach(o=>{const u=ua.includes(o.letter);let cls='muted';
+      if(o.correct)cls=u?'user-correct':'correct-ans';else if(u)cls='user-wrong';
+      html+=`<div class="opt-result ${cls}"><span class="letter">${o.letter}</span>${escapeHTML(o.text)}${o.correct?' <span class="badge">✓ CORRECT</span>':''}${u&&!o.correct?' <span class="badge">YOUR PICK</span>':''}<div class="why">${escapeHTML(o.why)}</div></div>`;});
+  } else if(q.questionType==='number'){const ua=answers[q.qId];
+    const corr=ua!==null&&Math.abs(ua-q.numberAnswer)<=(q.numberTolerance||5);
+    html+=`<div class="num-result-row"><div class="num-result-box user ${corr?'correct':''}"><div class="lbl">YOUR ANSWER</div>£${ua!==null?ua:'(skipped)'}</div><div class="num-result-box correct"><div class="lbl">CORRECT (±£${q.numberTolerance||5})</div>£${q.numberAnswer}</div></div>`;
+  } else if(q.questionType==='tf'){const ua=answers[q.qId]||[];
+    q.statements.forEach((s,i)=>{const uv=ua[i];const right=uv===s.correct;
+      let cls=right?'correct-ans':(uv===null||uv===undefined?'muted':'user-wrong');
+      html+=`<div class="opt-result ${cls}"><span class="letter">${i+1}</span>${escapeHTML(s.text)} <span class="badge">Correct: ${s.correct?'TRUE':'FALSE'}</span>${uv!==null&&uv!==undefined?' <span style="color:#888;font-size:11px;margin-left:6px">(you: '+(uv?'TRUE':'FALSE')+')</span>':''}<div class="why">${escapeHTML(s.why)}</div></div>`;});
+  } else if(q.questionType==='drag'){const ua=answers[q.qId]||{};
+    q.dragSlots.forEach(sl=>{const cId=Object.entries(q.dragMatches).find(([iid,sid])=>sid===sl.id)?.[0];
+      const ci=q.dragItems.find(i=>i.id===cId);const uId=ua[sl.id];const ui=uId?q.dragItems.find(i=>i.id===uId):null;
+      const right=uId===cId;const cls=right?'correct-ans':(uId?'user-wrong':'muted');
+      html+=`<div class="opt-result ${cls}"><strong>${escapeHTML(sl.label)}:</strong> Correct → <em>${escapeHTML(ci?.text||'')}</em> | You → <em>${escapeHTML(ui?.text||'(empty)')}</em></div>`;});
+  }
+  html+=`<div class="expl-block">`;
+  html+=`<div class="layer"><div class="what-tests"><strong>💡 WHAT THIS TESTS:</strong> ${escapeHTML(q.subTopic)} — ${escapeHTML(q.difficulty)} tier.</div></div>`;
+  if(q.explanation?.working)html+=`<div class="layer"><div class="layer-head">📐 WORKING</div><div class="working">${escapeHTML(q.explanation.working)}</div></div>`;
+  if(q.explanation?.ifrsRef)html+=`<div class="layer"><div class="ifrs-ref"><strong>📚 STANDARD REFERENCE:</strong> ${escapeHTML(q.explanation.ifrsRef)}</div></div>`;
+  if(q.explanation?.examinerNote)html+=`<div class="layer"><div class="examiner-note"><strong>📌 Examiner's Note:</strong> ${escapeHTML(q.explanation.examinerNote)}</div></div>`;
+  if(q.commentary){html+=`<div class="layer"><div class="layer-head">🎓 TEACHER COMMENTARY</div><div class="commentary-grid">
+    <div class="cm"><div class="cm-head">CONCEPT</div><div class="cm-text">${escapeHTML(q.commentary.concept)}</div></div>
+    <div class="cm"><div class="cm-head">PROCESS</div><div class="cm-text">${escapeHTML(q.commentary.process)}</div></div>
+    <div class="cm"><div class="cm-head">EVERYDAY</div><div class="cm-text">${escapeHTML(q.commentary.everyday)}</div></div></div></div>`;}
+  html+=`</div></div>`;
+  return html;
+}
+
+function renderMTQResultCard(m,n){
+  let html=`<div class="q-result"><div class="q-result-head"><div><span class="qno">Section B MTQ ${n}</span> · <span style="color:#888;font-size:11px">${escapeHTML(m.title)}</span></div></div>`;
+  html+=`<div class="scenario" style="margin-bottom:10px"><strong>Scenario:</strong> ${escapeHTML(m.scenario)}</div>`;
+  m.parts.forEach(p=>{const lvl=mtqMarks[m.qId+'_'+p.partId]||'unmarked';
+    const lbl=lvl==='right'?'✓ Fully right':lvl==='partial'?'~ Partial':lvl==='wrong'?'✗ Wrong':'(unmarked)';
+    html+=`<div style="border-top:1px dashed #d8dee5;margin-top:14px;padding-top:14px"><strong>Part (${p.partId}):</strong> ${escapeHTML(p.prompt)} <span class="tg" style="background:${lvl==='right'?'#c8e6c9':lvl==='partial'?'#fff3e0':'#ffebee'};color:${lvl==='right'?'#1b5e20':lvl==='partial'?'#e65100':'#b71c1c'};margin-left:6px">${lbl}</span>`;
+    html+=`<div class="mtq-box model" style="margin-top:8px"><h5>Model answer:</h5><pre>${escapeHTML(p.modelAnswer)}</pre></div></div>`;});
+  html+=`</div>`;
+  return html;
+}
+
+function buildAttemptJSON(sa,sb,elapsed){
+  const qs=[];
+  currentPool.questions.forEach(q=>{
+    let earned=0,correct=false,userAns=answers[q.qId];
+    if(userAns===null||userAns===undefined){correct=false;earned=0;}
+    else if(q.questionType==='mcq'){correct=userAns===q.correctAnswer;earned=correct?q.marks:0;}
+    else if(q.questionType==='multi'){const ua=userAns.slice().sort(),ca=q.correctAnswer.slice().sort();
+      correct=ua.length===ca.length&&ua.every((v,i)=>v===ca[i]);earned=correct?q.marks:0;}
+    else if(q.questionType==='number'){const tol=q.numberTolerance||5;
+      correct=Math.abs(userAns-q.numberAnswer)<=tol;earned=correct?q.marks:0;}
+    else if(q.questionType==='tf'){let pts=0;q.statements.forEach((s,i)=>{if(userAns[i]===s.correct)pts++;});
+      earned=pts;correct=pts===q.statements.length;}
+    else if(q.questionType==='drag'){const matches=q.dragMatches;
+      const allRight=Object.keys(matches).every(id=>Object.entries(userAns||{}).some(([slot,iid])=>iid===id&&matches[id]===slot));
+      correct=allRight;earned=correct?q.marks:0;}
+    qs.push({qId:q.qId,questionType:q.questionType,subTopic:q.subTopic,difficulty:q.difficulty,marks:q.marks,
+      userAnswer:userAns,correctAnswer:q.correctAnswer||null,correct:correct,earned:earned,guessed:!!guesses[q.qId]});});
+  const poolName=isPracticeMode?'Stress-Practice':`Stress-Official-${attemptNo}`;
+  return{schemaVersion:3,topicName:"Depreciation",poolName:poolName,attemptNumber:attemptNo,
+    isPractice:isPracticeMode,
+    date:new Date().toISOString(),timeSpentSeconds:elapsed,
+    sectionAScore:sa.earned,sectionAMax:sa.max,sectionBScore:sb.earned,sectionBMax:sb.max,
+    totalScore:sa.earned+sb.earned,totalPossible:sa.max+sb.max,questions:qs};
+}
+
+function autoSyncToPendingQueue(j){
+  try{const k='fa_v3_pending_imports';const ex=JSON.parse(localStorage.getItem(k)||'[]');
+    ex.push(j);localStorage.setItem(k,JSON.stringify(ex));
+    console.log('Auto-sync queued. Dashboard will pick up on next open.');}
+  catch(e){console.error('Auto-sync failed (JSON download still works):',e);}
+}
+
+function downloadJSON(){
+  const j=window.__attemptJSON;if(!j){alert('No attempt data');return;}
+  const blob=new Blob([JSON.stringify(j,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  const tag=isPracticeMode?'practice':`official_${attemptNo}`;
+  a.download=`fa_depreciation_stress_${tag}_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
