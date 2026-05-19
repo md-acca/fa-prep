@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test #8 — VAT, Discounts & Petty Cash | Pool A</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f7fa;color:#2c3e50;line-height:1.5;}
+#topBar{position:sticky;top:0;z-index:100;background:#003366;color:white;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,0.15);}
+#topBar .title{font-weight:600;font-size:15px;}
+#topBar .controls{display:flex;gap:12px;align-items:center;}
+#topBar button{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:white;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:14px;}
+#topBar button:hover{background:rgba(255,255,255,0.22);}
+#topBar .timer{font-family:'Courier New',monospace;font-weight:700;font-size:16px;padding:6px 12px;background:rgba(0,0,0,0.25);border-radius:4px;transition:background 0.3s,color 0.3s;}
+#topBar .timer.warning{background:#ffc107;color:#1a1a1a;animation:pulse-w 2s infinite;}
+#topBar .timer.critical{background:#dc3545;color:white;animation:pulse-c 1s infinite;}
+@keyframes pulse-w{0%,100%{opacity:1;}50%{opacity:0.7;}}
+@keyframes pulse-c{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.85;transform:scale(1.04);}}
+#subBar{background:white;padding:10px 24px;border-bottom:1px solid #e1e5ea;display:flex;justify-content:space-between;align-items:center;font-size:14px;}
+.qpos{color:#555;font-weight:500;}
+#flagBtn{background:none;border:1px solid #ccc;padding:4px 10px;border-radius:4px;cursor:pointer;margin-left:12px;font-size:13px;}
+#flagBtn.flagged{background:#fff3cd;border-color:#ffc107;color:#856404;}
+#timeUpOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;display:none;align-items:center;justify-content:center;}
+#timeUpOverlay.visible{display:flex;}
+#timeUpOverlay .panel{background:white;padding:36px 48px;border-radius:12px;text-align:center;max-width:420px;box-shadow:0 10px 40px rgba(0,0,0,0.4);}
+#timeUpOverlay h2{color:#dc3545;margin:0 0 12px;font-size:28px;}
+#mainArea{display:flex;max-width:1400px;margin:0 auto;gap:20px;padding:20px 24px;}
+#contentPanel{flex:1;min-width:0;}
+#navPanel{width:220px;flex-shrink:0;}
+.qcard{background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);padding:28px;margin-bottom:20px;}
+.scenario{background:#f5f7fa;border-left:4px solid #003366;padding:16px 18px;margin-bottom:18px;white-space:pre-wrap;font-size:14.5px;line-height:1.65;}
+.qprompt{font-size:15.5px;font-weight:500;margin:14px 0 18px;line-height:1.55;}
+.opt{display:flex;align-items:flex-start;padding:12px 14px;margin-bottom:8px;border:1.5px solid #d8dde3;border-radius:6px;cursor:pointer;transition:all 0.12s;background:white;}
+.opt:hover{border-color:#003366;background:#f8fafc;}
+.opt input[type="radio"],.opt input[type="checkbox"]{margin-right:12px;margin-top:3px;transform:scale(1.1);cursor:pointer;}
+.opt-letter{font-weight:700;color:#003366;margin-right:10px;min-width:18px;}
+.opt-text{flex:1;font-size:14.5px;line-height:1.55;}
+.opt.selected{border-color:#003366;background:#e8f0f8;}
+.opt.selected-multi{border-color:#003366;background:#e8f0f8;}
+.num-entry{display:flex;align-items:center;gap:10px;margin:16px 0;}
+.num-entry .prefix{font-size:18px;font-weight:600;color:#003366;}
+.num-entry input{padding:10px 14px;font-size:16px;border:2px solid #d8dde3;border-radius:6px;width:200px;font-family:inherit;}
+.num-entry input:focus{outline:none;border-color:#003366;}
+.num-instr{color:#777;font-size:13px;margin-top:6px;font-style:italic;}
+.multi-instr{background:#e8f0f8;border-left:3px solid #003366;padding:8px 12px;border-radius:0 4px 4px 0;font-size:13px;color:#003366;margin-bottom:12px;}
+.guess-row{margin-top:18px;padding:10px 14px;background:#fff8e1;border-radius:4px;font-size:13px;color:#6d5510;display:flex;align-items:center;gap:10px;}
+.bottom-nav{display:flex;justify-content:space-between;gap:12px;margin-top:20px;}
+.bottom-nav button{padding:10px 22px;border-radius:6px;font-size:14.5px;font-weight:600;cursor:pointer;border:none;}
+.btn-prev{background:white;border:1.5px solid #003366 !important;color:#003366;}
+.btn-next{background:#003366;color:white;}
+#navPanel{position:sticky;top:100px;max-height:calc(100vh - 130px);overflow-y:auto;background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);padding:14px;}
+.nav-header{font-weight:600;font-size:13px;color:#555;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e1e5ea;}
+.nav-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+.nav-cell{aspect-ratio:1;border:1.5px solid #d8dde3;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:white;}
+.nav-cell:hover{border-color:#003366;}
+.nav-cell.answered{background:#d4edda;border-color:#28a745;color:#155724;}
+.nav-cell.flagged{background:#fff3cd;border-color:#ffc107;color:#856404;}
+.nav-cell.current{box-shadow:0 0 0 2px #003366;}
+.nav-section-label{grid-column:1/-1;font-size:11px;color:#888;margin:8px 0 4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;}
+#calcWidget{position:fixed;right:24px;top:70px;background:white;border:1.5px solid #003366;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:12px;z-index:200;width:240px;display:none;}
+#calcWidget.visible{display:block;}
+#calcDisplay{width:100%;padding:10px;font-size:18px;font-family:'Courier New',monospace;text-align:right;border:1.5px solid #d8dde3;border-radius:4px;margin-bottom:8px;background:#f8fafc;}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}
+.calc-grid button{padding:10px 0;font-size:14px;font-weight:600;border:1px solid #d8dde3;background:white;cursor:pointer;border-radius:4px;}
+.calc-grid button.op{background:#003366;color:white;border-color:#003366;}
+.calc-grid button.eq{background:#28a745;color:white;border-color:#28a745;}
+.mtq-part{background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);padding:22px;margin-bottom:16px;}
+.mtq-part-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #e1e5ea;}
+.mtq-part-title{font-weight:700;font-size:16px;color:#003366;}
+.mtq-part-marks{background:#003366;color:white;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;}
+.mtq-working-area{background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);padding:22px;margin-top:16px;border:2px dashed #003366;}
+.mtq-working-area .lbl{font-weight:700;font-size:14px;color:#003366;margin-bottom:8px;}
+.mtq-working-area textarea{width:100%;height:200px;font-family:'Courier New',monospace;font-size:13px;padding:14px;border:1.5px solid #d8dde3;border-radius:6px;resize:vertical;line-height:1.55;box-sizing:border-box;}
+.model-answer-box{background:#f8fafc;border:1.5px solid #d8dde3;border-radius:6px;padding:14px;margin-top:12px;}
+.model-answer-box pre{font-family:'Courier New',monospace;font-size:13px;white-space:pre-wrap;margin:8px 0 0;line-height:1.5;}
+.model-label{font-weight:600;font-size:12px;color:#555;text-transform:uppercase;letter-spacing:0.5px;}
+.score-banner{background:linear-gradient(135deg,#003366,#004080);color:white;padding:30px;border-radius:10px;text-align:center;margin-bottom:24px;box-shadow:0 3px 8px rgba(0,0,0,0.15);}
+.score-banner .score{font-size:48px;font-weight:700;line-height:1;margin-bottom:8px;}
+.score-banner .pct{font-size:24px;font-weight:600;opacity:0.9;}
+.score-banner .meta{font-size:14px;opacity:0.85;margin-top:14px;}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px;}
+.metric-card{background:white;border-radius:8px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+.metric-card .label{font-size:12px;color:#777;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;}
+.metric-card .value{font-size:22px;font-weight:700;color:#003366;margin-top:6px;}
+.subtopic-table{background:white;border-radius:8px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.06);margin-bottom:24px;}
+.subtopic-table table{width:100%;border-collapse:collapse;font-size:14px;}
+.subtopic-table th{text-align:left;padding:8px 10px;background:#f5f7fa;color:#555;font-weight:600;font-size:12px;text-transform:uppercase;}
+.subtopic-table td{padding:10px;border-bottom:1px solid #e1e5ea;}
+.pct-bar{display:inline-block;width:80px;height:8px;background:#e1e5ea;border-radius:4px;overflow:hidden;vertical-align:middle;margin-right:8px;}
+.pct-bar-fill{height:100%;background:#28a745;}
+.pct-bar-fill.low{background:#dc3545;}
+.pct-bar-fill.mid{background:#ffc107;}
+.action-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px;}
+.action-row button{padding:12px 18px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:none;}
+.btn-download{background:#28a745;color:white;}
+.btn-pdf{background:#dc3545;color:white;}
+.btn-sync{background:#003366;color:white;}
+.btn-restart{background:#6c757d;color:white;}
+.result-card{background:white;border-radius:8px;padding:22px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,0.06);border-left:5px solid #28a745;}
+.result-card.wrong{border-left-color:#dc3545;}
+.result-card.skipped{border-left-color:#6c757d;}
+.rc-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+.rc-q{font-weight:700;font-size:15px;color:#003366;}
+.rc-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.tag{padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.tag.subtopic{background:#e8f0f8;color:#003366;}
+.tag.diff-easy{background:#d4edda;color:#155724;}
+.tag.diff-medium{background:#fff3cd;color:#856404;}
+.tag.diff-hard{background:#f8d7da;color:#721c24;}
+.tag.status-correct{background:#d4edda;color:#155724;}
+.tag.status-wrong{background:#f8d7da;color:#721c24;}
+.tag.status-skipped{background:#e1e5ea;color:#555;}
+.tag.guessed{background:#fff3cd;color:#856404;}
+.result-opt{padding:12px 14px;margin-bottom:8px;border-radius:6px;border:1.5px solid #e1e5ea;}
+.result-opt.correct{background:#d4edda;border-color:#28a745;}
+.result-opt.user-wrong{background:#f8d7da;border-color:#dc3545;}
+.result-opt .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;margin-left:8px;}
+.result-opt .badge.correct{background:#28a745;color:white;}
+.result-opt .badge.user-wrong{background:#dc3545;color:white;}
+.result-opt .why{font-size:13px;color:#555;margin-top:6px;font-style:italic;line-height:1.45;}
+.num-result{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;}
+.num-result-box{flex:1;min-width:200px;padding:12px 16px;border-radius:6px;border:2px solid;}
+.num-result-box.user-wrong{border-color:#dc3545;background:#fff5f5;}
+.num-result-box.user-correct{border-color:#28a745;background:#f5fff5;}
+.num-result-box.correct-ref{border-color:#28a745;background:#f5fff5;}
+.num-result-box .lbl{font-size:11px;color:#555;text-transform:uppercase;font-weight:600;}
+.num-result-box .val{font-size:18px;font-weight:700;color:#003366;margin-top:4px;}
+.what-tests{background:#e8f0f8;border-left:4px solid #003366;padding:12px 14px;margin:12px 0;border-radius:0 4px 4px 0;}
+.what-tests .lbl{font-weight:700;font-size:12px;color:#003366;text-transform:uppercase;margin-bottom:6px;}
+.standard-ref{background:#fff8e1;border-left:4px solid #ffc107;padding:12px 14px;margin:12px 0;border-radius:0 4px 4px 0;}
+.standard-ref .lbl{font-weight:700;font-size:12px;color:#856404;text-transform:uppercase;margin-bottom:6px;}
+.working-block{background:#1a1a1a;color:#e8e8e8;padding:14px 16px;border-radius:6px;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.55;white-space:pre-wrap;margin:12px 0;overflow-x:auto;}
+.examiner-note{background:#fff3cd;border-left:4px solid #ffc107;padding:12px 14px;margin:12px 0;border-radius:0 4px 4px 0;}
+.examiner-note .lbl{font-weight:700;font-size:12px;color:#856404;text-transform:uppercase;margin-bottom:6px;}
+.advanced-note{background:#f0e8f8;border-left:4px solid #6f42c1;padding:12px 14px;margin:12px 0;border-radius:0 4px 4px 0;}
+.advanced-note .lbl{font-weight:700;font-size:12px;color:#6f42c1;text-transform:uppercase;margin-bottom:6px;}
+.teacher-commentary{background:#e8f7e8;border-left:4px solid #28a745;padding:12px 14px;margin:12px 0;border-radius:0 4px 4px 0;}
+.teacher-commentary .lbl{font-weight:700;font-size:12px;color:#155724;text-transform:uppercase;margin-bottom:8px;}
+.teacher-commentary .tc-row{margin-bottom:8px;font-size:13.5px;line-height:1.55;}
+.teacher-commentary .tc-label{font-weight:700;color:#155724;}
+#submitView{background:white;border-radius:8px;padding:30px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+#submitView h2{color:#003366;margin-top:0;}
+.btn-submit{background:#28a745;color:white;padding:14px 32px;border:none;border-radius:6px;font-size:16px;font-weight:700;cursor:pointer;margin-top:14px;}
+.section-hidden{display:none;}
+@media print{#topBar,#subBar,#navPanel,.action-row,#calcWidget,.bottom-nav{display:none !important;}#mainArea{display:block;padding:0;}#contentPanel{width:100%;}.result-card{page-break-inside:avoid;box-shadow:none;border:1px solid #ccc;}}
+
+/* HOME PAGE */
+#homeScreen{min-height:100vh;background:linear-gradient(135deg,#001f4d 0%,#003366 60%,#004080 100%);display:flex;align-items:center;justify-content:center;padding:24px;}
+.home-card{background:white;border-radius:16px;max-width:680px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;}
+.home-header{background:linear-gradient(135deg,#003366,#004080);padding:36px 40px 28px;text-align:center;}
+.home-pool{display:inline-block;background:rgba(255,255,255,0.15);color:#ffc107;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:4px 14px;border-radius:20px;margin-bottom:16px;border:1px solid rgba(255,193,7,0.4);}
+.home-title{color:white;font-size:1.7rem;font-weight:700;margin:0 0 6px;line-height:1.2;}
+.home-subtitle{color:rgba(255,255,255,0.6);font-size:0.9rem;}
+.home-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:1px solid #f0f2f5;}
+.home-stat{padding:18px 12px;text-align:center;border-right:1px solid #f0f2f5;}
+.home-stat:last-child{border-right:none;}
+.hs-val{font-size:1.5rem;font-weight:700;color:#003366;line-height:1;}
+.hs-lbl{font-size:0.7rem;color:#8492a6;text-transform:uppercase;letter-spacing:0.6px;margin-top:4px;}
+.home-body{padding:28px 40px;}
+.home-section-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#8492a6;margin-bottom:10px;}
+.home-topics{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:22px;}
+.home-topic{background:#EAF2FF;color:#003366;font-size:0.75rem;padding:4px 10px;border-radius:12px;font-weight:500;}
+.home-rules{list-style:none;padding:0;margin:0 0 28px;}
+.home-rules li{display:flex;align-items:flex-start;gap:10px;font-size:0.87rem;color:#3d4f6b;margin-bottom:10px;line-height:1.45;}
+.home-rules li span.icon{font-size:1rem;flex-shrink:0;margin-top:1px;}
+.btn-start{width:100%;padding:16px;background:linear-gradient(135deg,#003366,#0055aa);color:white;border:none;border-radius:10px;font-size:1.05rem;font-weight:700;cursor:pointer;letter-spacing:0.5px;transition:all 0.2s;box-shadow:0 4px 14px rgba(0,51,102,0.35);}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,51,102,0.45);}
+.btn-start:active{transform:translateY(0);}
+.home-resume{background:#FFF8E1;border:1px solid #FFD54F;border-radius:8px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px;font-size:0.85rem;color:#7D5A00;}
+.home-resume strong{color:#5D4000;}
+</style>
+</head>
+<body>
+
+<!-- HOME PAGE -->
+<div id="homeScreen">
+  <div class="home-card">
+    <div class="home-header">
+      <div class="home-pool">Pool A · First Attempt</div>
+      <div class="home-title">Test #8 — VAT, Discounts &amp; Petty Cash</div>
+      <div class="home-subtitle">ACCA FA · 19 May 2026 · Exam 2 June 2026</div>
+    </div>
+    <div class="home-stats">
+      <div class="home-stat"><div class="hs-val">25</div><div class="hs-lbl">OT Questions</div></div>
+      <div class="home-stat"><div class="hs-val">1</div><div class="hs-lbl">MTQ (10 marks)</div></div>
+      <div class="home-stat"><div class="hs-val">60</div><div class="hs-lbl">Minutes</div></div>
+    </div>
+    <div class="home-body">
+      <div id="resumeBanner"></div>
+      <div class="home-section-title">Topics covered</div>
+      <div class="home-topics">
+        <span class="home-topic">VAT Basics &amp; Rates</span>
+        <span class="home-topic">VAT Fraction (1/6)</span>
+        <span class="home-topic">Trade Discounts</span>
+        <span class="home-topic">Settlement Discounts</span>
+        <span class="home-topic">Input VAT Recovery</span>
+        <span class="home-topic">Blocked VAT — Cars</span>
+        <span class="home-topic">VAT Returns</span>
+        <span class="home-topic">Zero-rated vs Exempt</span>
+        <span class="home-topic">Petty Cash Imprest</span>
+        <span class="home-topic">Partial Exemption</span>
+        <span class="home-topic">Discount Journals</span>
+      </div>
+      <div class="home-section-title">Instructions</div>
+      <ul class="home-rules">
+        <li><span class="icon">⏱️</span>Timer starts the moment you click Start Test. 60 minutes for everything.</li>
+        <li><span class="icon">🚩</span>Flag questions to review later — the navigator panel tracks your progress.</li>
+        <li><span class="icon">🎲</span>Tick "I'm guessing" on uncertain answers — keeps your True Accuracy honest in the dashboard.</li>
+        <li><span class="icon">📱</span>Built-in calculator available top right. Phone goes face-down now.</li>
+        <li><span class="icon">🔁</span>After submitting, click Sync to Dashboard — your FA Master Dashboard updates automatically.</li>
+      </ul>
+      <button class="btn-start" onclick="beginTest()">▶ &nbsp; Start Test — Timer Begins Now</button>
+    </div>
+  </div>
+</div>
+
+<div id="testShell" style="display:none;">
+<div id="topBar">
+  <div class="title">Test #8 — VAT, Discounts &amp; Petty Cash &nbsp;|&nbsp; Pool A &nbsp;<span style="color:#ffc107;">25 OT + MTQ · 60 min</span></div>
+  <div class="controls">
+    <button onclick="toggleCalc()">📱 Calc</button>
+    <button onclick="togglePause()" id="pauseBtn">⏸ Pause</button>
+    <span class="timer" id="timer">60:00</span>
+  </div>
+</div>
+<div id="subBar">
+  <div class="qpos" id="qpos">Question 1 of 25</div>
+  <div>
+    <span id="qmarks">2 marks · easy</span>
+    <button id="flagBtn" onclick="toggleFlag()">🚩 Flag for review</button>
+  </div>
+</div>
+<div id="timeUpOverlay">
+  <div class="panel">
+    <h2>⏰ Time's up!</h2>
+    <p>Your test has been automatically submitted. Continue to the MTQ marking page.</p>
+    <button class="btn-submit" onclick="dismissTimeUp()" style="background:#003366;">Continue →</button>
+  </div>
+</div>
+<div id="calcWidget">
+  <input id="calcDisplay" readonly value="0">
+  <div class="calc-grid">
+    <button onclick="calcInput('C')">C</button><button onclick="calcInput('(')">(</button><button onclick="calcInput(')')">)</button><button class="op" onclick="calcInput('/')">÷</button>
+    <button onclick="calcInput('7')">7</button><button onclick="calcInput('8')">8</button><button onclick="calcInput('9')">9</button><button class="op" onclick="calcInput('*')">×</button>
+    <button onclick="calcInput('4')">4</button><button onclick="calcInput('5')">5</button><button onclick="calcInput('6')">6</button><button class="op" onclick="calcInput('-')">−</button>
+    <button onclick="calcInput('1')">1</button><button onclick="calcInput('2')">2</button><button onclick="calcInput('3')">3</button><button class="op" onclick="calcInput('+')">+</button>
+    <button onclick="calcInput('0')">0</button><button onclick="calcInput('.')">.</button><button class="eq" onclick="calcInput('=')" style="grid-column:span 2;">=</button>
+  </div>
+</div>
+<div id="mainArea">
+  <div id="contentPanel">
+    <div id="testView">
+      <div id="questionContainer"></div>
+      <div class="bottom-nav">
+        <button class="btn-prev" onclick="navPrev()">← Previous</button>
+        <button class="btn-next" onclick="navNext()" id="nextBtn">Next →</button>
+      </div>
+    </div>
+    <div id="mtqView" class="section-hidden">
+      <div id="mtqContainer"></div>
+      <div class="bottom-nav">
+        <button class="btn-prev" onclick="backToOT()">← Back to OT</button>
+        <button class="btn-next" onclick="goToSubmit()">Continue →</button>
+      </div>
+    </div>
+    <div id="submitView" class="section-hidden">
+      <h2>Ready to submit?</h2>
+      <div style="margin:20px 0;font-size:15px;line-height:1.6;">
+        <div>Section A (OT): <span id="otAnsweredCount" style="font-weight:700;color:#28a745;">0</span> of 25 answered</div>
+        <div>Section B (MTQ): <span id="mtqAnsweredCount" style="font-weight:700;color:#28a745;">0</span> of 4 sub-parts attempted</div>
+      </div>
+      <button class="btn-submit" onclick="submitTest()">Submit Test</button>
+    </div>
+    <div id="mtqMarkView" class="section-hidden">
+      <h2 style="color:#003366;">Mark your MTQ answers</h2>
+      <p style="color:#555;font-size:14px;">Number entries are auto-marked. Compare working with model answers.</p>
+      <div id="mtqMarkContainer"></div>
+      <div class="bottom-nav">
+        <button class="btn-next" onclick="finalizeResults()">Continue to Results →</button>
+      </div>
+    </div>
+    <div id="resultsView" class="section-hidden">
+      <div class="score-banner" id="scoreBanner"></div>
+      <div class="metric-grid" id="metricGrid"></div>
+      <div class="subtopic-table" id="subtopicTable"></div>
+      <div class="action-row">
+        <button class="btn-download" onclick="downloadJSON()">📥 Download JSON</button>
+        <button class="btn-pdf" onclick="downloadPDF()">📄 Print Wrong Answers</button>
+        <button class="btn-sync" onclick="syncToDashboard()">🔁 Sync to Dashboard</button>
+        <button class="btn-restart" onclick="restartTest()">↻ Restart</button>
+      </div>
+      <div id="resultsCardContainer"></div>
+    </div>
+  </div>
+  <div id="navPanel">
+    <div class="nav-header">Navigator — <span id="navCount">0/25</span></div>
+    <div class="nav-grid" id="navGrid"></div>
+  </div>
+</div>
+
+<script>
+// =========================================================
+// QUESTION BANK — 25 OT QUESTIONS
+// =========================================================
+const QBANK = [
+  // ===== Q1 EASY MCQ =====
+  {qId:"VAT_A_Q1",displayIdx:1,type:"ot",questionType:"mcq",subTopic:"VAT Basics",difficulty:"easy",marks:2,timeIdeal:80,
+   scenario:"Brindleton Ltd is a VAT-registered business completing its first VAT return.",
+   questionText:"What is the current standard rate of VAT in the United Kingdom?",
+   options:[
+     {letter:"A",text:"17.5%",correct:false,why:"17.5% was the standard rate until January 2011 when it was increased. Not the current rate."},
+     {letter:"B",text:"15%",correct:false,why:"15% was a temporary rate applied during 2008-2009 to stimulate the economy. Not the current rate."},
+     {letter:"C",text:"20%",correct:true,why:"CORRECT — The standard rate of VAT has been 20% since 4 January 2011."},
+     {letter:"D",text:"25%",correct:false,why:"25% is not the UK standard rate. No such rate applies in the UK."}
+   ],
+   correctAnswer:"C",
+   explanationLayer1:"Tests the fundamental VAT rate that underpins all standard-rated calculations. Incorrect rate = all calculation answers wrong.",
+   explanationLayer3:"HMRC VAT Notice 700: Standard rate is 20% as of 4 January 2011. Kaplan FA Study Text Ch 5.",
+   workingShown:"Standard rate VAT: 20%\n\nKey rate relationships:\n  VAT-exclusive × 1.20 = VAT-inclusive\n  VAT-inclusive ÷ 1.20 = VAT-exclusive\n  VAT-inclusive × (20/120) = VAT amount  [= divide by 6]\n  VAT-exclusive × 20% = VAT amount\n\nMemory tip: multiply by 6 to get inclusive from VAT, divide by 6 to extract VAT from inclusive.",
+   examinerNote:"The most basic VAT fact. Exam questions occasionally embed the rate change date as a distractor scenario. The current rate is 20% — memorise it.",
+   advanced:"VAT rates in the UK: Standard 20%, Reduced 5% (domestic fuel, children's car seats, etc.), Zero 0% (food, books, children's clothing). Exempt supplies fall outside the VAT system entirely.",
+   teacherCommentary:{concept:"Standard rate = 20%. All FA exam calculations use this unless explicitly stated otherwise.",process:"Start every VAT question by identifying the supply type and applicable rate.",everyday:"Spot-check any receipt: the VAT should be exactly 1/6 of the VAT-inclusive total at standard rate."}},
+
+  // ===== Q2 EASY MCQ =====
+  {qId:"VAT_A_Q2",displayIdx:2,type:"ot",questionType:"mcq",subTopic:"VAT Fraction",difficulty:"easy",marks:2,timeIdeal:80,
+   scenario:"Cheswick Retailers Ltd receives an invoice showing a VAT-inclusive total of £960 for standard-rated goods.",
+   questionText:"Which fraction should be applied to the VAT-inclusive price to calculate the VAT content at the standard rate of 20%?",
+   options:[
+     {letter:"A",text:"1/4",correct:false,why:"1/4 would imply a rate of 25% (VAT = 25% of net, so VAT/gross = 25/125 = 1/5, not 1/4). Wrong fraction."},
+     {letter:"B",text:"1/5",correct:false,why:"1/5 is the fraction applied to the VAT-EXCLUSIVE price (20% × net = VAT). To extract VAT from the INCLUSIVE price, use 1/6."},
+     {letter:"C",text:"1/6",correct:true,why:"CORRECT — At 20%: VAT = gross × 20/120 = gross × 1/6. Example: £960 × 1/6 = £160 VAT; net = £800. Check: £800 × 20% = £160 ✓"},
+     {letter:"D",text:"1/7",correct:false,why:"1/7 is the old VAT fraction when the rate was 17.5% (17.5/117.5 ≈ 1/6.71 ≈ 1/7 rounded). No longer applicable at 20%."}
+   ],
+   correctAnswer:"C",
+   explanationLayer1:"Tests the VAT fraction used to extract VAT from a VAT-inclusive amount — a calculation shortcut frequently tested in number-entry questions.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: VAT fraction at 20% = 20/120 = 1/6. Applies whenever extracting VAT from a gross (VAT-inclusive) figure.",
+   workingShown:"Extracting VAT from a VAT-inclusive amount at 20%:\n\n  Gross × (rate / (100 + rate)) = VAT\n  Gross × (20 / 120) = VAT\n  Gross × (1 / 6) = VAT\n\nExample: £960 VAT-inclusive\n  VAT = £960 × 1/6 = £160\n  Net  = £960 - £160 = £800\n  Check: £800 × 20% = £160 ✓\n\nTwo routes to the same answer:\n  Route 1: Gross ÷ 1.20 = Net, then Gross - Net = VAT\n  Route 2: Gross × (1/6) = VAT  ← faster",
+   examinerNote:"Remember: 1/6 for inclusive → VAT extraction. 1/5 (or 20%) for exclusive → VAT addition. Confusing these two fractions is one of the most common MCQ errors on VAT.",
+   advanced:"This fraction changes with the rate: at 5% (reduced rate) the fraction is 1/21 (5/105). Always derive it as rate/(100+rate) rather than memorising multiple fractions.",
+   teacherCommentary:{concept:"1/6 extracts VAT from an inclusive price. 20% (= 1/5) adds VAT to an exclusive price.",process:"Ask: is the price I'm given inclusive or exclusive? Inclusive → divide by 6. Exclusive → multiply by 0.20.",everyday:"Restaurant bill says £72 including 20% VAT. VAT = £72 ÷ 6 = £12. Net food = £60."}},
+
+  // ===== Q3 EASY MCQ =====
+  {qId:"VAT_A_Q3",displayIdx:3,type:"ot",questionType:"mcq",subTopic:"Trade Discount and VAT",difficulty:"easy",marks:2,timeIdeal:90,
+   scenario:"Drumforth Wholesale Ltd sells goods with a list price of £500 and offers a 10% trade discount to all trade customers.",
+   questionText:"At what price should VAT at 20% be calculated?",
+   options:[
+     {letter:"A",text:"£500 (list price, before trade discount)",correct:false,why:"VAT is NEVER calculated on the list price when a trade discount applies. Trade discount reduces the taxable supply."},
+     {letter:"B",text:"£550 (list price plus 10%)",correct:false,why:"Adding to the list price makes no sense. The trade discount reduces, not increases, the price."},
+     {letter:"C",text:"£450 (list price after deducting the 10% trade discount)",correct:true,why:"CORRECT — Trade discount is deducted BEFORE calculating VAT. Taxable amount = £500 - £50 = £450. VAT = £450 × 20% = £90. Total = £450 + £90 = £540."},
+     {letter:"D",text:"£540 (list price plus VAT, then deduct the discount)",correct:false,why:"The sequence matters: deduct trade discount FIRST, then apply VAT. Adding VAT before the discount overstates the taxable amount and VAT charged."}
+   ],
+   correctAnswer:"C",
+   explanationLayer1:"Tests the golden rule: trade discount is ALWAYS deducted from list price BEFORE VAT is calculated. This affects both the invoice total and the VAT charged.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: 'Trade discounts reduce the invoice value before VAT is added. VAT is calculated on the discounted price.'",
+   workingShown:"Correct sequence for trade discount + VAT:\n\n  Step 1: List price                   500.00\n  Step 2: Less trade discount (10%)    (50.00)\n  Step 3: Net price (taxable amount)   450.00\n  Step 4: Add VAT (20% × £450)          90.00\n  Step 5: Invoice total               540.00\n\nNEVER: VAT on £500 then deduct discount — wrong amount and wrong VAT.",
+   examinerNote:"Trade discount sequence = ALWAYS deduct first. Settlement discount = different rule (VAT on full price). Exam questions deliberately test whether you know which type of discount you're dealing with.",
+   advanced:"Unlike trade discounts, prompt payment discounts (settlement discounts) do NOT reduce the VAT base under current UK rules. The VAT is on the full invoice amount. If the customer takes the discount, a VAT adjustment is made separately.",
+   teacherCommentary:{concept:"Trade discount → deduct first → then VAT. No exceptions.",process:"Look at the discount type: trade = off the price before VAT. Settlement = does not affect VAT calculation on the invoice.",everyday:"Buying wholesale: '20% trade discount on £200 list price.' You pay £160 + £32 VAT = £192. Not £200 + £40 VAT - discount."}},
+
+  // ===== Q4 MEDIUM NUMBER =====
+  {qId:"VAT_A_Q4",displayIdx:4,type:"ot",questionType:"number",subTopic:"VAT Calculation — Exclusive to Inclusive",difficulty:"medium",marks:2,timeIdeal:100,
+   scenario:"Brightwell Ltd sells standard-rated goods with a VAT-exclusive selling price of £840.",
+   questionText:"Calculate the amount of VAT charged on this sale (in £).",
+   numAns:168,tol:1,prefix:"£",correctAnswer:"168",
+   explanationLayer1:"Tests the basic VAT calculation: exclusive price × 20% = VAT amount. Direct application of the standard rate.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: Output VAT = taxable supply × standard rate (20%).",
+   workingShown:"VAT-exclusive price:      £840.00\nVAT (£840 × 20%):          £168.00\nVAT-inclusive total:     £1,008.00\n\nCheck (reverse): £1,008 ÷ 6 = £168 ✓",
+   examinerNote:"Straightforward application. The trap is using 1/6 on the exclusive price — 1/6 only applies when extracting VAT from an INCLUSIVE price.",
+   advanced:"Output VAT on sales is collected on behalf of HMRC. It is a liability in the business's books (Cr VAT control account) until paid to HMRC.",
+   teacherCommentary:{concept:"Exclusive × 20% = VAT. Simple.",process:"£840 × 0.20 = £168. Or £840 × 20 ÷ 100 = £168.",everyday:"Freelancer charges £840 for work plus VAT. Client pays £1,008. Freelancer owes HMRC £168."}},
+
+  // ===== Q5 MEDIUM NUMBER =====
+  {qId:"VAT_A_Q5",displayIdx:5,type:"ot",questionType:"number",subTopic:"VAT Calculation — Inclusive to Exclusive",difficulty:"medium",marks:2,timeIdeal:110,
+   scenario:"Eccleston Trading receives a supplier invoice with a VAT-inclusive total of £1,380 for standard-rated goods.",
+   questionText:"Calculate the VAT-exclusive (net) price of the goods (in £).",
+   numAns:1150,tol:2,prefix:"£",correctAnswer:"1150",
+   explanationLayer1:"Tests extraction of net price from a VAT-inclusive total using the VAT fraction or divide-by-1.20 method.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: Net price = inclusive price ÷ 1.20. Or: VAT = inclusive × (1/6), then net = inclusive - VAT.",
+   workingShown:"Method 1 (divide by 1.20):\n  £1,380 ÷ 1.20 = £1,150 net price\n\nMethod 2 (VAT fraction):\n  VAT = £1,380 × (1/6) = £230\n  Net = £1,380 - £230 = £1,150\n\nCheck: £1,150 × 1.20 = £1,380 ✓",
+   examinerNote:"Two valid methods. Pick one and stick to it. The most common error is applying 20% directly to the inclusive price — this gives £276, which is wrong (that would imply a 24% effective rate).",
+   advanced:"When recording purchases: Dr Purchases £1,150 / Dr VAT control £230 / Cr Trade payables £1,380. The VAT is a separate asset (reclaim from HMRC), not part of the purchase cost.",
+   teacherCommentary:{concept:"Inclusive price ÷ 1.20 = net. Or inclusive × 1/6 = VAT, then subtract.",process:"Do not apply 20% to the inclusive total. £1,380 × 20% = £276 is wrong.",everyday:"Supermarket receipt says £1,380 including VAT. Net goods = £1,380 ÷ 1.2 = £1,150."}},
+
+  // ===== Q6 MEDIUM MCQ =====
+  {qId:"VAT_A_Q6",displayIdx:6,type:"ot",questionType:"mcq",subTopic:"Settlement Discount and VAT",difficulty:"medium",marks:2,timeIdeal:120,
+   scenario:"Fairholm Ltd sells goods to a customer for £6,000 (VAT exclusive, standard rate). Fairholm offers a 2% settlement discount if the customer pays within 10 days.",
+   questionText:"What is the VAT amount that should appear on the invoice?",
+   options:[
+     {letter:"A",text:"£1,176 — VAT on the discounted price (£6,000 × 98% × 20%)",correct:false,why:"This was the OLD pre-2015 rule. Under current UK VAT rules, VAT on the invoice is calculated on the FULL price, not the discounted price."},
+     {letter:"B",text:"£1,200 — VAT on the full invoice price (£6,000 × 20%)",correct:true,why:"CORRECT — Under current UK VAT rules, the invoice shows VAT on the full price. If the customer later takes the discount, a VAT credit note is issued for £24 (the VAT on the £120 discount)."},
+     {letter:"C",text:"£1,080 — VAT on 90% of the invoice price",correct:false,why:"There is no 10% reduction applicable here. Settlement discount is 2%, not 10%, and does not reduce the VAT base on the invoice."},
+     {letter:"D",text:"£0 — no VAT as settlement discounts are exempt from VAT",correct:false,why:"Settlement discounts do not exempt the sale from VAT. The sale is still a standard-rated taxable supply."}
+   ],
+   correctAnswer:"B",
+   explanationLayer1:"Tests the current UK VAT treatment of settlement (prompt payment) discounts: VAT on invoice = full price × 20%. This changed in 2015 from the old rule.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: Post-April 2015 rules — VAT is charged on the full amount. If discount is taken, a credit note adjusts the VAT. The ACCA FA exam tests the current rule.",
+   workingShown:"Current UK VAT rule for settlement discounts:\n\n  Invoice VAT = Full price × 20%\n             = £6,000 × 20%\n             = £1,200\n\n  Invoice shows:\n    Net:           £6,000\n    VAT (20%):     £1,200\n    Total:         £7,200\n\nIF customer pays within 10 days and takes 2% discount:\n  Customer pays: £6,000 × 98% + £1,200 = £5,880 + £1,176 = £7,056\n  (Actually the VAT credit note for the discount = £120 × 20% = £24)\n  Supplier issues credit note: £120 + £24 VAT\n  Adjusted total paid: £7,200 - £144 = £7,056",
+   examinerNote:"The 2015 rule change is frequently tested. Old rule: VAT on discounted price. New rule: VAT on full price, credit note if discount taken. The ACCA exam tests the CURRENT rule.",
+   advanced:"This change was to align the UK with EU VAT rules and prevent VAT abuse where customers claimed the discount VAT reduction without actually taking the discount.",
+   teacherCommentary:{concept:"Settlement discount ≠ trade discount for VAT. Invoice always shows VAT on full price.",process:"Check: is it a trade discount (deduct before VAT) or settlement discount (VAT on full amount)? Two different rules.",everyday:"Like getting a receipt for the full price and getting a refund later if you pay quickly."}},
+
+  // ===== Q7 MEDIUM NUMBER =====
+  {qId:"VAT_A_Q7",displayIdx:7,type:"ot",questionType:"number",subTopic:"SLCA with Discount Allowed",difficulty:"medium",marks:2,timeIdeal:130,
+   scenario:"Fenwick Ltd's sales ledger control account at 1 October had a debit balance of £45,600. During October:\n   Credit sales:                     £28,400\n   Cash received from customers:     £31,200\n   Settlement discount allowed:         £840\n   Sales returns:                      £1,200",
+   questionText:"Calculate the closing balance on the sales ledger control account at 31 October (in £).",
+   numAns:40760,tol:5,prefix:"£",correctAnswer:"40760",
+   explanationLayer1:"Tests SLCA preparation incorporating settlement discount allowed — a credit item that reduces receivables in addition to cash received and returns.",
+   explanationLayer3:"Kaplan FA Study Text Ch 10: Settlement discount allowed is a CREDIT in the SLCA (reduces what customers owe). Dr: Discount allowed expense / Cr: SLCA.",
+   workingShown:"Sales Ledger Control Account — October\n────────────────────────────────────────\n                    £       |                    £\nBalance b/f      45,600      | Cash received   31,200\nCredit sales     28,400      | Discount allowed    840\n                             | Sales returns     1,200\n                             | Balance c/f      40,760\n              ─────────      |              ─────────\n               74,000        |               74,000\n              ═════════      |              ═════════\nBalance b/f      40,760\n\nCheck: 45,600 + 28,400 = 74,000 Dr total\n31,200 + 840 + 1,200 + 40,760 = 74,000 Cr total ✓",
+   examinerNote:"Discount allowed goes on the CREDIT side of the SLCA (reduces receivables). Students sometimes put it on the debit side — this gives £42,440 which is wrong.",
+   advanced:"The double entry for discount allowed: Dr Discount allowed (P&L expense) / Cr SLCA. The customer effectively pays less, so the receivable is reduced. This also reduces revenue quality (discount = cost to business).",
+   teacherCommentary:{concept:"Discount allowed credits SLCA. Cash received credits SLCA. Returns credit SLCA. Sales debit SLCA.",process:"For every item: did it make the customer OWE MORE (debit) or LESS (credit)?",everyday:"Customer owes £45,600. New sales £28,400. Paid £31,200, took £840 discount, returned £1,200. Outstanding = £40,760."}},
+
+  // ===== Q8 MEDIUM MCQ =====
+  {qId:"VAT_A_Q8",displayIdx:8,type:"ot",questionType:"mcq",subTopic:"Input VAT Recovery",difficulty:"medium",marks:2,timeIdeal:110,
+   scenario:"Greyfield Ltd is a fully VAT-registered business making only standard-rated supplies. The following purchases were made in the quarter:\n   Office furniture (standard rated)\n   Business computer (standard rated)\n   Car for an employee (used partly for private purposes)\n   Petrol for business delivery vans",
+   questionText:"For which purchase is the input VAT NOT recoverable?",
+   options:[
+     {letter:"A",text:"Office furniture",correct:false,why:"Office furniture is a standard business overhead. Input VAT is fully recoverable for a fully taxable business."},
+     {letter:"B",text:"Business computer",correct:false,why:"Computers are standard business assets. Input VAT is fully recoverable."},
+     {letter:"C",text:"Car for an employee used partly privately",correct:true,why:"CORRECT — Input VAT on CARS is blocked (irrecoverable) when the car is available for any private use, even one journey. This is a specific UK VAT rule. The full VAT is added to the cost of the car instead."},
+     {letter:"D",text:"Petrol for business delivery vans",correct:false,why:"Petrol for delivery vans (not cars) used exclusively for business is fully recoverable. Vans are not subject to the car blocking rule."}
+   ],
+   correctAnswer:"C",
+   explanationLayer1:"Tests the car input VAT blocking rule — one of the most important and frequently examined VAT recovery restrictions in the FA syllabus.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: Input VAT on purchase of a car is blocked (not recoverable) unless the car is used EXCLUSIVELY for business with absolutely NO private use whatsoever.",
+   workingShown:"VAT recovery rules:\n   ✓ Office furniture:     Fully recoverable (business overhead)\n   ✓ Business computer:   Fully recoverable (business asset)\n   ✗ Car (private use):   BLOCKED — added to cost of car instead\n   ✓ Delivery van petrol: Fully recoverable (business use only)\n\nCar rule in detail:\n   Even ONE private journey = car = input VAT BLOCKED\n   'Available for private use' = private use assumed\n   The blocked VAT is capitalised as part of the car cost\n   Then depreciated as part of the car (not claimed as VAT)",
+   examinerNote:"'Car' in VAT law has a specific meaning. A car available for ANY private use = input blocked. A van or commercial vehicle does not trigger the blocking rule. Exam loves the car/van distinction.",
+   advanced:"If a car is used EXCLUSIVELY for business (e.g., a driving instructor's vehicle, or a car kept locked at the business overnight with no private use ever), the blocking rule does not apply. This is rare and must be evidenced.",
+   teacherCommentary:{concept:"Cars with private use = blocked input VAT. Everything else (assuming standard rated and for business) = recoverable.",process:"Spot cars in the question. Check: any private use? Yes = blocked. No (strictly never) = recoverable.",everyday:"Company car perk = the company can't claim back the VAT. That's part of why company cars cost the employer more."}},
+
+  // ===== Q9 MEDIUM NUMBER =====
+  {qId:"VAT_A_Q9",displayIdx:9,type:"ot",questionType:"number",subTopic:"Net VAT Payable",difficulty:"medium",marks:2,timeIdeal:120,
+   scenario:"Hartley Ltd's VAT quarter ended 30 September shows:\n   Output VAT on standard-rated sales:          £18,400\n   Input VAT on standard-rated overheads:       £12,650\n   Input VAT on purchase of a car (private use): £3,200",
+   questionText:"Calculate the net VAT payable to HMRC for the quarter (in £).",
+   numAns:5750,tol:5,prefix:"£",correctAnswer:"5750",
+   explanationLayer1:"Tests net VAT calculation incorporating the car blocking rule. Blocked input VAT is excluded from the recovery calculation.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: Net VAT payable = Output VAT - Recoverable input VAT. Car VAT is blocked = cannot offset against output VAT.",
+   workingShown:"Output VAT:                         £18,400\nLess: Recoverable input VAT:\n  Standard overheads:  £12,650  ✓\n  Car (private use):    £3,200  ✗ BLOCKED\n                                ───────\n  Total recoverable:             (12,650)\n                                ───────\nNet VAT payable to HMRC:         £5,750\n\nThe £3,200 car VAT is added to the COST of the car instead:\n  Dr Car at cost (increased by £3,200)\n  NOT Dr VAT control account",
+   examinerNote:"The car VAT of £3,200 is not just ignored — it is capitalised as part of the car cost. Exam sometimes asks what happens to it, not just whether it's recoverable.",
+   advanced:"The blocked car VAT affects the depreciation calculation too — because the car's cost in the accounts includes the irrecoverable VAT, depreciation is higher than if the VAT had been recovered.",
+   teacherCommentary:{concept:"Net VAT = Output - recoverable inputs only. Blocked inputs go to asset cost.",process:"List all inputs. Cross out blocked ones (cars with private use). Deduct the rest from output.",everyday:"Running a business: the VAT you collect from customers (£18,400) minus VAT you paid on supplies (£12,650) = £5,750 you owe HMRC."}},
+
+  // ===== Q10 MEDIUM MCQ =====
+  {qId:"VAT_A_Q10",displayIdx:10,type:"ot",questionType:"mcq",subTopic:"Trade vs Settlement Discount",difficulty:"medium",marks:2,timeIdeal:110,
+   scenario:"Inchester Wholesale offers two types of discount to customers: (i) a 15% discount given to all trade customers based on order volume, and (ii) a 2% discount given to customers who pay within 7 days.",
+   questionText:"Which of the following correctly distinguishes how these two discounts affect the VAT calculation?",
+   options:[
+     {letter:"A",text:"Both discounts reduce the VAT base; VAT is calculated on the net price after both discounts.",correct:false,why:"Incorrect. Settlement (prompt payment) discounts do NOT reduce the VAT on the invoice under current rules. Only trade discounts reduce the VAT base."},
+     {letter:"B",text:"The 15% trade discount reduces the VAT base; the 2% settlement discount does not reduce the VAT on the invoice.",correct:true,why:"CORRECT — Trade discount (15%) is deducted before VAT. Settlement discount (2%) does not affect the VAT on the invoice; if taken, a credit note adjusts both price and VAT separately."},
+     {letter:"C",text:"Neither discount reduces the VAT base; VAT is always calculated on the full list price.",correct:false,why:"Trade discounts definitely reduce the VAT base. VAT is calculated on the discounted price after trade discounts."},
+     {letter:"D",text:"The 2% settlement discount reduces the VAT; the 15% trade discount does not.",correct:false,why:"This reverses the correct rule. Trade discount reduces VAT base; settlement discount does not (currently)."}
+   ],
+   correctAnswer:"B",
+   explanationLayer1:"Tests the key distinction between how trade and settlement discounts interact with VAT — a classic exam pairing question.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: Trade discount → deduct first, then VAT. Settlement discount → VAT on full price, credit note if discount taken.",
+   workingShown:"List price: £1,000\n\nWith TRADE discount (15%):\n  Net: £1,000 - £150 = £850\n  VAT: £850 × 20% = £170\n  Invoice total: £1,020\n\nWith SETTLEMENT discount (2%) added:\n  Invoice VAT unchanged at £170 (on £850 net)\n  If customer pays within 7 days:\n    Credit note: £17 net + £3.40 VAT\n    Customer pays: £1,020 - £20.40 = £999.60",
+   examinerNote:"Two discounts in same question = highest-probability exam scenario for this topic. Always identify discount TYPE first before calculating VAT.",
+   advanced:"Settlement discounts appear in the P&L as 'Discounts allowed' (expense for supplier) or 'Discounts received' (income for customer). Trade discounts never appear in the P&L — they reduce the invoice price before any entry is made.",
+   teacherCommentary:{concept:"Trade = reduces price before VAT. Settlement = does not change VAT on invoice.",process:"Read the discount description: bulk/volume/trade = deduct first. Early payment/prompt = VAT on full.",everyday:"Regular customer rate vs early-pay rate: you still charge VAT on the trade price, not the early-pay price."}},
+
+  // ===== Q11 MEDIUM MULTI =====
+  {qId:"VAT_A_Q11",displayIdx:11,type:"ot",questionType:"multi",subTopic:"PLCA Credit Items",difficulty:"medium",marks:2,timeIdeal:120,
+   scenario:"Jarrow Ltd's accountant is reconciling the purchase ledger control account for the quarter ended 31 December.",
+   questionText:"Select TWO items that would appear as CREDITS in the purchase ledger control account.",
+   options:[
+     {letter:"A",text:"Credit purchases from suppliers",correct:true,why:"CORRECT — Credit purchases CREDIT the PLCA (increase the liability — we owe suppliers more)."},
+     {letter:"B",text:"Cash paid to suppliers",correct:false,why:"Cash paid to suppliers DEBITS the PLCA (reduces the liability — we owe less)."},
+     {letter:"C",text:"Purchase returns to suppliers",correct:false,why:"Purchase returns DEBIT the PLCA (we owe less after returning goods)."},
+     {letter:"D",text:"Refunds received from suppliers for overpayments",correct:true,why:"CORRECT — Refunds from suppliers CREDIT the PLCA. When a supplier refunds an overpayment, the credit balance is reinstated (Dr Bank / Cr PLCA)."},
+     {letter:"E",text:"Settlement discounts received from suppliers",correct:false,why:"Settlement discounts received DEBIT the PLCA (reduce the amount we owe to suppliers)."}
+   ],
+   correctOptions:["A","D"],correctAnswer:"A,D",
+   explanationLayer1:"Tests PLCA credit side items: credits increase what we owe to suppliers. A mirror of the SLCA (debits there = credits here).",
+   explanationLayer3:"Kaplan FA Study Text Ch 11: PLCA credits = opening b/f, credit purchases, refunds from suppliers. PLCA debits = cash paid, returns, discounts received, contras, closing b/f.",
+   workingShown:"PLCA — credit side (INCREASES liability):\n   ✓ Opening balance b/f\n   ✓ Credit purchases         ← OPTION A\n   ✓ Refunds from suppliers   ← OPTION D\n\nPLCA — debit side (REDUCES liability):\n   ✗ Cash paid to suppliers   ← OPTION B\n   ✗ Purchase returns         ← OPTION C\n   ✗ Discounts received       ← OPTION E\n   ✗ Contras with SLCA\n   ✗ Closing balance c/f",
+   examinerNote:"Multi-select: must pick exactly two. Discounts RECEIVED are a common trap — they DEBIT the PLCA (reduce payables), not credit. Option E is the distractor.",
+   advanced:"Refunds from suppliers (Option D) can be puzzling: if we overpaid, the supplier owes us. When they pay, Dr Bank / Cr PLCA. This creates a credit balance for that supplier (they owe us) which is unusual but technically correct.",
+   teacherCommentary:{concept:"PLCA credits = things that INCREASE what we owe. Debits = things that DECREASE what we owe.",process:"For each option: does it mean we owe more (Cr) or less (Dr)?",everyday:"Credit card statement: purchases = credits (add to balance). Payments = debits (reduce balance). PLCA works the same way."}},
+
+  // ===== Q12 MEDIUM NUMBER =====
+  {qId:"VAT_A_Q12",displayIdx:12,type:"ot",questionType:"number",subTopic:"Petty Cash Restoration",difficulty:"medium",marks:2,timeIdeal:110,
+   scenario:"Harfield Co operates an imprest petty cash system with a float of £300. At month end, the petty cash tin contains the following vouchers:\n   Office supplies:      £42.80\n   Taxi fares:           £28.50\n   Postage:             £15.60\n   Refreshments:        £19.40\n   Cleaning materials:  £31.20",
+   questionText:"How much should be drawn from the main bank account to restore the imprest float (in £)?",
+   numAns:137.50,tol:0.10,prefix:"£",correctAnswer:"137.50",
+   explanationLayer1:"Tests the core imprest petty cash calculation: restoration amount = total of vouchers paid out during the period.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: Under the imprest system, the float is restored to its original level at each period end by drawing cash equal to the vouchers reimbursed.",
+   workingShown:"Petty cash vouchers:\n   Office supplies:      £42.80\n   Taxi fares:           £28.50\n   Postage:             £15.60\n   Refreshments:        £19.40\n   Cleaning materials:  £31.20\n                       ──────\n   Total vouchers:     £137.50\n\nRestoration draw = £137.50\n\nCheck: Cash remaining in tin = £300 - £137.50 = £162.50\nAfter restoration: £162.50 + £137.50 = £300.00 ✓",
+   examinerNote:"The float size (£300) is given to check your work, not to use in the calculation. The restoration amount is always the VOUCHERS total, not the float size minus cash remaining.",
+   advanced:"The double entry when restoring the float: Dr Petty cash control / Cr Bank. Each individual voucher is posted to the relevant expense account (stationery, travel, etc.) when the float is restored.",
+   teacherCommentary:{concept:"Restore = top up to original float level. Amount = what was spent = total vouchers.",process:"Add up all vouchers. That is the draw from bank. Simple.",everyday:"You have a £300 kitty for office snacks. By Friday £137.50 spent. You draw £137.50 to bring it back to £300."}},
+
+  // ===== Q13 MEDIUM MCQ =====
+  {qId:"VAT_A_Q13",displayIdx:13,type:"ot",questionType:"mcq",subTopic:"Imprest Petty Cash System",difficulty:"medium",marks:2,timeIdeal:100,
+   scenario:"Keswick Trading Ltd's petty cashier explains the imprest system to a new colleague.",
+   questionText:"Which of the following BEST describes the imprest system of petty cash control?",
+   options:[
+     {letter:"A",text:"The petty cashier draws a fixed sum at the start of each month and keeps any unspent balance for next month.",correct:false,why:"This is NOT the imprest system. Carrying forward unspent balances means the float grows or shrinks over time — losing control."},
+     {letter:"B",text:"The petty cashier is reimbursed at each period end by an amount equal to the total vouchers paid out, restoring the float to its original level.",correct:true,why:"CORRECT — The defining feature of the imprest system: the float is always restored to the same original amount by reimbursing exactly what was spent (= total vouchers)."},
+     {letter:"C",text:"All petty cash payments are made by the main cashier; the petty cashier only collects vouchers.",correct:false,why:"This describes a different system entirely. In the imprest system, the petty cashier makes payments from their float and holds the vouchers."},
+     {letter:"D",text:"The float size is reviewed and adjusted monthly based on anticipated expenditure.",correct:false,why:"Float adjustments are possible but infrequent. The defining feature of imprest is the RESTORATION mechanism, not monthly review."}
+   ],
+   correctAnswer:"B",
+   explanationLayer1:"Tests the key characteristic of the imprest system: the float is ALWAYS restored to the same fixed amount by reimbursing vouchers.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: 'The imprest system maintains the float at a constant level by reimbursing the exact amount spent at each period end.'",
+   workingShown:"Imprest system mechanics:\n\n  Period start:  Float = £X\n  During period: Payments made, vouchers collected\n  Period end:    Cash + Vouchers = £X (should equal)\n  Restoration:   Draw (= vouchers total) from bank\n  After restore: Cash = £X again\n\nKey control feature: at ALL times, Cash + Vouchers = Float\nIf this doesn't balance: there is a discrepancy to investigate.",
+   examinerNote:"The examination definition of imprest: float restored to same level each period by reimbursing vouchers. This creates the internal control: at any point, cash + vouchers should equal the float.",
+   advanced:"The imprest system's main internal control value: if cash + vouchers ≠ float, there is an unexplained difference. This makes theft or error immediately detectable at each period end.",
+   teacherCommentary:{concept:"Same float level maintained perpetually by reimbursing what was spent.",process:"Think of it as a self-refilling pot: you spend from it, then top it back up to the same level.",everyday:"Office coffee tin with £50. People take change for snacks and leave receipts. Each Friday, manager counts receipts and tops tin back to £50."}},
+
+  // ===== Q14 MEDIUM NUMBER =====
+  {qId:"VAT_A_Q14",displayIdx:14,type:"ot",questionType:"number",subTopic:"Petty Cash Remaining",difficulty:"medium",marks:2,timeIdeal:100,
+   scenario:"Lynwood Co has a petty cash imprest float of £250. During the month the following petty cash payments were made:\n   Stationery:     £18.40\n   Travel:         £34.20\n   Entertainment:  £12.75\n   Sundry:          £8.95",
+   questionText:"How much cash should remain in the petty cash tin at the month end BEFORE the float is restored (in £)?",
+   numAns:175.70,tol:0.10,prefix:"£",correctAnswer:"175.70",
+   explanationLayer1:"Tests the logical complement of restoration: cash remaining = float minus total vouchers. Simple subtraction applied to the petty cash context.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: Cash remaining + vouchers total = float (imprest check). Cash remaining = Float - vouchers total.",
+   workingShown:"Total vouchers:\n   Stationery:     £18.40\n   Travel:         £34.20\n   Entertainment:  £12.75\n   Sundry:          £8.95\n                  ──────\n   Total spent:    £74.30\n\nCash remaining = Float - Spent\n              = £250.00 - £74.30\n              = £175.70\n\nCheck (imprest): £175.70 cash + £74.30 vouchers = £250 ✓",
+   examinerNote:"The check: cash + vouchers = float. If the tin count doesn't equal £175.70, there is a discrepancy. Students sometimes subtract the float from vouchers — direction matters.",
+   advanced:"In practice, the petty cashier physically counts the cash at period end to verify £175.70 is actually there. Any shortfall (e.g., only £170 in tin) is a petty cash discrepancy that must be investigated.",
+   teacherCommentary:{concept:"Remaining cash = original float minus what was spent.",process:"£250 - (18.40 + 34.20 + 12.75 + 8.95) = £250 - £74.30 = £175.70.",everyday:"Wallet starts with £250. Spend £74.30 on various things. £175.70 left."}},
+
+  // ===== Q15 HARD NUMBER =====
+  {qId:"VAT_A_Q15",displayIdx:15,type:"ot",questionType:"number",subTopic:"VAT Return Calculation",difficulty:"hard",marks:2,timeIdeal:150,
+   scenario:"Greyfield Traders' VAT quarter ended 30 September:\n   Standard rated sales (VAT exclusive):       £124,800\n   Standard rated purchases (VAT exclusive):    £86,400\n   Zero-rated purchases:                        £12,500\n   Exempt purchases:                             £8,200",
+   questionText:"Calculate the net VAT payable to HMRC for the quarter (in £).",
+   numAns:7680,tol:10,prefix:"£",correctAnswer:"7680",
+   explanationLayer1:"Tests a multi-supply VAT return: output VAT on standard sales minus recoverable input VAT. Zero-rated and exempt PURCHASES carry zero input VAT to recover.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: Output VAT = standard-rated sales × 20%. Input VAT recoverable = standard-rated purchases × 20% only. Zero-rated and exempt inputs carry no VAT.",
+   workingShown:"Output VAT:\n   Standard rated sales: £124,800 × 20% = £24,960\n\nInput VAT recoverable:\n   Standard rated purch: £86,400 × 20%  = £17,280  ✓\n   Zero-rated purchases: no VAT to recover = £0        (zero-rated = no VAT charged)\n   Exempt purchases:     no VAT to recover = £0        (exempt = outside VAT system)\n\nNet VAT payable:\n   Output:             £24,960\n   Less input:        (£17,280)\n                      ────────\n   Net payable:         £7,680",
+   examinerNote:"Zero-rated purchases carry NO input VAT (the rate is 0%). Exempt purchases are OUTSIDE the VAT system entirely — no VAT charged and none to reclaim. Both give £0 input VAT, but for different reasons.",
+   advanced:"A fully taxable business (standard and zero-rated only) can recover all its input VAT. An exempt business cannot recover any. A partially exempt business must apportion. This question tests the first type.",
+   teacherCommentary:{concept:"Output minus recoverable inputs = net. Zero-rated and exempt purchases = no input to recover.",process:"Only standard-rated inputs generate recoverable input VAT. Zero-rated = 0% VAT charged. Exempt = no VAT at all.",everyday:"You sell at 20%, buy some things at 20% and some at 0%. You only reclaim VAT you actually PAID, which is zero on the zero-rated items."}},
+
+  // ===== Q16 HARD MCQ =====
+  {qId:"VAT_A_Q16",displayIdx:16,type:"ot",questionType:"mcq",subTopic:"Irrecoverable VAT — Car",difficulty:"hard",marks:2,timeIdeal:140,
+   scenario:"Moorfield Ltd purchases a car for £28,800 including VAT at 20%. The car is provided to a sales manager who uses it for business travel and private journeys.",
+   questionText:"What is the correct accounting treatment for the VAT on this car purchase?",
+   options:[
+     {letter:"A",text:"Dr VAT control £4,800 — input VAT fully recoverable as car is used for business",correct:false,why:"Business use alone does not make car VAT recoverable. Private use (even occasional) blocks ALL the input VAT. Cannot partially recover."},
+     {letter:"B",text:"Dr Motor vehicles at cost £28,800 — full cost including irrecoverable VAT capitalised",correct:true,why:"CORRECT — VAT = £28,800 × (1/6) = £4,800. This is BLOCKED (irrecoverable). The car is recorded at its FULL cost including the irrecoverable VAT of £4,800. There is no VAT control entry."},
+     {letter:"C",text:"Dr Motor vehicles £24,000 / Dr VAT control £4,800 — 50% business use applied",correct:false,why:"There is no 50% split for cars in UK VAT. The rule is binary: exclusively business (fully recoverable) OR any private use (fully blocked). No partial recovery."},
+     {letter:"D",text:"Dr Motor vehicles £24,000 — car recorded at VAT-exclusive cost; VAT ignored",correct:false,why:"The irrecoverable VAT (£4,800) is not ignored — it becomes part of the asset cost. Recording only £24,000 understates the car's cost in the accounts."}
+   ],
+   correctAnswer:"B",
+   explanationLayer1:"Tests that irrecoverable car VAT is CAPITALISED as part of the asset cost, not expensed or recovered. The car appears in the accounts at the full VAT-inclusive amount.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5 and NCA chapter: Irrecoverable input VAT is added to the cost of the asset. For a car with private use, the full VAT-inclusive cost is capitalised.",
+   workingShown:"Car purchase — VAT-inclusive £28,800:\n\n  VAT content: £28,800 × (1/6) = £4,800\n  Net price:   £28,800 - £4,800 = £24,000\n\nJournal entry:\n   Dr Motor vehicles at cost     28,800\n     Cr Trade payables / Bank          28,800\n\n  (No separate VAT control entry — VAT is irrecoverable)\n\nEffect on depreciation:\n  Depreciation base = £28,800 (full cost incl. blocked VAT)\n  Higher depreciation charge than if VAT had been recovered",
+   examinerNote:"Three consequences of blocked car VAT: (1) no input VAT claim, (2) asset cost includes VAT, (3) higher depreciation. Exam tests all three at different times.",
+   advanced:"This treatment is consistent with IAS 16: the cost of an asset includes 'any costs directly attributable to bringing the asset to its intended location and condition.' Irrecoverable taxes on acquisition qualify.",
+   teacherCommentary:{concept:"Blocked VAT = part of the cost. No separate VAT entry. Asset goes in at full inclusive price.",process:"Step 1: is this a car with ANY private use? Yes → block VAT. Step 2: capitalise full inclusive price as asset cost.",everyday:"You buy a car for £28,800. You can't reclaim £4,800 VAT. So your car 'cost' you £28,800 in your books."}},
+
+  // ===== Q17 HARD MULTI =====
+  {qId:"VAT_A_Q17",displayIdx:17,type:"ot",questionType:"multi",subTopic:"Zero-Rated vs Exempt Supplies",difficulty:"hard",marks:2,timeIdeal:140,
+   scenario:"Northfield Accountants Ltd is advising a new client on the VAT treatment of various supplies.",
+   questionText:"Select TWO supplies that are ZERO-RATED (not exempt) for UK VAT purposes.",
+   options:[
+     {letter:"A",text:"Insurance services",correct:false,why:"Insurance is EXEMPT from VAT (not zero-rated). Key difference: zero-rated businesses can recover input VAT; exempt businesses cannot."},
+     {letter:"B",text:"Most food for human consumption",correct:true,why:"CORRECT — Most basic food is zero-rated (not exempt). This allows food businesses to recover their input VAT, unlike exempt suppliers. Hot food and restaurant meals are standard-rated."},
+     {letter:"C",text:"Postal services by Royal Mail",correct:false,why:"Royal Mail's universal postal services are EXEMPT from VAT, not zero-rated."},
+     {letter:"D",text:"Children's clothing and footwear",correct:true,why:"CORRECT — Children's clothing and footwear is zero-rated. This is why there is no VAT on children's school uniforms."},
+     {letter:"E",text:"Financial services (loans and deposits)",correct:false,why:"Financial services are EXEMPT from VAT, not zero-rated."}
+   ],
+   correctOptions:["B","D"],correctAnswer:"B,D",
+   explanationLayer1:"Tests the critical distinction between zero-rated and exempt supplies — two categories that result in no VAT being charged, but with completely different input VAT recovery consequences.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: Zero-rated = taxable supply at 0%; input VAT fully recoverable. Exempt = not a taxable supply; input VAT NOT recoverable (or restricted for partial exemption).",
+   workingShown:"ZERO-RATED (taxable at 0% — input VAT FULLY RECOVERABLE):\n   ✓ Most food for human consumption\n   ✓ Children's clothing and footwear\n   ✓ Books and newspapers\n   ✓ Prescription drugs\n   ✓ Exports\n   ✓ International passenger transport\n\nEXEMPT (not a taxable supply — input VAT NOT recoverable):\n   ✗ Insurance\n   ✗ Financial services (loans, deposits)\n   ✗ Royal Mail postal services\n   ✗ Most education\n   ✗ Most health services\n   ✗ Residential lettings\n\nKey: Zero-rated business = can recover inputs. Exempt business = cannot.",
+   examinerNote:"This distinction trips up many students. Zero-rated and exempt both result in no output VAT charged, but ONLY zero-rated businesses can recover their input VAT. This is a 2-mark question designed to test this distinction precisely.",
+   advanced:"A business making only exempt supplies cannot register for VAT (no taxable supplies) and cannot recover input VAT. This is a significant cost disadvantage. Mixed businesses with both taxable and exempt supplies must apportion (partial exemption rules).",
+   teacherCommentary:{concept:"Zero-rated = taxable at 0% = can reclaim inputs. Exempt = outside VAT = cannot reclaim inputs.",process:"Remember: zero-rated businesses CAN recover inputs. Exempt cannot. The tax difference is about the INPUT side, not the output side.",everyday:"Baker selling bread (zero-rated): no VAT charged but CAN reclaim VAT on flour, ovens, etc. Insurance company (exempt): no VAT charged but CANNOT reclaim VAT on office costs."}},
+
+  // ===== Q18 HARD NUMBER =====
+  {qId:"VAT_A_Q18",displayIdx:18,type:"ot",questionType:"number",subTopic:"Invoice Total with Trade Discount + VAT",difficulty:"hard",marks:2,timeIdeal:150,
+   scenario:"Hartwell Ltd orders 500 units at £4.80 each from a supplier. A trade discount of 15% is available. Standard rate VAT applies.",
+   questionText:"Calculate the total amount payable on the invoice including VAT (in £).",
+   numAns:2448,tol:5,prefix:"£",correctAnswer:"2448",
+   explanationLayer1:"Tests the three-step invoice calculation: list price → trade discount → VAT. All three steps required in sequence.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: Invoice sequence = quantity × unit price, less trade discount, plus VAT. Three distinct steps.",
+   workingShown:"Step 1: Gross list price\n   500 units × £4.80 = £2,400\n\nStep 2: Less trade discount (15%)\n   £2,400 × 15% = £360\n   Net of discount: £2,400 - £360 = £2,040\n\nStep 3: Add VAT (20%)\n   £2,040 × 20% = £408\n   Invoice total: £2,040 + £408 = £2,448\n\nAlternative check:\n   £2,040 × 1.20 = £2,448 ✓",
+   examinerNote:"The three-step sequence is exam standard. Skipping the trade discount (doing £2,400 × 1.20 = £2,880) is the most common error — double the marks lost.",
+   advanced:"In computerised systems (Sage, Xero), trade discounts are applied at invoice entry. The system calculates VAT on the net price automatically. Understanding the manual sequence is essential for both the exam and for auditing system outputs.",
+   teacherCommentary:{concept:"3 steps: gross → minus trade discount → plus VAT. Always in this order.",process:"Never shortcut: always calculate the trade discount first, then apply VAT to the discounted price.",everyday:"Buying 500 items: list price £2,400. Trade price (15% off) = £2,040. You pay £2,040 + 20% VAT = £2,448."}},
+
+  // ===== Q19 HARD MCQ =====
+  {qId:"VAT_A_Q19",displayIdx:19,type:"ot",questionType:"mcq",subTopic:"Settlement Discount Allowed — Journal",difficulty:"hard",marks:2,timeIdeal:140,
+   scenario:"Greystone Ltd sells goods for £4,200 and offers a 2.5% settlement discount for payment within 14 days. The customer pays within the discount period.",
+   questionText:"Which journal entry correctly records the settlement discount allowed in Greystone's books?",
+   options:[
+     {letter:"A",text:"Dr Discount allowed (P&L) £105 / Cr Trade receivables £105",correct:true,why:"CORRECT — Settlement discount allowed: Dr Discounts allowed expense (P&L reduces profit) / Cr Trade receivables (customer owes less). £4,200 × 2.5% = £105."},
+     {letter:"B",text:"Dr Trade receivables £105 / Cr Discount allowed £105",correct:false,why:"Direction reversed. Discount allowed REDUCES receivables (Cr SLCA). Debiting receivables would increase what the customer owes — the opposite of granting a discount."},
+     {letter:"C",text:"Dr Cash £4,095 / Cr Sales £4,200 / Dr Discount allowed £105",correct:false,why:"This mixes the cash receipt with the discount. The discount is journalled separately at the point the customer takes it: Dr Discount allowed / Cr Receivables. The original sale stays at £4,200."},
+     {letter:"D",text:"Dr Trade payables £105 / Cr Discount received £105",correct:false,why:"This is the journal for DISCOUNT RECEIVED (in the buyer's books). Greystone is the SELLER — they record discount ALLOWED (an expense) not discount received."}
+   ],
+   correctAnswer:"A",
+   explanationLayer1:"Tests the journal for settlement discount allowed (seller's books): expense in P&L, credit to receivables. Distinguishes allowed (seller) vs received (buyer).",
+   explanationLayer3:"Kaplan FA Study Text Ch 10: Discount allowed = Dr Discounts allowed (P&L) / Cr Trade receivables (SLCA). Discount received = Dr Trade payables (PLCA) / Cr Discounts received (P&L income).",
+   workingShown:"Discount allowed calculation:\n   £4,200 × 2.5% = £105\n\nJournal — seller (Greystone) records:\n   Dr  Discounts allowed (P&L expense)    105\n     Cr  Trade receivables (SLCA)               105\n\nEffect:\n   P&L: Discounts allowed increases by £105 (reduces profit)\n   SLCA: Reduced by £105 (customer owes less)\n   Customer pays: £4,200 - £105 = £4,095 cash received\n\nFull receipt journal:\n   Dr  Cash                               4,095\n   Dr  Discounts allowed                    105\n     Cr  Trade receivables                       4,200",
+   examinerNote:"Allowed = seller's expense. Received = buyer's income. The P&L treatments are mirrors: allowed reduces seller's profit; received increases buyer's profit.",
+   advanced:"In the FA exam, discount allowed and received appear in both control account questions (affecting SLCA/PLCA) and P&L questions (as expense/income). Both perspectives are examinable.",
+   teacherCommentary:{concept:"Allowed = expense (Dr P&L). Received = income (Cr P&L). Mirror images from each party's perspective.",process:"Seller: Dr Discounts allowed / Cr Receivables. Buyer: Dr Payables / Cr Discounts received.",everyday:"You let a customer pay £105 less. Your P&L takes the hit (Dr expense). Their bill drops (Cr receivables)."}},
+
+  // ===== Q20 HARD NUMBER =====
+  {qId:"VAT_A_Q20",displayIdx:20,type:"ot",questionType:"number",subTopic:"Discount Received — P&L",difficulty:"hard",marks:2,timeIdeal:130,
+   scenario:"Fernwood Ltd purchases goods on credit for £8,600. The supplier's payment terms offer a 3% discount for payment within 7 days. Fernwood pays within the discount period.",
+   questionText:"What amount will be credited to 'Discounts received' in Fernwood's income statement (in £)?",
+   numAns:258,tol:2,prefix:"£",correctAnswer:"258",
+   explanationLayer1:"Tests discount received: buyer's perspective. The discount reduces the amount paid and is recognised as income (Cr Discounts received) in the P&L.",
+   explanationLayer3:"Kaplan FA Study Text Ch 11: Discount received = Dr Trade payables / Cr Discounts received (income). The income equals the discount amount: invoice × discount rate.",
+   workingShown:"Discount received calculation:\n   £8,600 × 3% = £258\n\nJournal — Fernwood (buyer) records:\n   Dr  Trade payables (PLCA)     258\n     Cr  Discounts received (P&L)      258\n\nEffect:\n   PLCA: Reduced by £258 (we owe less)\n   P&L: Discounts received income = £258 (improves profit)\n   Cash paid: £8,600 - £258 = £8,342\n\nFull payment journal:\n   Dr  Trade payables             8,600\n     Cr  Cash                          8,342\n     Cr  Discounts received              258",
+   examinerNote:"Discounts received = INCOME for the buyer. Appears on the credit side of the income statement. Common error: treating it as a reduction in purchases cost rather than income.",
+   advanced:"Under IFRS, prompt payment discounts are sometimes netted against the cost of the asset/inventory. For FA purposes, discounts received on trading goods are recognised as income (Cr Discounts received).",
+   teacherCommentary:{concept:"Discount received = buyer gets to pay less = income. Cr P&L, Dr payables.",process:"Invoice × rate = discount. Dr PLCA / Cr Discounts received income.",everyday:"Supplier says pay in 7 days for 3% off. You save £258. Your books show £258 as income."}},
+
+  // ===== Q21 HARD NUMBER =====
+  {qId:"VAT_A_Q21",displayIdx:21,type:"ot",questionType:"number",subTopic:"Partial Exemption",difficulty:"hard",marks:2,timeIdeal:160,
+   scenario:"Radley Financial Ltd makes both taxable and exempt supplies. For the quarter:\n   Input VAT exclusively for taxable activities: £3,800\n   Input VAT on overheads (relating to both activities): £12,400\n   Recoverable proportion of overhead input VAT: 65%",
+   questionText:"Calculate the TOTAL input VAT recoverable for the quarter (in £).",
+   numAns:11860,tol:10,prefix:"£",correctAnswer:"11860",
+   explanationLayer1:"Tests partial exemption input VAT calculation: fully recoverable (taxable-only) plus apportioned overhead inputs at the specified recovery percentage.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: Partial exemption — taxable-only inputs: fully recoverable. Mixed inputs: apportioned by taxable/exempt activity ratio. Exempt-only inputs: irrecoverable.",
+   workingShown:"Step 1: Taxable-only input VAT (100% recoverable)\n   £3,800 × 100% = £3,800\n\nStep 2: Mixed overhead input VAT (65% recoverable)\n   £12,400 × 65% = £8,060\n\nTotal recoverable:\n   £3,800 + £8,060 = £11,860\n\nNote: The 35% balance (£12,400 × 35% = £4,340) is\nirrecoverable due to the exempt activities.",
+   examinerNote:"Partial exemption has three categories: (1) taxable-only = fully recover; (2) exempt-only = none; (3) mixed = apportion. This question gives you the percentage — just apply it.",
+   advanced:"In practice, the recovery percentage is calculated as: (Taxable turnover / Total turnover) × 100%. The de minimis rules allow full recovery if exempt input VAT is below a threshold (£625/month and less than 50% of total input VAT).",
+   teacherCommentary:{concept:"Taxable inputs = recover. Exempt inputs = can't. Mixed inputs = recover the taxable portion (given as 65%).",process:"Two steps: (1) 100% of taxable-only. (2) 65% of mixed. Add them.",everyday:"Like claiming expenses at work: 100% of purely work costs + 65% of shared costs."}},
+
+  // ===== Q22 HARD NUMBER =====
+  {qId:"VAT_A_Q22",displayIdx:22,type:"ot",questionType:"number",subTopic:"Output VAT Calculation",difficulty:"hard",marks:2,timeIdeal:140,
+   scenario:"Infield Trading's VAT quarter ended 31 December shows the following supplies:\n   Standard-rated goods (VAT exclusive):  £285,600\n   Zero-rated goods:                       £42,800\n   Exempt services:                        £18,400",
+   questionText:"Calculate the output VAT for the quarter (in £).",
+   numAns:57120,tol:20,prefix:"£",correctAnswer:"57120",
+   explanationLayer1:"Tests output VAT calculation: only standard-rated supplies generate output VAT. Zero-rated (0%) and exempt (outside VAT) generate nil output VAT.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: Output VAT = standard-rated sales × 20%. Zero-rated = 0% output VAT. Exempt = no output VAT (not a taxable supply).",
+   workingShown:"Output VAT by supply type:\n   Standard rated: £285,600 × 20% = £57,120  ← generates output VAT\n   Zero-rated:      £42,800 × 0%  = £0        ← taxable but at 0%\n   Exempt:          £18,400 × N/A = £0        ← not a taxable supply\n                                   ─────────\n   Total output VAT:                £57,120",
+   examinerNote:"Output VAT only on standard-rated supplies. Both zero-rated and exempt give £0 output VAT — but for different reasons. Exam loves three-supply questions to test this.",
+   advanced:"Despite generating no output VAT, zero-rated and exempt supplies have very different input VAT implications: zero-rated businesses recover inputs; exempt businesses don't. This question tests the output side only.",
+   teacherCommentary:{concept:"Output VAT only on standard-rated sales. Zero-rated = 0% output. Exempt = no output VAT.",process:"Identify supply types. Apply 20% only to standard-rated. Others give zero.",everyday:"Three income streams: one taxed at 20%, one at 0%, one tax-free. Only the first generates a VAT bill."}},
+
+  // ===== Q23 HARD MCQ =====
+  {qId:"VAT_A_Q23",displayIdx:23,type:"ot",questionType:"mcq",subTopic:"Petty Cash Imprest Discrepancy",difficulty:"hard",marks:2,timeIdeal:140,
+   scenario:"Inchester Ltd's imprest float is £400. At month end, the petty cashier presents vouchers totalling £140.40 and counts the remaining cash as £259.60.",
+   questionText:"How much should be drawn from the bank to restore the imprest float?",
+   options:[
+     {letter:"A",text:"£140.40 — equal to the total of vouchers paid",correct:true,why:"CORRECT — Under the imprest system, the restoration draw equals the VOUCHERS TOTAL. Check: £259.60 cash + £140.40 vouchers = £400.00 (float) ✓. No discrepancy exists here."},
+     {letter:"B",text:"£259.60 — equal to the cash remaining in the tin",correct:false,why:"The restoration draw is NOT the cash remaining. It is the vouchers total. Drawing £259.60 would give total cash of £259.60 + £259.60 = £519.20 — exceeding the float."},
+     {letter:"C",text:"£400.00 — the full float, drawn at start of each month",correct:false,why:"The full float is drawn at the VERY START of the period, not at restoration. Restoring only requires topping up to the original level, not redrawing the whole amount."},
+     {letter:"D",text:"£0 — no restoration needed as the float reconciles correctly",correct:false,why:"Restoration IS needed because cash has been spent. The fact that it reconciles (no discrepancy) means the vouchers are all accounted for — but the draw to restore is still £140.40."}
+   ],
+   correctAnswer:"A",
+   explanationLayer1:"Tests imprest restoration mechanics combined with the reconciliation check. The question gives both cash count and vouchers to allow verification — but the draw amount is always the vouchers total.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: Restoration = vouchers total. Cash + vouchers = float is the internal control check. The draw from bank = vouchers total.",
+   workingShown:"Internal control check:\n   Cash in tin:   £259.60\n   Vouchers:       £140.40\n   Total:          £400.00 = Float ✓ (no discrepancy)\n\nRestoration amount:\n   = Vouchers total = £140.40\n\nAfter restoration:\n   £259.60 (remaining cash) + £140.40 (draw from bank) = £400 ✓",
+   examinerNote:"The reconciliation check (cash + vouchers = float) is given to verify there's no discrepancy — NOT to calculate the draw amount. The draw is always the vouchers total regardless.",
+   advanced:"If cash + vouchers ≠ float, there is a discrepancy. The restoration would still equal the vouchers total (to restore to £400), but an additional investigation entry would be needed to record the shortage/surplus.",
+   teacherCommentary:{concept:"Restore = vouchers total. Cash + vouchers = float is just the check.",process:"Step 1: Add cash + vouchers. Does it = float? (£400 here = £400 ✓). Step 2: draw = vouchers = £140.40.",everyday:"Kitty had £400. Spent £140.40 (receipts prove it). £259.60 left. Draw £140.40 to refill to £400."}},
+
+  // ===== Q24 HARD NUMBER =====
+  {qId:"VAT_A_Q24",displayIdx:24,type:"ot",questionType:"number",subTopic:"VAT on Invoice with Trade Discount",difficulty:"hard",marks:2,timeIdeal:150,
+   scenario:"Jarrow Supplies prices goods at £180 per unit. A customer orders 12 units and qualifies for a 20% trade discount. Standard rate VAT applies.",
+   questionText:"Calculate the amount of VAT on the invoice (in £).",
+   numAns:345.60,tol:0.20,prefix:"£",correctAnswer:"345.60",
+   explanationLayer1:"Tests VAT calculation on invoices with trade discounts: discount applied first, then VAT calculated on the net price.",
+   explanationLayer3:"Kaplan FA Study Text Ch 5: VAT base = selling price after trade discount. VAT = (units × unit price × (1 - discount rate)) × 20%.",
+   workingShown:"Step 1: Gross price\n   12 units × £180 = £2,160\n\nStep 2: Less trade discount (20%)\n   £2,160 × 20% = £432\n   Net price: £2,160 - £432 = £1,728\n\nStep 3: VAT on net price\n   £1,728 × 20% = £345.60\n\nAlternative (shortcut):\n   £2,160 × 80% × 20% = £2,160 × 16% = £345.60\n\nFull invoice total: £1,728 + £345.60 = £2,073.60",
+   examinerNote:"Note the decimal answer: £345.60, not a round number. Number entry questions may have decimals. The most common error is calculating VAT on £2,160 (before discount) = £432, which is wrong.",
+   advanced:"The shortcut formula (gross × (1 - discount) × rate) is useful in calculation questions. Here: £2,160 × 0.80 × 0.20 = £345.60. Three multiplications, no subtractions.",
+   teacherCommentary:{concept:"Trade discount first, then VAT. Always.",process:"£2,160 gross → £1,728 after 20% discount → £345.60 VAT (20% of £1,728).",everyday:"Price tag £180 each, bulk discount 20%, you buy 12. VAT is on what you actually pay (£1,728), not the marked price."}},
+
+  // ===== Q25 HARD MCQ =====
+  {qId:"VAT_A_Q25",displayIdx:25,type:"ot",questionType:"mcq",subTopic:"Settlement Discount Received — Journal",difficulty:"hard",marks:2,timeIdeal:140,
+   scenario:"Keswick Co purchases goods on credit. The purchase invoice is £16,800. Keswick pays within the early payment period and receives a settlement discount of £420 from the supplier.",
+   questionText:"Which journal entry correctly records the settlement discount received in Keswick's books?",
+   options:[
+     {letter:"A",text:"Dr Trade payables £420 / Cr Discounts received £420",correct:true,why:"CORRECT — Discount received: Dr Trade payables (PLCA) — we owe less / Cr Discounts received (P&L income) — the saving is income. £420 is the discount amount."},
+     {letter:"B",text:"Dr Discounts allowed £420 / Cr Trade payables £420",correct:false,why:"'Discounts allowed' is in the SELLER's books (when they give a discount). Keswick is the BUYER receiving a discount — it should be 'discounts received'."},
+     {letter:"C",text:"Dr Purchases £420 / Cr Trade payables £420",correct:false,why:"Reducing purchases cost by £420 would be incorrect. The original purchase was correctly recorded at £16,800. The discount is a separate income item, not a purchase reversal."},
+     {letter:"D",text:"Dr Cash £420 / Cr Trade payables £420",correct:false,why:"No cash changes hands for a discount on a credit purchase. The discount reduces the amount owed. Cash paid = £16,800 - £420 = £16,380 (as a separate journal)."}
+   ],
+   correctAnswer:"A",
+   explanationLayer1:"Tests discount received journal from the buyer's perspective — a frequently examined double entry that is the mirror of discount allowed in the seller's books.",
+   explanationLayer3:"Kaplan FA Study Text Ch 11: Discount received (buyer): Dr Trade payables (PLCA) / Cr Discounts received (income). Reduces liability and recognises income.",
+   workingShown:"Settlement discount received:\n   Discount = £420\n\nJournal — Keswick (BUYER):\n   Dr  Trade payables (PLCA)         420\n     Cr  Discounts received (P&L income)    420\n\nFull payment journal:\n   Dr  Trade payables               16,800\n     Cr  Cash                            16,380\n     Cr  Discounts received                 420\n\nEffect:\n   PLCA: Reduced by £420 (we owe £420 less)\n   P&L: Income of £420 (increases profit)\n   Net cash paid: £16,380",
+   examinerNote:"Buyer vs seller perspective is the classic confusion. Buyer RECEIVES discount = income. Seller ALLOWS discount = expense. Both reduce the receivable/payable on their respective ledgers.",
+   advanced:"Discounts received improve the buyer's P&L and cash conversion cycle. In performance analysis, a high discount received figure relative to purchases indicates effective use of early payment terms — a liquidity management tool.",
+   teacherCommentary:{concept:"Received = income (Cr P&L). Allowed = expense (Dr P&L). Both reduce the ledger balance on each side.",process:"Buyer: Dr PLCA / Cr Discounts received income. Simple.",everyday:"Supplier gives you £420 off for paying early. Your P&L shows £420 income. Your bill drops by £420."}}
+];
+
+// =========================================================
+// MTQ
+// =========================================================
+const MTQ = {
+  title: "Lakefield Traders Ltd — VAT, Discounts & Petty Cash",
+  scenario: "Lakefield Traders Ltd is a VAT-registered business making only standard-rated supplies.\n\nThe following transactions occurred during October 20X6:\n\n(a)  Lakefield sold goods to a new trade customer. List price: £3,600. A trade discount of 10% applies. Standard rate VAT at 20%.\n\n(b)  Lakefield purchased a delivery van for £18,000 (VAT exclusive) for use exclusively in its business delivery operations. The van is never used privately.\n\n(c)  Lakefield operates an imprest petty cash float of £350. During October the following petty cash payments were made:\n     Postage:          £28.40\n     Office supplies:  £19.60\n     Travel:           £44.20\n     Entertainment:    £16.80\n\n(d)  For the quarter ended 31 October 20X6:\n     Standard rated sales (ex-VAT):        £212,400\n     Output VAT:                            £42,480\n     Standard rated purchases (ex-VAT):    £158,250  (input VAT £31,650)\n     Car purchased for a director (inc VAT): £14,400  (used partly privately)\n     Zero-rated purchases:                  £18,600",
+  totalMarks: 10,
+  parts: [
+    {
+      part:"(a)", marks:3,
+      prompt:"Calculate the TOTAL amount payable by the customer including VAT (in £).",
+      questionType:"number", numAns:3888, tol:5, prefix:"£",
+      modelAnswer:"List price:                        £3,600\nLess trade discount (10%):          (£360)\nNet price (VAT base):              £3,240\nAdd VAT (20% × £3,240):              £648\n─────────────────────────────────────────\nTotal payable:                     £3,888\n\nKey: Trade discount deducted BEFORE VAT. VAT on £3,240 not £3,600."
+    },
+    {
+      part:"(b)", marks:2,
+      prompt:"Calculate the input VAT Lakefield can reclaim on the delivery van (in £).",
+      questionType:"number", numAns:3600, tol:5, prefix:"£",
+      modelAnswer:"Van VAT = £18,000 × 20% = £3,600  ← FULLY RECOVERABLE\n\nWhy: A van used EXCLUSIVELY for business is NOT subject to\nthe car blocking rule. Only CARS with private use are blocked.\n\nContrast: if this were a car for a director with private use,\nthe £3,600 VAT would be BLOCKED and added to the van cost."
+    },
+    {
+      part:"(c)", marks:2,
+      prompt:"Calculate how much should be drawn from the bank account to restore the petty cash float to £350 (in £).",
+      questionType:"number", numAns:109, tol:0.50, prefix:"£",
+      modelAnswer:"Petty cash vouchers:\n   Postage:         £28.40\n   Office supplies: £19.60\n   Travel:          £44.20\n   Entertainment:   £16.80\n                   ──────\n   Total vouchers:  £109.00\n\nRestoration draw = £109.00\n\nCheck: £350 - £109 = £241 remaining + £109 restoration = £350 ✓"
+    },
+    {
+      part:"(d)", marks:3,
+      prompt:"Calculate the net VAT payable to HMRC for the quarter (in £).",
+      questionType:"number", numAns:10830, tol:10, prefix:"£",
+      modelAnswer:"Output VAT:                         £42,480\n\nInput VAT recoverable:\n  Standard purchases:  £31,650  ✓ fully recoverable\n  Car (private use):   £14,400 × (1/6) = £2,400  ✗ BLOCKED\n  Zero-rated purch:    £0 (no VAT charged)         —\n                       ──────────────\n  Total recoverable:  (£31,650)\n\nNet VAT payable = £42,480 - £31,650 = £10,830\n\nThe blocked car VAT (£2,400) is capitalised as part of the\ncar's cost in the accounts — not claimed or expensed separately."
+    }
+  ]
+};
+
+// =========================================================
+// STATE
+// =========================================================
+const TOTAL_TIME = 3600; // 60 minutes
+const STATE = {
+  STORAGE_KEY: 'fa_v3_vat_pool_a',
+  answers: {}, mtqAnswers: {}, mtqWorking: '',
+  currentQ: 0, startTime: Date.now(), pausedTime: 0, pauseStart: null,
+  isPaused: false, testSubmitted: false, attemptNumber: 1,
+  timerInterval: null
+};
+
+// =========================================================
+// TIMER
+// =========================================================
+function startTimer() {
+  const remaining_at_start = TOTAL_TIME - Math.floor((Date.now() - STATE.startTime - STATE.pausedTime) / 1000);
+  let remaining = Math.max(0, remaining_at_start);
+  STATE.timerInterval = setInterval(() => {
+    if (STATE.isPaused) return;
+    remaining--;
+    const el = document.getElementById('timer');
+    if (remaining <= 0) {
+      clearInterval(STATE.timerInterval);
+      el.textContent = '00:00';
+      el.classList.add('critical');
+      autoTimeoutSubmit();
+      return;
+    }
+    const m = Math.floor(remaining / 60), s = remaining % 60;
+    el.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    el.classList.remove('warning','critical');
+    if (remaining < 300) el.classList.add('critical');
+    else if (remaining < 600) el.classList.add('warning');
+  }, 1000);
+}
+
+function autoTimeoutSubmit() {
+  if (STATE.testSubmitted) return;
+  STATE.testSubmitted = true;
+  document.getElementById('timeUpOverlay').classList.add('visible');
+}
+
+function dismissTimeUp() {
+  document.getElementById('timeUpOverlay').classList.remove('visible');
+  document.getElementById('testView').classList.add('section-hidden');
+  document.getElementById('mtqView').classList.add('section-hidden');
+  document.getElementById('submitView').classList.add('section-hidden');
+  document.getElementById('mtqMarkView').classList.remove('section-hidden');
+  renderMTQMarkPage();
+}
+
+function togglePause() {
+  STATE.isPaused = !STATE.isPaused;
+  const btn = document.getElementById('pauseBtn');
+  if (STATE.isPaused) {
+    STATE.pauseStart = Date.now();
+    btn.textContent = '▶ Resume';
+    document.getElementById('contentPanel').style.opacity = '0.4';
+    document.getElementById('contentPanel').style.pointerEvents = 'none';
+  } else {
+    STATE.pausedTime += Date.now() - STATE.pauseStart;
+    btn.textContent = '⏸ Pause';
+    document.getElementById('contentPanel').style.opacity = '1';
+    document.getElementById('contentPanel').style.pointerEvents = 'auto';
+  }
+}
+
+// =========================================================
+// CALCULATOR
+// =========================================================
+let calcExpr = '';
+function toggleCalc() { document.getElementById('calcWidget').classList.toggle('visible'); }
+function calcInput(v) {
+  const disp = document.getElementById('calcDisplay');
+  if (v==='C'){calcExpr='';disp.value='0';return;}
+  if (v==='='){try{const r=Function('"use strict";return('+calcExpr+')')();disp.value=r;calcExpr=String(r);}catch(e){disp.value='Error';calcExpr='';}return;}
+  calcExpr+=v;disp.value=calcExpr;
+}
+
+// =========================================================
+// RENDER QUESTION
+// =========================================================
+function escapeHtml(s){if(s==null)return'';return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function renderQuestion(idx) {
+  const q = QBANK[idx];
+  const ans = STATE.answers[q.qId] || { value: null, guessed: false, flagged: false };
+  STATE.currentQ = idx;
+  document.getElementById('qpos').textContent = 'Question ' + (idx+1) + ' of ' + QBANK.length;
+  document.getElementById('qmarks').textContent = q.marks + ' marks · ' + q.difficulty;
+  const flagBtn = document.getElementById('flagBtn');
+  flagBtn.classList.toggle('flagged', !!ans.flagged);
+  flagBtn.textContent = ans.flagged ? '🚩 Flagged' : '🚩 Flag for review';
+  let html = '<div class="qcard">';
+  html += '<div class="scenario">' + escapeHtml(q.scenario) + '</div>';
+  html += '<div class="qprompt">' + escapeHtml(q.questionText) + '</div>';
+  if (q.questionType === 'number') {
+    const v = (ans.value !== null && ans.value !== undefined) ? ans.value : '';
+    html += '<div class="num-entry"><span class="prefix">' + (q.prefix||'£') + '</span>';
+    html += '<input type="number" step="0.01" value="' + v + '" onchange="setNumberAnswer(\'' + q.qId + '\',this.value)" placeholder="Enter answer"></div>';
+    html += '<div class="num-instr">Tolerance ±' + (q.prefix||'£') + (q.tol||1) + '</div>';
+  } else if (q.questionType === 'mcq') {
+    q.options.forEach(opt => {
+      const sel = (ans.value === opt.letter) ? ' selected' : '';
+      html += '<label class="opt'+sel+'" onclick="selectOption(\''+q.qId+'\',\''+opt.letter+'\')">';
+      html += '<input type="radio" name="'+q.qId+'"'+(ans.value===opt.letter?' checked':'')+' onclick="event.stopPropagation()">';
+      html += '<span class="opt-letter">'+opt.letter+'.</span><span class="opt-text">'+escapeHtml(opt.text)+'</span></label>';
+    });
+  } else if (q.questionType === 'multi') {
+    html += '<div class="multi-instr">Select <strong>TWO</strong> options.</div>';
+    const sel = Array.isArray(ans.value) ? ans.value : [];
+    q.options.forEach(opt => {
+      const checked = sel.includes(opt.letter);
+      html += '<label class="opt'+(checked?' selected-multi':'')+'" onclick="toggleMulti(\''+q.qId+'\',\''+opt.letter+'\')">';
+      html += '<input type="checkbox"'+(checked?' checked':'')+' onclick="event.stopPropagation()">';
+      html += '<span class="opt-letter">'+opt.letter+'.</span><span class="opt-text">'+escapeHtml(opt.text)+'</span></label>';
+    });
+  }
+  html += '<div class="guess-row"><input type="checkbox"'+(ans.guessed?' checked':'')+' onclick="setGuess(\''+q.qId+'\',this.checked)"> 🎲 <strong>I\'m guessing</strong> · keeps true accuracy honest</div>';
+  html += '</div>';
+  document.getElementById('questionContainer').innerHTML = html;
+  updateNavigator();
+}
+
+function selectOption(qId, letter) {
+  if (!STATE.answers[qId]) STATE.answers[qId] = {value:null,guessed:false,flagged:false};
+  STATE.answers[qId].value = letter;
+  saveState(); renderQuestion(STATE.currentQ);
+}
+function toggleMulti(qId, letter) {
+  if (!STATE.answers[qId]) STATE.answers[qId] = {value:[],guessed:false,flagged:false};
+  if (!Array.isArray(STATE.answers[qId].value)) STATE.answers[qId].value = [];
+  const arr = STATE.answers[qId].value;
+  const idx = arr.indexOf(letter);
+  if (idx >= 0) arr.splice(idx,1); else if (arr.length < 2) arr.push(letter);
+  saveState(); renderQuestion(STATE.currentQ);
+}
+function setNumberAnswer(qId, val) {
+  if (!STATE.answers[qId]) STATE.answers[qId] = {value:null,guessed:false,flagged:false};
+  STATE.answers[qId].value = val==='' ? null : parseFloat(val);
+  saveState(); updateNavigator();
+}
+function setGuess(qId, checked) {
+  if (!STATE.answers[qId]) STATE.answers[qId] = {value:null,guessed:false,flagged:false};
+  STATE.answers[qId].guessed = checked; saveState();
+}
+function toggleFlag() {
+  const q = QBANK[STATE.currentQ];
+  if (!STATE.answers[q.qId]) STATE.answers[q.qId] = {value:null,guessed:false,flagged:false};
+  STATE.answers[q.qId].flagged = !STATE.answers[q.qId].flagged;
+  saveState(); renderQuestion(STATE.currentQ);
+}
+
+// =========================================================
+// NAVIGATOR
+// =========================================================
+function updateNavigator() {
+  const grid = document.getElementById('navGrid');
+  let answered = 0;
+  let html = '<div class="nav-section-label">Section A — OT (25 questions)</div>';
+  QBANK.forEach((q,i) => {
+    const ans = STATE.answers[q.qId] || {};
+    const hasAnswer = ans.value !== null && ans.value !== undefined && (Array.isArray(ans.value) ? ans.value.length > 0 : true);
+    if (hasAnswer) answered++;
+    const cls = ans.flagged ? 'flagged' : hasAnswer ? 'answered' : '';
+    const cur = i === STATE.currentQ && document.getElementById('testView') && !document.getElementById('testView').classList.contains('section-hidden') ? ' current' : '';
+    html += '<div class="nav-cell'+cls+cur+'" onclick="jumpTo('+i+')">'+(i+1)+'</div>';
+  });
+  grid.innerHTML = html;
+  document.getElementById('navCount').textContent = answered + '/' + QBANK.length;
+}
+
+function jumpTo(idx) {
+  if (!document.getElementById('testView').classList.contains('section-hidden')) {
+    STATE.currentQ = idx; renderQuestion(idx);
+  }
+}
+function navPrev() { if (STATE.currentQ > 0) renderQuestion(--STATE.currentQ); }
+function navNext() {
+  if (STATE.currentQ < QBANK.length - 1) { renderQuestion(++STATE.currentQ); }
+  else {
+    document.getElementById('testView').classList.add('section-hidden');
+    document.getElementById('mtqView').classList.remove('section-hidden');
+    renderMTQ();
+  }
+}
+function backToOT() {
+  document.getElementById('mtqView').classList.add('section-hidden');
+  document.getElementById('testView').classList.remove('section-hidden');
+  renderQuestion(QBANK.length - 1);
+}
+function goToSubmit() {
+  const otAns = QBANK.filter(q => {
+    const a = STATE.answers[q.qId];
+    return a && a.value !== null && a.value !== undefined && (Array.isArray(a.value)?a.value.length>0:true);
+  }).length;
+  const mtqAns = MTQ.parts.filter((_,i) => {
+    const a = STATE.mtqAnswers[i];
+    return a && (a.value !== null && a.value !== undefined);
+  }).length;
+  document.getElementById('otAnsweredCount').textContent = otAns;
+  document.getElementById('mtqAnsweredCount').textContent = mtqAns;
+  document.getElementById('mtqView').classList.add('section-hidden');
+  document.getElementById('submitView').classList.remove('section-hidden');
+}
+function submitTest() {
+  STATE.testSubmitted = true;
+  document.getElementById('submitView').classList.add('section-hidden');
+  document.getElementById('mtqMarkView').classList.remove('section-hidden');
+  renderMTQMarkPage();
+}
+
+// =========================================================
+// MTQ RENDER
+// =========================================================
+function renderMTQ() {
+  let html = '<div class="qcard"><div class="scenario">' + escapeHtml(MTQ.scenario) + '</div></div>';
+  MTQ.parts.forEach((p, i) => {
+    const ans = STATE.mtqAnswers[i] || {value:null};
+    const v = (ans.value !== null && ans.value !== undefined) ? ans.value : '';
+    html += '<div class="mtq-part">';
+    html += '<div class="mtq-part-header"><span class="mtq-part-title">'+p.part+' · '+escapeHtml(p.prompt.split('\n')[0])+'</span><span class="mtq-part-marks">'+p.marks+' marks</span></div>';
+    html += '<div class="qprompt">'+escapeHtml(p.prompt)+'</div>';
+    html += '<div class="num-entry"><span class="prefix">'+(p.prefix||'£')+'</span>';
+    html += '<input type="number" step="0.01" value="'+v+'" onchange="setMTQAnswer('+i+',this.value)" placeholder="Enter answer"></div>';
+    html += '<div class="num-instr">Tolerance ±'+(p.prefix||'£')+(p.tol||5)+'</div></div>';
+  });
+  html += '<div class="mtq-working-area"><div class="lbl">📝 Working area (optional — not marked)</div>';
+  html += '<textarea placeholder="Show your workings here..." onchange="STATE.mtqWorking=this.value;saveState();">'+escapeHtml(STATE.mtqWorking)+'</textarea></div>';
+  document.getElementById('mtqContainer').innerHTML = html;
+}
+
+function setMTQAnswer(i, val) {
+  if (!STATE.mtqAnswers[i]) STATE.mtqAnswers[i] = {value:null,marksAwarded:0};
+  STATE.mtqAnswers[i].value = val==='' ? null : parseFloat(val);
+  saveState();
+}
+
+function renderMTQMarkPage() {
+  let html = '<div class="qcard"><div class="scenario">'+escapeHtml(MTQ.scenario)+'</div></div>';
+  MTQ.parts.forEach((p,i) => {
+    if (!STATE.mtqAnswers[i]) STATE.mtqAnswers[i] = {value:null,marksAwarded:0};
+    const ans = STATE.mtqAnswers[i];
+    const isNum = p.questionType === 'number';
+    let autoCorrect = false;
+    if (isNum && ans.value !== null && ans.value !== undefined) {
+      autoCorrect = Math.abs(parseFloat(ans.value) - p.numAns) <= (p.tol||5);
+      ans.marksAwarded = autoCorrect ? p.marks : 0;
+    }
+    const userVal = (ans.value !== null && ans.value !== undefined) ? (p.prefix||'£') + parseFloat(ans.value).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2}) : '(skipped)';
+    const correctVal = (p.prefix||'£') + p.numAns.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+    html += '<div class="mtq-part">';
+    html += '<div class="mtq-part-header"><span class="mtq-part-title">'+p.part+' · '+escapeHtml(p.prompt)+'</span><span class="mtq-part-marks">'+p.marks+' marks</span></div>';
+    html += '<div class="num-result">';
+    html += '<div class="num-result-box '+(autoCorrect?'user-correct':'user-wrong')+'"><div class="lbl">Your answer</div><div class="val">'+userVal+'</div></div>';
+    html += '<div class="num-result-box correct-ref"><div class="lbl">Correct (±'+(p.prefix||'£')+(p.tol||5)+')</div><div class="val">'+correctVal+'</div></div></div>';
+    html += '<div class="model-answer-box"><div class="model-label">Model answer & working</div><pre>'+escapeHtml(p.modelAnswer)+'</pre></div></div>';
+  });
+  document.getElementById('mtqMarkContainer').innerHTML = html;
+}
+
+function finalizeResults() {
+  MTQ.parts.forEach((_,i) => {
+    if (!STATE.mtqAnswers[i]) STATE.mtqAnswers[i] = {value:null,marksAwarded:0};
+  });
+  document.getElementById('mtqMarkView').classList.add('section-hidden');
+  document.getElementById('resultsView').classList.remove('section-hidden');
+  computeAndRenderResults();
+}
+
+// =========================================================
+// SCORING HELPERS
+// =========================================================
+function isNumCorrect(ans, q) {
+  if (ans.value === null || ans.value === undefined) return false;
+  return Math.abs(parseFloat(ans.value) - q.numAns) <= (q.tol||1);
+}
+function isMcqCorrect(ans, q) {
+  if (!ans.value) return false;
+  const c = q.options.find(o => o.correct);
+  return ans.value === c.letter;
+}
+function isMultiCorrect(ans, q) {
+  if (!Array.isArray(ans.value) || ans.value.length === 0) return false;
+  const correct = q.options.filter(o=>o.correct).map(o=>o.letter).sort().join(',');
+  return [...ans.value].sort().join(',') === correct;
+}
+function isCorrect(ans, q) {
+  if (q.questionType==='number') return isNumCorrect(ans,q);
+  if (q.questionType==='multi') return isMultiCorrect(ans,q);
+  return isMcqCorrect(ans,q);
+}
+
+// =========================================================
+// RESULTS
+// =========================================================
+function computeAndRenderResults() {
+  let aE=0, aP=0, correct=0, wrong=0, skipped=0, guessed=0;
+  const subStats={};
+  QBANK.forEach(q => {
+    aP += q.marks;
+    const ans = STATE.answers[q.qId] || {};
+    const isSkip = ans.value===null || ans.value===undefined || (Array.isArray(ans.value)&&ans.value.length===0);
+    const c = !isSkip && isCorrect(ans, q);
+    if (c){aE+=q.marks;correct++;}else if(isSkip)skipped++;else wrong++;
+    if(ans.guessed)guessed++;
+    if(!subStats[q.subTopic])subStats[q.subTopic]={e:0,p:0};
+    subStats[q.subTopic].p+=q.marks;
+    if(c)subStats[q.subTopic].e+=q.marks;
+  });
+  let bE=0, bP=MTQ.totalMarks;
+  MTQ.parts.forEach((_,i)=>{bE+=(STATE.mtqAnswers[i]||{}).marksAwarded||0;});
+  const tE=aE+bE,tP=aP+bP;
+  const pct=Math.round((tE/tP)*100);
+  const pass=pct>=50;
+  const elapsed=Math.floor((Date.now()-STATE.startTime-STATE.pausedTime)/1000);
+  const m=Math.floor(elapsed/60),s=elapsed%60;
+  const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('scoreBanner').innerHTML=
+    '<div class="score">'+tE+' / '+tP+'</div>'+
+    '<div class="pct">'+pct+'%</div>'+
+    '<div class="meta">Section A: '+aE+'/'+aP+' · Section B: '+bE+'/'+bP+'</div>'+
+    '<div class="meta">Pool A · '+date+' · '+m+'m '+s+'s · <strong style="color:'+(pass?'#28a745':'#dc3545')+';background:white;padding:2px 10px;border-radius:4px;margin-left:6px;">'+(pass?'PASS':'BELOW PASS')+'</strong></div>';
+
+  const confCorrect=QBANK.filter(q=>{const a=STATE.answers[q.qId]||{};return !a.guessed&&isCorrect(a,q);}).length;
+  const confAttempted=QBANK.filter(q=>{const a=STATE.answers[q.qId]||{};return !a.guessed&&a.value!==null&&a.value!==undefined&&!(Array.isArray(a.value)&&a.value.length===0);}).length;
+  const tA=confAttempted>0?Math.round((confCorrect/confAttempted)*100):0;
+  const gR=QBANK.length>0?Math.round((guessed/QBANK.length)*100):0;
+  const sR=QBANK.length>0?Math.round((skipped/QBANK.length)*100):0;
+  document.getElementById('metricGrid').innerHTML=
+    '<div class="metric-card"><div class="label">Correct</div><div class="value">'+correct+' / '+QBANK.length+'</div></div>'+
+    '<div class="metric-card"><div class="label">True Accuracy</div><div class="value">'+tA+'%</div></div>'+
+    '<div class="metric-card"><div class="label">Guess Rate</div><div class="value">'+gR+'%</div></div>'+
+    '<div class="metric-card"><div class="label">Skip Rate</div><div class="value">'+sR+'%</div></div>';
+
+  const subE=Object.entries(subStats).map(([k,v])=>({subTopic:k,e:v.e,p:v.p,pct:Math.round((v.e/v.p)*100)})).sort((a,b)=>a.pct-b.pct);
+  let stHtml='<h3 style="margin-top:0;color:#003366;">Sub-topic Performance</h3><table><thead><tr><th>Sub-topic</th><th>Marks</th><th>%</th></tr></thead><tbody>';
+  subE.forEach(s=>{
+    const bc=s.pct<40?'low':s.pct<70?'mid':'';
+    stHtml+='<tr><td>'+escapeHtml(s.subTopic)+'</td><td>'+s.e+' / '+s.p+'</td><td><span class="pct-bar"><span class="pct-bar-fill '+bc+'" style="width:'+s.pct+'%"></span></span>'+s.pct+'%</td></tr>';
+  });
+  stHtml+='</tbody></table>';
+  document.getElementById('subtopicTable').innerHTML=stHtml;
+
+  let cardsHtml='<h2 style="margin-top:30px;color:#003366;">Section A — Question Review</h2>';
+  QBANK.forEach((q,idx)=>{
+    try{
+      const ans=STATE.answers[q.qId]||{};
+      const isSkip=ans.value===null||ans.value===undefined||(Array.isArray(ans.value)&&ans.value.length===0);
+      const c=!isSkip&&isCorrect(ans,q);
+      const cardCls=c?'result-card':isSkip?'result-card skipped':'result-card wrong';
+      const status=c?'CORRECT':isSkip?'SKIPPED':'WRONG';
+      const stCls=c?'status-correct':isSkip?'status-skipped':'status-wrong';
+      cardsHtml+='<div class="'+cardCls+'" id="resCard'+idx+'">';
+      cardsHtml+='<div class="rc-header"><div class="rc-q">Q'+(idx+1)+' ('+q.marks+' marks)</div><div class="rc-tags">';
+      cardsHtml+='<span class="tag subtopic">'+escapeHtml(q.subTopic)+'</span>';
+      cardsHtml+='<span class="tag diff-'+q.difficulty+'">'+q.difficulty+'</span>';
+      cardsHtml+='<span class="tag '+stCls+'">'+status+'</span>';
+      if(ans.guessed)cardsHtml+='<span class="tag guessed">Guessed</span>';
+      cardsHtml+='</div></div>';
+      cardsHtml+='<div class="scenario">'+escapeHtml(q.scenario)+'</div>';
+      cardsHtml+='<div class="qprompt"><strong>'+escapeHtml(q.questionText)+'</strong></div>';
+      if(q.questionType==='number'){
+        const uv=isSkip?'(skipped)':(q.prefix||'£')+parseFloat(ans.value).toLocaleString();
+        const ubc=c?'user-correct':'user-wrong';
+        cardsHtml+='<div class="num-result"><div class="num-result-box '+ubc+'"><div class="lbl">Your answer</div><div class="val">'+uv+'</div></div><div class="num-result-box correct-ref"><div class="lbl">Correct (±'+(q.prefix||'£')+(q.tol||1)+')</div><div class="val">'+(q.prefix||'£')+q.numAns.toLocaleString()+'</div></div></div>';
+      } else if(q.questionType==='mcq'){
+        q.options.forEach(opt=>{
+          const isCorr=opt.correct;
+          const isUser=ans.value===opt.letter;
+          let cls='result-opt';
+          if(isCorr)cls+=' correct';
+          else if(isUser)cls+=' user-wrong';
+          cardsHtml+='<div class="'+cls+'"><div class="opt-text"><strong>'+opt.letter+'.</strong> '+escapeHtml(opt.text);
+          if(isCorr)cardsHtml+='<span class="badge correct">✓ CORRECT</span>';
+          if(isUser&&!isCorr)cardsHtml+='<span class="badge user-wrong">YOUR PICK</span>';
+          cardsHtml+='</div>';
+          if(opt.why)cardsHtml+='<div class="why">'+escapeHtml(opt.why)+'</div>';
+          cardsHtml+='</div>';
+        });
+      } else if(q.questionType==='multi'){
+        const sel=Array.isArray(ans.value)?ans.value:[];
+        q.options.forEach(opt=>{
+          const isCorr=opt.correct;
+          const isUser=sel.includes(opt.letter);
+          let cls='result-opt';
+          if(isCorr)cls+=' correct';
+          else if(isUser&&!isCorr)cls+=' user-wrong';
+          cardsHtml+='<div class="'+cls+'"><div class="opt-text"><strong>'+opt.letter+'.</strong> '+escapeHtml(opt.text);
+          if(isCorr)cardsHtml+='<span class="badge correct">✓ CORRECT</span>';
+          if(isUser&&!isCorr)cardsHtml+='<span class="badge user-wrong">YOUR PICK</span>';
+          cardsHtml+='</div>';
+          if(opt.why)cardsHtml+='<div class="why">'+escapeHtml(opt.why)+'</div>';
+          cardsHtml+='</div>';
+        });
+      }
+      cardsHtml+='<div class="what-tests"><div class="lbl">💡 What this tests</div>'+escapeHtml(q.explanationLayer1)+'</div>';
+      cardsHtml+='<div class="standard-ref"><div class="lbl">📚 Standard reference</div>'+escapeHtml(q.explanationLayer3)+'</div>';
+      cardsHtml+='<div class="working-block">'+escapeHtml(q.workingShown)+'</div>';
+      cardsHtml+='<div class="examiner-note"><div class="lbl">📌 Examiner\'s note</div>'+escapeHtml(q.examinerNote)+'</div>';
+      if(q.advanced)cardsHtml+='<div class="advanced-note"><div class="lbl">⚡ Advanced</div>'+escapeHtml(q.advanced)+'</div>';
+      if(q.teacherCommentary){
+        cardsHtml+='<div class="teacher-commentary"><div class="lbl">🎓 Teacher commentary</div>';
+        if(q.teacherCommentary.concept)cardsHtml+='<div class="tc-row"><span class="tc-label">Concept:</span> '+escapeHtml(q.teacherCommentary.concept)+'</div>';
+        if(q.teacherCommentary.process)cardsHtml+='<div class="tc-row"><span class="tc-label">Process:</span> '+escapeHtml(q.teacherCommentary.process)+'</div>';
+        if(q.teacherCommentary.everyday)cardsHtml+='<div class="tc-row"><span class="tc-label">Everyday:</span> '+escapeHtml(q.teacherCommentary.everyday)+'</div>';
+        cardsHtml+='</div>';
+      }
+      cardsHtml+='</div>';
+    }catch(err){cardsHtml+='<div class="result-card wrong"><strong>Error Q'+(idx+1)+':</strong>'+escapeHtml(err.message)+'</div>';}
+  });
+
+  cardsHtml+='<h2 style="margin-top:30px;color:#003366;">Section B — MTQ Review</h2>';
+  cardsHtml+='<div class="result-card"><div class="rc-q">'+escapeHtml(MTQ.title)+'</div>';
+  cardsHtml+='<div class="scenario">'+escapeHtml(MTQ.scenario)+'</div>';
+  MTQ.parts.forEach((p,i)=>{
+    const ans=STATE.mtqAnswers[i]||{};
+    const earned=ans.marksAwarded||0;
+    cardsHtml+='<div style="margin:16px 0;padding-top:16px;border-top:1px solid #e1e5ea;">';
+    cardsHtml+='<div style="font-weight:700;color:#003366;margin-bottom:8px;">'+p.part+' '+escapeHtml(p.prompt)+'<span style="float:right;background:'+(earned===p.marks?'#28a745':'#dc3545')+';color:white;padding:2px 10px;border-radius:12px;font-size:12px;">'+earned+' / '+p.marks+'</span></div>';
+    const uv=(ans.value!==null&&ans.value!==undefined)?(p.prefix||'£')+parseFloat(ans.value).toLocaleString():'(skipped)';
+    const ubc=earned===p.marks?'user-correct':'user-wrong';
+    cardsHtml+='<div class="num-result"><div class="num-result-box '+ubc+'"><div class="lbl">Your answer</div><div class="val">'+uv+'</div></div><div class="num-result-box correct-ref"><div class="lbl">Correct</div><div class="val">'+(p.prefix||'£')+p.numAns.toLocaleString()+'</div></div></div>';
+    cardsHtml+='<div class="working-block">'+escapeHtml(p.modelAnswer)+'</div></div>';
+  });
+  cardsHtml+='</div>';
+  document.getElementById('resultsCardContainer').innerHTML=cardsHtml;
+}
+
+// =========================================================
+// EXPORT / SYNC
+// =========================================================
+function buildExportJSON() {
+  const elapsed=Math.floor((Date.now()-STATE.startTime-STATE.pausedTime)/1000);
+  let aE=0,aP=0;
+  const questions=QBANK.map(q=>{
+    const ans=STATE.answers[q.qId]||{};
+    const isSkip=ans.value===null||ans.value===undefined||(Array.isArray(ans.value)&&ans.value.length===0);
+    const c=!isSkip&&isCorrect(ans,q);
+    aP+=q.marks;if(c)aE+=q.marks;
+    return {qId:q.qId,displayIdx:q.displayIdx,type:q.type,questionType:q.questionType,
+      subTopic:q.subTopic,difficulty:q.difficulty,marks:q.marks,timeIdeal:q.timeIdeal,
+      questionText:q.questionText,scenario:q.scenario,options:q.options||null,
+      userAnswer:isSkip?null:ans.value,correctAnswer:q.correctAnswer,correct:c,
+      earned:c?q.marks:0,timeSpent:null,guessed:!!ans.guessed,flagged:!!ans.flagged,
+      explanation:q.explanationLayer1,examinerNote:q.examinerNote,
+      ifrsRef:q.explanationLayer3,advanced:q.advanced,teacherCommentary:q.teacherCommentary};
+  });
+  let bE=0;
+  MTQ.parts.forEach((_,i)=>{bE+=(STATE.mtqAnswers[i]||{}).marksAwarded||0;});
+  return {schemaVersion:3,topicName:'VAT/Discounts',poolName:'Pool A',
+    attemptNumber:STATE.attemptNumber,date:new Date().toISOString(),
+    timeSpentSeconds:elapsed,sectionAScore:aE,sectionBScore:bE,
+    totalScore:aE+bE,totalPossible:aP+MTQ.totalMarks,
+    questions:questions,
+    mtq:{title:MTQ.title,totalMarks:MTQ.totalMarks,workingArea:STATE.mtqWorking||'',
+      partsAwarded:MTQ.parts.map((_,i)=>({part:MTQ.parts[i].part,marks:MTQ.parts[i].marks,
+        earned:(STATE.mtqAnswers[i]||{}).marksAwarded||0,
+        userAnswer:(STATE.mtqAnswers[i]||{}).value}))}};
+}
+
+function downloadJSON() {
+  const data=buildExportJSON();
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='vat_pool_a_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();URL.revokeObjectURL(url);
+}
+
+function autoSyncToPendingQueue(d) {
+  try {
+    const k='fa_v3_pending_imports';
+    const ex=JSON.parse(localStorage.getItem(k)||'[]');
+    ex.push(d);
+    localStorage.setItem(k,JSON.stringify(ex));
+  } catch(e){console.error('Auto-sync failed:',e);}
+}
+
+function syncToDashboard() {
+  const d=buildExportJSON();
+  autoSyncToPendingQueue(d);
+  alert('✓ Synced to dashboard. Open fa-prep dashboard to see your results — it will update automatically.');
+}
+
+function downloadPDF() {
+  const wrongIdxs=[];
+  QBANK.forEach((q,idx)=>{
+    const ans=STATE.answers[q.qId]||{};
+    const isSkip=ans.value===null||ans.value===undefined||(Array.isArray(ans.value)&&ans.value.length===0);
+    if(!(!isSkip&&isCorrect(ans,q)))wrongIdxs.push(idx);
+  });
+  QBANK.forEach((_,idx)=>{const c=document.getElementById('resCard'+idx);if(c&&!wrongIdxs.includes(idx))c.style.display='none';});
+  setTimeout(()=>{window.print();QBANK.forEach((_,idx)=>{const c=document.getElementById('resCard'+idx);if(c)c.style.display='';});},100);
+}
+
+function restartTest() {
+  if(!confirm('Restart? Current attempt will be cleared.'))return;
+  localStorage.removeItem(STATE.STORAGE_KEY);
+  location.reload();
+}
+
+// =========================================================
+// PERSISTENCE
+// =========================================================
+function saveState() {
+  try{localStorage.setItem(STATE.STORAGE_KEY,JSON.stringify({
+    answers:STATE.answers,mtqAnswers:STATE.mtqAnswers,mtqWorking:STATE.mtqWorking,
+    currentQ:STATE.currentQ,startTime:STATE.startTime,pausedTime:STATE.pausedTime,
+    attemptNumber:STATE.attemptNumber,testSubmitted:STATE.testSubmitted}));}
+  catch(e){console.error('saveState failed:',e);}
+}
+
+function loadState() {
+  try{
+    const s=JSON.parse(localStorage.getItem(STATE.STORAGE_KEY)||'null');
+    if(s&&!s.testSubmitted){
+      STATE.answers=s.answers||{};STATE.mtqAnswers=s.mtqAnswers||{};
+      STATE.mtqWorking=s.mtqWorking||'';STATE.currentQ=s.currentQ||0;
+      STATE.startTime=s.startTime||Date.now();STATE.pausedTime=s.pausedTime||0;
+      STATE.attemptNumber=s.attemptNumber||1;
+      return true; // has in-progress state
+    }else if(s&&s.testSubmitted){STATE.attemptNumber=(s.attemptNumber||1)+1;}
+    return false;
+  }catch(e){console.error('loadState failed:',e);return false;}
+}
+
+function beginTest() {
+  STATE.startTime = Date.now();
+  STATE.pausedTime = 0;
+  saveState();
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('testShell').style.display = 'block';
+  renderQuestion(STATE.currentQ);
+  updateNavigator();
+  startTimer();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const hasProgress = loadState();
+  if (hasProgress) {
+    // In-progress test — skip home page, resume directly
+    const ans = Object.keys(STATE.answers).length;
+    const banner = document.getElementById('resumeBanner');
+    if (banner) {
+      banner.innerHTML = '<div class="home-resume">⚡ <div><strong>In-progress test found.</strong> You have answered ' + ans + ' question(s). Click Start Test to resume where you left off.</div></div>';
+    }
+    document.getElementById('homeScreen').style.display = 'none';
+    document.getElementById('testShell').style.display = 'block';
+    renderQuestion(STATE.currentQ);
+    updateNavigator();
+    startTimer();
+  }
+  // else: home page is already visible by default
+});
+</script>
+</div><!-- close testShell -->
+</body>
+</html>
