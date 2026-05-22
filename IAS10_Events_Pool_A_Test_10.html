@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test #10 &mdash; IAS 10 Events After the Reporting Period | Pool A</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f7fa;color:#2c3e50;line-height:1.5;}
+#topBar{position:sticky;top:0;z-index:100;background:#5a1e2e;color:white;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,0.15);}
+#topBar .title{font-weight:600;font-size:15px;}
+#topBar .controls{display:flex;gap:12px;align-items:center;}
+#topBar button{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:white;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:14px;}
+#topBar .timer{font-family:'Courier New',monospace;font-weight:700;font-size:16px;padding:6px 12px;background:rgba(0,0,0,0.25);border-radius:4px;transition:background 0.3s,color 0.3s;}
+#topBar .timer.warning{background:#ffc107;color:#1a1a1a;}
+#topBar .timer.critical{background:#dc3545;color:white;animation:pulse-c 1s infinite;}
+@keyframes pulse-c{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.85;transform:scale(1.04);}}
+#subBar{background:white;padding:10px 24px;border-bottom:1px solid #e1e5ea;display:flex;justify-content:space-between;align-items:center;font-size:14px;}
+#flagBtn{background:none;border:1px solid #ccc;padding:4px 10px;border-radius:4px;cursor:pointer;margin-left:12px;font-size:13px;}
+#flagBtn.flagged{background:#fff3cd;border-color:#ffc107;color:#856404;}
+#timeUpOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;display:none;align-items:center;justify-content:center;}
+#timeUpOverlay.visible{display:flex;}
+#timeUpOverlay .panel{background:white;padding:36px 48px;border-radius:12px;text-align:center;max-width:420px;}
+#timeUpOverlay h2{color:#dc3545;margin:0 0 12px;}
+#mainArea{display:flex;max-width:1400px;margin:0 auto;gap:20px;padding:20px 24px;}
+#contentPanel{flex:1;min-width:0;}
+#navPanel{width:220px;flex-shrink:0;}
+.qcard{background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);padding:28px;margin-bottom:20px;}
+.scenario{background:#f5f7fa;border-left:4px solid #5a1e2e;padding:16px 18px;margin-bottom:18px;white-space:pre-wrap;font-size:14.5px;line-height:1.65;}
+.qprompt{font-size:15.5px;font-weight:500;margin:14px 0 18px;line-height:1.55;}
+.opt{display:flex;align-items:flex-start;padding:12px 14px;margin-bottom:8px;border:1.5px solid #d8dde3;border-radius:6px;cursor:pointer;transition:all 0.12s;background:white;}
+.opt:hover{border-color:#5a1e2e;background:#f8f0f2;}
+.opt input[type="radio"],.opt input[type="checkbox"]{margin-right:12px;margin-top:3px;transform:scale(1.1);cursor:pointer;}
+.opt-letter{font-weight:700;color:#5a1e2e;margin-right:10px;min-width:18px;}
+.opt-text{flex:1;font-size:14.5px;line-height:1.55;}
+.opt.selected{border-color:#5a1e2e;background:#f0e0e4;}
+.opt.selected-multi{border-color:#5a1e2e;background:#f0e0e4;}
+.num-entry{display:flex;align-items:center;gap:10px;margin:16px 0;}
+.num-entry .prefix{font-size:18px;font-weight:600;color:#5a1e2e;}
+.num-entry input{padding:10px 14px;font-size:16px;border:2px solid #d8dde3;border-radius:6px;width:200px;font-family:inherit;}
+.num-entry input:focus{outline:none;border-color:#5a1e2e;}
+.num-instr{color:#777;font-size:13px;margin-top:6px;font-style:italic;}
+.multi-instr{background:#f0e0e4;border-left:3px solid #5a1e2e;padding:8px 12px;border-radius:0 4px 4px 0;font-size:13px;color:#5a1e2e;margin-bottom:12px;}
+.guess-row{margin-top:18px;padding:10px 14px;background:#fff8e1;border-radius:4px;font-size:13px;color:#6d5510;display:flex;align-items:center;gap:10px;}
+.bottom-nav{display:flex;justify-content:space-between;gap:12px;margin-top:20px;}
+.bottom-nav button{padding:10px 22px;border-radius:6px;font-size:14.5px;font-weight:600;cursor:pointer;border:none;}
+.btn-prev{background:white;border:1.5px solid #5a1e2e !important;color:#5a1e2e;}
+.btn-next{background:#5a1e2e;color:white;}
+#navPanel{position:sticky;top:100px;max-height:calc(100vh - 130px);overflow-y:auto;background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);padding:14px;}
+.nav-header{font-weight:600;font-size:13px;color:#555;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e1e5ea;}
+.nav-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+.nav-cell{aspect-ratio:1;border:1.5px solid #d8dde3;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:white;}
+.nav-cell:hover{border-color:#5a1e2e;}
+.nav-cell.answered{background:#d4edda;border-color:#28a745;color:#155724;}
+.nav-cell.flagged{background:#fff3cd;border-color:#ffc107;color:#856404;}
+.nav-cell.current{box-shadow:0 0 0 2px #5a1e2e;}
+.nav-section-label{grid-column:1/-1;font-size:11px;color:#888;margin:8px 0 4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;}
+#calcWidget{position:fixed;right:24px;top:70px;background:white;border:1.5px solid #5a1e2e;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:12px;z-index:200;width:240px;display:none;}
+#calcWidget.visible{display:block;}
+#calcDisplay{width:100%;padding:10px;font-size:18px;font-family:'Courier New',monospace;text-align:right;border:1.5px solid #d8dde3;border-radius:4px;margin-bottom:8px;background:#f8fafc;}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}
+.calc-grid button{padding:10px 0;font-size:14px;font-weight:600;border:1px solid #d8dde3;background:white;cursor:pointer;border-radius:4px;}
+.calc-grid button.op{background:#5a1e2e;color:white;border-color:#5a1e2e;}
+.calc-grid button.eq{background:#28a745;color:white;border-color:#28a745;}
+.mtq-part{background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);padding:22px;margin-bottom:16px;}
+.mtq-part-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #e1e5ea;}
+.mtq-part-title{font-weight:700;font-size:16px;color:#5a1e2e;}
+.mtq-part-marks{background:#5a1e2e;color:white;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;}
+.mtq-working-area{background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);padding:22px;margin-top:16px;border:2px dashed #5a1e2e;}
+.mtq-working-area .lbl{font-weight:700;font-size:14px;color:#5a1e2e;margin-bottom:8px;}
+.mtq-working-area textarea{width:100%;height:200px;font-family:'Courier New',monospace;font-size:13px;padding:14px;border:1.5px solid #d8dde3;border-radius:6px;resize:vertical;line-height:1.55;box-sizing:border-box;}
+.model-answer-box{background:#f8fafc;border:1.5px solid #d8dde3;border-radius:6px;padding:14px;margin-top:12px;}
+.model-answer-box pre{font-family:'Courier New',monospace;font-size:13px;white-space:pre-wrap;margin:8px 0 0;line-height:1.5;}
+.model-label{font-weight:600;font-size:12px;color:#555;text-transform:uppercase;letter-spacing:0.5px;}
+.score-banner{background:linear-gradient(135deg,#5a1e2e,#8a3a4a);color:white;padding:30px;border-radius:10px;text-align:center;margin-bottom:24px;}
+.score-banner .score{font-size:48px;font-weight:700;line-height:1;margin-bottom:8px;}
+.score-banner .pct{font-size:24px;font-weight:600;opacity:0.9;}
+.score-banner .meta{font-size:14px;opacity:0.85;margin-top:14px;}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px;}
+.metric-card{background:white;border-radius:8px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+.metric-card .label{font-size:12px;color:#777;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;}
+.metric-card .value{font-size:22px;font-weight:700;color:#5a1e2e;margin-top:6px;}
+.subtopic-table{background:white;border-radius:8px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.06);margin-bottom:24px;}
+.subtopic-table table{width:100%;border-collapse:collapse;font-size:14px;}
+.subtopic-table th{text-align:left;padding:8px 10px;background:#f5f7fa;color:#555;font-weight:600;font-size:12px;text-transform:uppercase;}
+.subtopic-table td{padding:10px;border-bottom:1px solid #e1e5ea;}
+.pct-bar{display:inline-block;width:80px;height:8px;background:#e1e5ea;border-radius:4px;overflow:hidden;vertical-align:middle;margin-right:8px;}
+.pct-bar-fill{height:100%;background:#28a745;}
+.pct-bar-fill.low{background:#dc3545;}
+.pct-bar-fill.mid{background:#ffc107;}
+.action-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px;}
+.action-row button{padding:12px 18px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:none;}
+.btn-download{background:#28a745;color:white;}
+.btn-pdf{background:#dc3545;color:white;}
+.btn-sync{background:#5a1e2e;color:white;}
+.btn-restart{background:#6c757d;color:white;}
+.result-card{background:white;border-radius:8px;padding:22px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,0.06);border-left:5px solid #28a745;}
+.result-card.wrong{border-left-color:#dc3545;}
+.result-card.skipped{border-left-color:#6c757d;}
+.rc-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+.rc-q{font-weight:700;font-size:15px;color:#5a1e2e;}
+.rc-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.tag{padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.tag.subtopic{background:#f0e0e4;color:#5a1e2e;}
+.tag.diff-easy{background:#d4edda;color:#155724;}
+.tag.diff-medium{background:#fff3cd;color:#856404;}
+.tag.diff-hard{background:#f8d7da;color:#721c24;}
+.tag.status-correct{background:#d4edda;color:#155724;}
+.tag.status-wrong{background:#f8d7da;color:#721c24;}
+.tag.status-skipped{background:#e1e5ea;color:#555;}
+.tag.guessed{background:#fff3cd;color:#856404;}
+.result-opt{padding:12px 14px;margin-bottom:8px;border-radius:6px;border:1.5px solid #e1e5ea;}
+.result-opt.correct{background:#d4edda;border-color:#28a745;}
+.result-opt.user-wrong{background:#f8d7da;border-color:#dc3545;}
+.result-opt .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;margin-left:8px;}
+.result-opt .badge.correct{background:#28a745;color:white;}
+.result-opt .badge.user-wrong{background:#dc3545;color:white;}
+.result-opt .why{font-size:13px;color:#555;margin-top:6px;font-style:italic;line-height:1.45;}
+.num-result{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;}
+.num-result-box{flex:1;min-width:200px;padding:12px 16px;border-radius:6px;border:2px solid;}
+.num-result-box.user-wrong{border-color:#dc3545;background:#fff5f5;}
+.num-result-box.user-correct{border-color:#28a745;background:#f5fff5;}
+.num-result-box.correct-ref{border-color:#28a745;background:#f5fff5;}
+.num-result-box .lbl{font-size:11px;color:#555;text-transform:uppercase;font-weight:600;}
+.num-result-box .val{font-size:18px;font-weight:700;color:#5a1e2e;margin-top:4px;}
+.what-tests{background:#f0e0e4;border-left:4px solid #5a1e2e;padding:12px 14px;margin:12px 0;border-radius:0 4px 4px 0;}
+.what-tests .lbl{font-weight:700;font-size:12px;color:#5a1e2e;text-transform:uppercase;margin-bottom:6px;}
+.standard-ref{background:#fff8e1;border-left:4px solid #ffc107;padding:12px 14px;margin:12px 0;border-radius:0 4px 4px 0;}
+.standard-ref .lbl{font-weight:700;font-size:12px;color:#856404;text-transform:uppercase;margin-bottom:6px;}
+.working-block{background:#1a1a1a;color:#e8e8e8;padding:14px 16px;border-radius:6px;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.55;white-space:pre-wrap;margin:12px 0;overflow-x:auto;}
+.examiner-note{background:#fff3cd;border-left:4px solid #ffc107;padding:12px 14px;margin:12px 0;border-radius:0 4px 4px 0;}
+.examiner-note .lbl{font-weight:700;font-size:12px;color:#856404;text-transform:uppercase;margin-bottom:6px;}
+.advanced-note{background:#f0e8f8;border-left:4px solid #6f42c1;padding:12px 14px;margin:12px 0;border-radius:0 4px 4px 0;}
+.advanced-note .lbl{font-weight:700;font-size:12px;color:#6f42c1;text-transform:uppercase;margin-bottom:6px;}
+.teacher-commentary{background:#e8f7e8;border-left:4px solid #28a745;padding:12px 14px;margin:12px 0;border-radius:0 4px 4px 0;}
+.teacher-commentary .lbl{font-weight:700;font-size:12px;color:#155724;text-transform:uppercase;margin-bottom:8px;}
+.teacher-commentary .tc-row{margin-bottom:8px;font-size:13.5px;line-height:1.55;}
+.teacher-commentary .tc-label{font-weight:700;color:#155724;}
+#submitView{background:white;border-radius:8px;padding:30px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+#submitView h2{color:#5a1e2e;margin-top:0;}
+.btn-submit{background:#28a745;color:white;padding:14px 32px;border:none;border-radius:6px;font-size:16px;font-weight:700;cursor:pointer;margin-top:14px;}
+.section-hidden{display:none;}
+#homeScreen{min-height:100vh;background:#5a1e2e;display:flex;align-items:center;justify-content:center;}
+.btn-start{padding:22px 64px;background:white;color:#5a1e2e;border:none;border-radius:10px;font-size:1.2rem;font-weight:700;cursor:pointer;letter-spacing:0.5px;transition:all 0.15s;box-shadow:0 4px 20px rgba(0,0,0,0.25);}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,0.35);}
+</style>
+</head>
+<body>
+<div id="homeScreen">
+  <button class="btn-start" onclick="startFresh()">Start</button>
+</div>
+<div id="testShell" style="display:none;">
+<div id="topBar">
+  <div class="title">Test #10 &mdash; IAS 10 Events After the Reporting Period &nbsp;|&nbsp; Pool A &nbsp;<span style="color:#f0c4cc;">25 OT + MTQ &middot; 60 min</span></div>
+  <div class="controls">
+    <button onclick="toggleCalc()">Calc</button>
+    <button onclick="togglePause()" id="pauseBtn">Pause</button>
+    <span class="timer" id="timer">60:00</span>
+  </div>
+</div>
+<div id="subBar">
+  <div class="qpos" id="qpos">Question 1 of 25</div>
+  <div><span id="qmarks">2 marks</span><button id="flagBtn" onclick="toggleFlag()">Flag</button></div>
+</div>
+<div id="timeUpOverlay">
+  <div class="panel"><h2>Time's up!</h2><p>Test auto-submitted. Continue to MTQ marking.</p>
+  <button class="btn-submit" onclick="dismissTimeUp()" style="background:#5a1e2e;">Continue</button></div>
+</div>
+<div id="calcWidget">
+  <input id="calcDisplay" readonly value="0">
+  <div class="calc-grid">
+    <button onclick="calcInput('C')">C</button><button onclick="calcInput('(')">( </button><button onclick="calcInput(')')">)</button><button class="op" onclick="calcInput('/')">div</button>
+    <button onclick="calcInput('7')">7</button><button onclick="calcInput('8')">8</button><button onclick="calcInput('9')">9</button><button class="op" onclick="calcInput('*')">x</button>
+    <button onclick="calcInput('4')">4</button><button onclick="calcInput('5')">5</button><button onclick="calcInput('6')">6</button><button class="op" onclick="calcInput('-')">-</button>
+    <button onclick="calcInput('1')">1</button><button onclick="calcInput('2')">2</button><button onclick="calcInput('3')">3</button><button class="op" onclick="calcInput('+')">+</button>
+    <button onclick="calcInput('0')">0</button><button onclick="calcInput('.')">.</button><button class="eq" onclick="calcInput('=')" style="grid-column:span 2;">=</button>
+  </div>
+</div>
+<div id="mainArea">
+  <div id="contentPanel">
+    <div id="testView"><div id="questionContainer"></div>
+    <div class="bottom-nav">
+      <button class="btn-prev" onclick="navPrev()">Prev</button>
+      <button class="btn-next" onclick="navNext()">Next</button>
+    </div></div>
+    <div id="mtqView" class="section-hidden"><div id="mtqContainer"></div>
+    <div class="bottom-nav">
+      <button class="btn-prev" onclick="backToOT()">Back to OT</button>
+      <button class="btn-next" onclick="goToSubmit()">Continue</button>
+    </div></div>
+    <div id="submitView" class="section-hidden">
+      <h2>Ready to submit?</h2>
+      <div style="margin:20px 0;font-size:15px;">OT: <span id="otAns" style="font-weight:700;color:#28a745;">0</span>/25 answered &nbsp;|&nbsp; MTQ: <span id="mtqAns" style="font-weight:700;color:#28a745;">0</span>/4 parts</div>
+      <button class="btn-submit" onclick="submitTest()">Submit Test</button>
+    </div>
+    <div id="mtqMarkView" class="section-hidden">
+      <h2 style="color:#5a1e2e;">Mark your MTQ</h2>
+      <div id="mtqMarkContainer"></div>
+      <div class="bottom-nav"><button class="btn-next" onclick="finalizeResults()">Continue to Results</button></div>
+    </div>
+    <div id="resultsView" class="section-hidden">
+      <div class="score-banner" id="scoreBanner"></div>
+      <div class="metric-grid" id="metricGrid"></div>
+      <div class="subtopic-table" id="subtopicTable"></div>
+      <div class="action-row">
+        <button class="btn-download" onclick="downloadJSON()">Download JSON</button>
+        <button class="btn-pdf" onclick="downloadPDF()">Print Wrong</button>
+        <button class="btn-sync" onclick="syncToDashboard()">Sync to Dashboard</button>
+        <button class="btn-restart" onclick="restartTest()">Restart</button>
+      </div>
+      <div id="resultsCardContainer"></div>
+    </div>
+  </div>
+  <div id="navPanel">
+    <div class="nav-header">Navigator &mdash; <span id="navCount">0/25</span></div>
+    <div class="nav-grid" id="navGrid"></div>
+  </div>
+</div>
+</div>
+<script>
+const QBANK=[{"qId": "IAS10_A_Q1", "displayIdx": 1, "type": "ot", "questionType": "mcq", "subTopic": "IAS 10 Definition", "difficulty": "easy", "marks": 2, "timeIdeal": 80, "scenario": "Larkhill plc is preparing its financial statements for the year ended 31 December 20X5. The finance team is reviewing events occurring after 31 December 20X5 to determine the relevant IAS 10 cut-off.", "questionText": "Which of the following BEST defines an event after the reporting period per IAS 10?", "options": [{"letter": "A", "text": "Any event occurring during the financial year", "correct": false, "why": "Describes ordinary in-year transactions. IAS 10 covers events AFTER the year end."}, {"letter": "B", "text": "Events, favourable and unfavourable, occurring between the end of the reporting period and the date when the financial statements are authorised for issue", "correct": true, "why": "CORRECT — IAS 10 para 3 verbatim. Window: year end → authorisation for issue. Includes favourable and unfavourable."}, {"letter": "C", "text": "Events between the year end and the Annual General Meeting", "correct": false, "why": "AGM is after authorisation for issue. IAS 10 window closes at authorisation, not AGM."}, {"letter": "D", "text": "Events voluntarily disclosed in the chairman's statement", "correct": false, "why": "Not defined by management discretion. IAS 10 events are objectively defined by timing and nature."}], "correctAnswer": "B", "explanationLayer1": "Tests the IAS 10 para 3 definition: window starts at year end, ends at authorisation for issue.", "explanationLayer3": "IAS 10 para 3. Kaplan FA Study Text Ch 15 Section 11.", "workingShown": "IAS 10 timing window:\n  31 Dec 20X5: year end (start)\n  | <-- IAS 10 events -->\n  18 Mar 20X6: directors authorise FS (end)\n  30 Apr 20X6: AGM (NOT relevant)\n\nTwo tests for each event:\n  1. In the window?\n  2. Evidence of year-end conditions?\n     Yes = adjusting\n     No = non-adjusting", "examinerNote": "AGM/audit-date traps are common. Authorisation = directors approve FS for issue. AGM comes later. IAS 10 window closes at authorisation.", "advanced": "Some jurisdictions require reissue if material events arise between authorisation and final shareholder approval. The strict IAS 10 cut-off remains authorisation for issue.", "teacherCommentary": {"concept": "IAS 10 window: year end to date FS authorised. Both favourable and unfavourable count.", "process": "Two dates: year end (start), directors approve FS (end).", "everyday": "Post-game review period. Once the report is sent, the window closes."}}, {"qId": "IAS10_A_Q2", "displayIdx": 2, "type": "ot", "questionType": "mcq", "subTopic": "Adjusting Event Definition", "difficulty": "easy", "marks": 2, "timeIdeal": 80, "scenario": "Crestwood Co's finance team is classifying events that occurred after the reporting period under IAS 10.", "questionText": "Which BEST describes an ADJUSTING event under IAS 10?", "options": [{"letter": "A", "text": "An event that creates a new obligation after year end", "correct": false, "why": "Describes non-adjusting. Adjusting events relate to conditions ALREADY existing at year end."}, {"letter": "B", "text": "An event providing additional evidence of conditions existing at the reporting date", "correct": true, "why": "CORRECT — Kaplan ST Ch 15: provides additional evidence of conditions existing at the reporting date."}, {"letter": "C", "text": "An event that directors choose to adjust for", "correct": false, "why": "Not based on discretion. Objectively defined by IAS 10."}, {"letter": "D", "text": "An event changing operating activities", "correct": false, "why": "Changes in operations are typically forward-looking (non-adjusting). Adjusting events relate to past conditions."}], "correctAnswer": "B", "explanationLayer1": "Adjusting events REVEAL year-end conditions; they do not CREATE new ones.", "explanationLayer3": "Kaplan FA Study Text Ch 15 Section 11: 'These events provide additional evidence of conditions existing at the reporting date.'", "workingShown": "The adjusting test:\n  Q: Did condition exist at year end?\n     YES -> ADJUSTING\n     NO  -> Non-adjusting\n\nAdjusting events PROVIDE EVIDENCE of year-end conditions.\nThey do not CREATE new conditions.\n\nKaplan ST examples:\n  - Customer bankruptcy confirming bad year-end debt\n  - Court case settlement of pre-year-end claim\n  - Inventory sold below cost (NRV evidence)\n  - Discovery of fraud showing FS incorrect\n  - Insurance proceeds for pre-year-end loss", "examinerNote": "Trap in A: the word 'new'. Adjusting events do NOT create new conditions. Trap in D: operating changes are typically forward-looking.", "advanced": "The 'condition at year end' test can be subtle. A customer bankruptcy in January: financial distress was developing before year end (latent), the formal bankruptcy reveals it.", "teacherCommentary": {"concept": "Adjusting = condition existed at year end. Post-event reveals it.", "process": "Ask: was condition present at year end, even if unknown? Yes = adjusting. Amend FS.", "everyday": "Finding out in February you owed someone money in December. The debt was real — you just didn't know."}}, {"qId": "IAS10_A_Q3", "displayIdx": 3, "type": "ot", "questionType": "mcq", "subTopic": "Non-Adjusting Event Definition", "difficulty": "easy", "marks": 2, "timeIdeal": 80, "scenario": "Marshfield Co is finalising its financial statements. Several events have occurred after year end. The team must distinguish adjusting from non-adjusting events.", "questionText": "Which BEST describes a NON-ADJUSTING event under IAS 10?", "options": [{"letter": "A", "text": "An event requiring the FS to be amended", "correct": false, "why": "Describes ADJUSTING. Non-adjusting events do not require figure amendment."}, {"letter": "B", "text": "An event arising after the reporting date but not concerning conditions existing at the reporting date", "correct": true, "why": "CORRECT — Kaplan ST Ch 15 verbatim: 'events arising after the reporting date but which do not concern conditions existing at the reporting date.'"}, {"letter": "C", "text": "An event with no impact and never requiring disclosure", "correct": false, "why": "Non-adjusting events DO require disclosure if material — nature plus estimated financial effect."}, {"letter": "D", "text": "An event occurring before year end but discovered after", "correct": false, "why": "That would be a correction of an in-year transaction, not 'after the reporting period' under IAS 10."}], "correctAnswer": "B", "explanationLayer1": "Non-adjusting = new conditions arising after year end. No figure adjustment. Disclose if material.", "explanationLayer3": "Kaplan ST Ch 15 Section 11. Disclosure note must describe: (i) nature; (ii) estimated financial effect, OR statement that estimate cannot be made.", "workingShown": "Non-adjusting characteristics:\n  - Occurs AFTER year end\n  - Conditions arose AFTER year end\n  - NO effect on year-end SFP/P&L\n  - IF MATERIAL: disclose in notes\n\nKaplan ST examples:\n  - Share issue after year end\n  - Major asset purchase\n  - Fire (no going concern impact)\n  - Plan to discontinue operation\n  - Court case re post-year-end events\n  - Business acquisition after year end\n\nDisclosure note:\n  (i) Nature of event\n  (ii) Estimated financial effect (or state cannot estimate)", "examinerNote": "Trap in C: students assume non-adjusting = ignore. Wrong. Material non-adjusting events MUST be disclosed.", "advanced": "A market decline after year end is non-adjusting if the new economic conditions caused it. If the decline was caused by information known at year end but only later public, it might be adjusting. Judgement required.", "teacherCommentary": {"concept": "Non-adjusting = new conditions after year end. Disclose if material.", "process": "Did condition exist at year end? No = non-adjusting. Material = note. Not material = ignore.", "everyday": "A February fire doesn't change December's accounts. Material? Mention in a footnote."}}, {"qId": "IAS10_A_Q4", "displayIdx": 4, "type": "ot", "questionType": "mcq", "subTopic": "Customer Bankruptcy", "difficulty": "medium", "marks": 2, "timeIdeal": 100, "scenario": "Hartwood Co's year end is 31 December 20X5. The trade receivables balance included £12,000 owed by Stratton Co. On 18 January 20X6, before authorisation for issue, Stratton was declared bankrupt and the liquidator confirmed no recovery.", "questionText": "How should Hartwood account for this in its FS for the year ended 31 December 20X5?", "options": [{"letter": "A", "text": "No adjustment as bankruptcy occurred after year end", "correct": false, "why": "Wrong. Customer bankruptcy after year end is a classic adjusting event per IAS 10 — it confirms the receivable was already irrecoverable."}, {"letter": "B", "text": "Write off the £12,000 as irrecoverable debt at 31 December 20X5", "correct": true, "why": "CORRECT — Kaplan ST Ch 15: 'The bankruptcy of a customer after the reporting date that confirms that a year-end debt is irrecoverable' = adjusting event."}, {"letter": "C", "text": "Disclose the bankruptcy in notes as a non-adjusting event", "correct": false, "why": "Understates impact. Bankruptcy of year-end debtor is firmly ADJUSTING — FS must be amended, not just disclosed."}, {"letter": "D", "text": "Wait until next year to write off", "correct": false, "why": "Deferring would misstate the year-end receivables. IAS 10 requires amendment now (before authorisation), not in next year."}], "correctAnswer": "B", "explanationLayer1": "Tests the canonical IAS 10 adjusting event: customer bankruptcy after year end.", "explanationLayer3": "Kaplan FA Study Text Ch 15 Section 11. TYU 3 Big Co solution: 'The bankruptcy of the customer provides evidence of their inability to pay their debt at the year-end.'", "workingShown": "Adjusting event analysis:\n  Year end:     31 December 20X5\n  Receivable:   £12,000 from Stratton Co\n  Event:        18 Jan 20X6 - Stratton bankrupt\n  Recovery:     none confirmed\n\nFinancial difficulty pre-dated 18 Jan -> Stratton\nwas already in trouble at 31 Dec. Bankruptcy\nCONFIRMS the year-end condition.\n\n-> ADJUSTING EVENT\n\nJournal in year ended 31 Dec 20X5:\n  Dr Irrecoverable debts   12,000\n    Cr Trade receivables   12,000", "examinerNote": "Identical to Kaplan TYU 3 Big Co item 4. Exam pattern: specific scenario, specific amount, asks for treatment. Always: write off in year just ended.", "advanced": "If a prior specific allowance existed, only the uncovered portion is the additional expense. The total receivable is written off; the previous allowance is released to offset.", "teacherCommentary": {"concept": "Customer bankrupt after year end = always adjusting. Debt was bad at year end.", "process": "Bankruptcy -> adjusting -> Dr Irrecoverable debts / Cr Receivables in year just ended.", "everyday": "Customer goes bust in January owing December's money. The debt was bad on December 31 — write off."}}, {"qId": "IAS10_A_Q5", "displayIdx": 5, "type": "ot", "questionType": "mcq", "subTopic": "Inventory Sold Below Cost", "difficulty": "medium", "marks": 2, "timeIdeal": 100, "scenario": "Penmount Co's year end is 31 December 20X5. Year-end inventory included 1,000 units of Product Bravo at cost of £20 per unit. On 25 January 20X6, all 1,000 units were sold at £15 each in a clearance sale. The market decline started October 20X5.", "questionText": "What is the correct IAS 10 treatment for the year ended 31 December 20X5?", "options": [{"letter": "A", "text": "No adjustment as sale occurred after year end", "correct": false, "why": "Ignores IAS 10. The post-year-end sale price evidences NRV at year end. Market decline began before year end."}, {"letter": "B", "text": "Reduce inventory carrying amount at year end to £15 per unit (NRV)", "correct": true, "why": "CORRECT — Kaplan ST: 'sale of inventories after the reporting period at a price lower than cost' = adjusting. Use lower of cost (£20) and NRV (£15). Write down £5,000."}, {"letter": "C", "text": "Disclose the clearance sale as a non-adjusting event", "correct": false, "why": "Sale below cost is ADJUSTING because it evidences year-end NRV. Inventory must be written down, not just disclosed."}, {"letter": "D", "text": "Adjust only opening inventory of next period", "correct": false, "why": "Defers loss to wrong period. IAS 10 requires adjustment in year ended 31 Dec 20X5 because NRV evidence relates to that year end."}], "correctAnswer": "B", "explanationLayer1": "Tests IAS 10 adjusting treatment for inventory sold below cost (Kaplan TYU 3 Big Co item 1).", "explanationLayer3": "Kaplan ST Ch 15 Section 11. TYU 3 solution: 'Closing inventory must be valued at the lower of cost and net realisable value. The post-yearend sale provides evidence of the net realisable value.'", "workingShown": "NRV adjustment from subsequent sale:\n  Cost per unit:     £20\n  Subsequent sale:   £15 per unit (25 Jan 20X6)\n  Units:             1,000\n  Market decline:    started Oct 20X5 (pre-year-end)\n\nIAS 2: carry at LOWER of cost and NRV\n  Cost: £20  |  NRV: £15  ->  Use £15\n\nWrite-down: 1,000 x (£20 - £15) = £5,000\n\nJournal in year ended 31 Dec 20X5:\n  Dr Cost of sales (write-down)   5,000\n    Cr Inventory                  5,000\n\nSFP at 31 Dec 20X5: inventory £15,000 (was £20,000)", "examinerNote": "Subsequent sale = direct NRV evidence. Dates matter: market decline must have started before year end for adjusting classification.", "advanced": "IAS 2 NRV = estimated selling price less estimated costs to complete and sell. In FA exams, selling costs are often ignored unless stated.", "teacherCommentary": {"concept": "Sold below cost after year end = adjusting. Subsequent price = year-end NRV evidence.", "process": "Compare cost vs NRV. Take lower. Write inventory down.", "everyday": "Valued stock at £20/unit in December. January clearance sells at £15. Stock was over-valued — write down."}}, {"qId": "IAS10_A_Q6", "displayIdx": 6, "type": "ot", "questionType": "mcq", "subTopic": "Share Issue After Year End", "difficulty": "medium", "marks": 2, "timeIdeal": 100, "scenario": "Brentwood plc's year end is 30 June 20X5. On 12 July 20X5, Brentwood issued 500,000 new ordinary shares at £2 per share, raising £1,000,000. The decision was made after year end. FS authorised 20 August 20X5.", "questionText": "How should this share issue be treated in the FS for the year ended 30 June 20X5?", "options": [{"letter": "A", "text": "Add £1,000,000 to share capital and share premium at 30 June 20X5", "correct": false, "why": "Wrong. Shares issued AFTER 30 June 20X5. Capital was NOT raised at year end."}, {"letter": "B", "text": "Recognise the share issue in the SCE for the year ended 30 June 20X5", "correct": false, "why": "SCE for 30 June 20X5 should only include equity changes WITHIN that year. Share issue belongs in next year's SCE."}, {"letter": "C", "text": "Disclose in the notes as a non-adjusting event", "correct": true, "why": "CORRECT — Kaplan TYU 3 Big Co item 2: share issue after year end = non-adjusting. £1m is clearly material; disclose."}, {"letter": "D", "text": "Reduce profit for the year by the share issue proceeds", "correct": false, "why": "Share issues never affect P/L — they are capital transactions. Even if adjusting (it isn't), impact would be in equity."}], "correctAnswer": "C", "explanationLayer1": "Share issue after year end is non-adjusting (Kaplan TYU 3 item 2).", "explanationLayer3": "Kaplan FA Study Text Ch 15 Section 11. TYU 3 (Big Co) item 2.", "workingShown": "Classification:\n  Year end:       30 June 20X5\n  Issue date:     12 July 20X5 (after)\n  Amount:         £1,000,000 (material)\n\nTest: condition at year end?\n  NO — decision and issue both after year end.\n  No year-end capital change occurred.\n\n-> NON-ADJUSTING EVENT\n\nTreatment:\n  SFP at 30 Jun 20X5: NO share capital change\n  Notes: disclose:\n    - Nature: 500,000 shares at £2\n    - Effect: £1,000,000 raised\n    - Date: 12 July 20X5", "examinerNote": "Trap in A: students 'forward-date' transactions to year end. IAS 10 doesn't allow this. Share issue is a fresh transaction in new period.", "advanced": "For very significant post-year-end issues, IAS 33 EPS adjusts the WEIGHTED average for the post-year-end issue. The year-end SFP itself is not adjusted.", "teacherCommentary": {"concept": "Share issue after year end = non-adjusting. Disclose if material.", "process": "Issue during year? No = don't touch SFP. Material = note in disclosures.", "everyday": "Buying a car in January doesn't make it yours in December. But you'd mention it for context."}}, {"qId": "IAS10_A_Q7", "displayIdx": 7, "type": "ot", "questionType": "mcq", "subTopic": "Major Asset Purchase", "difficulty": "medium", "marks": 2, "timeIdeal": 100, "scenario": "Selwood Engineering plc's year end is 31 December 20X5. Four events occurred after year end but before FS authorisation on 28 February 20X6. Each is assessed for IAS 10 treatment.", "questionText": "Which of these events would NOT require adjustment to the FS?", "options": [{"letter": "A", "text": "A material inventory item is sold for less than its year-end carrying amount", "correct": false, "why": "IS adjusting. Subsequent sale below cost evidences year-end NRV — Kaplan ST."}, {"letter": "B", "text": "A court case for a pre-year-end injury settled, confirming year-end obligation", "correct": false, "why": "IS adjusting. Kaplan ST: settlement confirming a year-end obligation."}, {"letter": "C", "text": "Selwood acquires a major piece of equipment for £750,000", "correct": true, "why": "CORRECT — Kaplan ST lists 'major purchases of assets' as a NON-adjusting event. Disclose if material."}, {"letter": "D", "text": "Evidence received that a year-end debt is irrecoverable", "correct": false, "why": "IS adjusting. Information confirming year-end debt is bad = adjusting event per Kaplan ST."}], "correctAnswer": "C", "explanationLayer1": "Identifies one non-adjusting event among three adjusting ones. Common ACCA pattern.", "explanationLayer3": "Kaplan ST Ch 15 Section 11: 'Major purchases of assets' = non-adjusting. Other three options are all in the adjusting examples list.", "workingShown": "Classification:\n  A) Inventory sold below cost\n     -> ADJUSTING (NRV evidence)\n  B) Court case settled re pre-YE obligation\n     -> ADJUSTING (confirms year-end liability)\n  C) Major asset purchase £750,000\n     -> NON-ADJUSTING (new post-YE condition)\n  D) Evidence year-end debt is irrecoverable\n     -> ADJUSTING (year-end receivable was bad)\n\nAnswer: C (the non-adjusting event)", "examinerNote": "Exam buries non-adjusting option among adjusting ones. Read each option: does the info REVEAL year-end facts (adjusting) or CREATE new ones (non-adjusting)?", "advanced": "Even though C is non-adjusting, £750k is clearly material. Disclosure should describe equipment, purchase price, operational impact.", "teacherCommentary": {"concept": "Buying assets after year end = non-adjusting. SFP unaffected.", "process": "For each: REVEALS year-end (adjusting) or CREATES new (non-adjusting)?", "everyday": "February equipment purchase doesn't change December's garage."}}, {"qId": "IAS10_A_Q8", "displayIdx": 8, "type": "ot", "questionType": "mcq", "subTopic": "Fire - Small Inventory", "difficulty": "medium", "marks": 2, "timeIdeal": 110, "scenario": "Clevedon Co's year end is 31 March 20X6. On 15 April 20X6 (before authorisation), a fire damaged a warehouse section, destroying inventory worth £3,800 — less than 1% of total inventory. Going concern is not affected.", "questionText": "How should this fire be treated in the FS for the year ended 31 March 20X6?", "options": [{"letter": "A", "text": "Recognise £3,800 loss in P/L for year ended 31 March 20X6", "correct": false, "why": "Fire occurred AFTER year end. Inventory was intact at 31 March 20X6. Fire is a separate post-year-end event."}, {"letter": "B", "text": "Reduce inventory at 31 March 20X6 by £3,800", "correct": false, "why": "Wrong for same reason as A. Inventory at year end was intact. Adjustment would misstate year-end SFP."}, {"letter": "C", "text": "Disclose the fire in notes as a non-adjusting event if material", "correct": true, "why": "CORRECT — Kaplan TYU 3 item 3 (Big Co fire): non-adjusting. Going concern unaffected. Disclose if material — £3,800 is less than 1% so may not be material."}, {"letter": "D", "text": "No disclosure required as it has no impact at all", "correct": false, "why": "Partially right (if not material) but blanket 'no disclosure' is wrong. IAS 10 requires disclosure if material."}], "correctAnswer": "C", "explanationLayer1": "Tests non-adjusting treatment of post-year-end fire (Kaplan TYU 3 item 3).", "explanationLayer3": "Kaplan ST Ch 15 Section 11: 'The destruction of assets after the reporting date by fire or flood (unless the extent of loss is such that the entity may not be able to continue as a going concern...).'", "workingShown": "Fire analysis:\n  Year end:       31 March 20X6\n  Fire date:      15 April 20X6 (post-YE)\n  Inventory lost: £3,800 (<1%)\n  Going concern:  NOT affected\n\nTest 1: condition at year end? NO\nTest 2: going concern affected? NO\n\n-> NON-ADJUSTING EVENT\n\nTreatment:\n  SFP at 31 Mar 20X6: NO change\n  P/L for year ended 31 Mar 20X6: NO loss\n  Notes: disclose IF material\n\nYear ended 31 Mar 20X7:\n  Loss recognised when fire occurs", "examinerNote": "Kaplan TYU 3 item 3 verbatim. Phrase 'small quantity' signals no going concern issue = non-adjusting.", "advanced": "Contrast with catastrophic fire affecting going concern: Kaplan ST says 'the basis upon which the financial statements are prepared may need to be questioned.' That changes everything.", "teacherCommentary": {"concept": "Small post-YE fire = non-adjusting. Disclose if material.", "process": "Going concern affected? Not affected = non-adjusting. Material? Yes = note. No = ignore.", "everyday": "Small January fire doesn't change December's inventory count."}}, {"qId": "IAS10_A_Q9", "displayIdx": 9, "type": "ot", "questionType": "number", "subTopic": "Inventory NRV Write-Down", "difficulty": "medium", "marks": 2, "timeIdeal": 120, "scenario": "Garrick Co's year end is 30 June 20X5. Inventory of 400 units of Type A widgets at cost of £45 per unit was held at year end. On 12 July 20X5, all 400 units were sold for £32 each in an end-of-line clearance. The market decline originated before year end.", "questionText": "Calculate the inventory write-down required in the FS for the year ended 30 June 20X5 (in £).", "numAns": 5200, "tol": 50, "prefix": "£", "correctAnswer": "5200", "explanationLayer1": "NRV write-down from post-year-end sale below cost. (Cost - NRV) x units.", "explanationLayer3": "IAS 10 (Kaplan ST Ch 15 Section 11) + IAS 2 lower of cost and NRV.", "workingShown": "NRV write-down calculation:\n\n  Units:           400 Type A widgets\n  Cost per unit:   £45\n  Subsequent sale: £32 per unit (12 Jul 20X5)\n  Origin of decline: pre-year-end\n\nIAS 10: subsequent sale evidences year-end NRV\nIAS 2: carry at LOWER of cost and NRV\n  Cost £45  |  NRV £32  ->  Use £32\n\nWrite-down per unit: £45 - £32 = £13\nTotal:               400 x £13 = £5,200\n\nJournal in year ended 30 Jun 20X5:\n  Dr Cost of sales (write-down)   5,200\n    Cr Inventory                  5,200\n\nSFP at 30 Jun 20X5: inventory = 400 x £32 = £12,800", "examinerNote": "(Cost - NRV) x units. Read carefully: if part of inventory sold and part held, write-down applies to all of same type.", "advanced": "With selling costs (e.g. 5% commission), NRV = £32 x 95% = £30.40, write-down rises to £5,840. FA exams typically ignore selling costs unless stated.", "teacherCommentary": {"concept": "Write-down = (Cost - NRV) x units. NRV evidenced by post-YE sale.", "process": "£45 - £32 = £13/unit. 400 x £13 = £5,200.", "everyday": "Bought 400 shirts at £45. July clearance £32. December stock was overvalued by £13 each."}}, {"qId": "IAS10_A_Q10", "displayIdx": 10, "type": "ot", "questionType": "mcq", "subTopic": "Court Case Settlement", "difficulty": "medium", "marks": 2, "timeIdeal": 110, "scenario": "Halton Co's year end is 31 December 20X5. In October 20X5, an employee was injured at Halton's premises and commenced legal action. At year end, Halton recognised a £15,000 provision based on lawyers' best estimate. On 22 January 20X6, the court ordered Halton to pay £22,000.", "questionText": "How should the settlement be reflected in the FS for the year ended 31 December 20X5?", "options": [{"letter": "A", "text": "Adjust the provision at 31 December 20X5 to £22,000 (the settlement amount)", "correct": true, "why": "CORRECT — Settlement CONFIRMS year-end obligation. Kaplan ST: 'The settlement after the reporting date of a court case which confirms a year end obligation' = adjusting."}, {"letter": "B", "text": "Maintain provision at £15,000 as settlement was after year end", "correct": false, "why": "Ignores post-year-end evidence. Injury was October — obligation existed at year end. Settlement provides definitive evidence."}, {"letter": "C", "text": "Disclose as a non-adjusting event in notes", "correct": false, "why": "Settlement is ADJUSTING — it confirms year-end obligation. Note alone is non-adjusting treatment."}, {"letter": "D", "text": "Make no entries until £22,000 is actually paid", "correct": false, "why": "Accrual basis requires recognition when established. Court order on 22 Jan establishes the £22,000 obligation."}], "correctAnswer": "A", "explanationLayer1": "Post-year-end court settlement adjusts provision to actual amount.", "explanationLayer3": "Kaplan ST Ch 15 Section 11: adjusting event — 'settlement after the reporting date of a court case which confirms a year end obligation.'", "workingShown": "Court case adjustment:\n  Year end:       31 Dec 20X5\n  Injury:         October 20X5 (pre-YE)\n  YE provision:   £15,000\n  Settlement:     22 Jan 20X6 - £22,000\n\nObligation existed at YE (injury in Oct).\nSettlement = adjusting event.\n\nIncrease provision: £22,000 - £15,000 = £7,000\n\nJournal in year ended 31 Dec 20X5:\n  Dr Legal expense    7,000\n    Cr Provision      7,000\n\nSFP at 31 Dec 20X5: Provision £22,000 (was £15,000)\n\nPayment in 20X6:\n  Dr Provision   22,000\n    Cr Bank      22,000", "examinerNote": "Canonical IAS 10 + IAS 37 interaction. The IAS 10 adjustment ensures year-end provision reflects best available evidence — including post-year-end settlements.", "advanced": "Symmetrical: if settlement was LESS than provision (e.g. £8,000), provision reduced and £7,000 difference released to P/L credit.", "teacherCommentary": {"concept": "Post-YE court settlement of pre-YE case = adjusting. Update provision.", "process": "Obligation existed at YE. Settlement confirms amount. Update from estimate to actual.", "everyday": "December estimate £15k. January court fines £22k. Update December accounts."}}, {"qId": "IAS10_A_Q11", "displayIdx": 11, "type": "ot", "questionType": "mcq", "subTopic": "Discovery of Fraud", "difficulty": "medium", "marks": 2, "timeIdeal": 110, "scenario": "Plumpton Co's year end is 31 December 20X5. During an audit review in February 20X6, before authorisation for issue, it was discovered that an employee had committed fraud during 20X5, overstating revenue by £45,000 in the year ended 31 December 20X5.", "questionText": "How should this discovery be treated in the FS for the year ended 31 December 20X5?", "options": [{"letter": "A", "text": "Reduce revenue by £45,000 in the year ended 31 December 20X5", "correct": true, "why": "CORRECT — Kaplan ST: 'The discovery of fraud or errors showing that the financial statements are incorrect' = adjusting event. Fraud occurred IN 20X5; FS must be amended before authorisation."}, {"letter": "B", "text": "Disclose as a non-adjusting event in notes only", "correct": false, "why": "Fraud happened DURING 20X5; discovery just confirms it. Adjustment required, not disclosure alone."}, {"letter": "C", "text": "Adjust opening retained earnings in year ending 31 December 20X6", "correct": false, "why": "Treats as prior period error to fix next year. But fraud was in current period and FS not yet issued — IAS 10 requires direct amendment."}, {"letter": "D", "text": "Disclose only after legal process is complete", "correct": false, "why": "FS must be amended now. Legal proceedings against the perpetrator are separate from the accounting correction."}], "correctAnswer": "A", "explanationLayer1": "Tests fraud/error discovery as adjusting event. Direct from Kaplan ST adjusting events list.", "explanationLayer3": "Kaplan ST Ch 15 Section 11: 'The discovery of fraud or errors showing that the financial statements are incorrect.'", "workingShown": "Fraud discovery analysis:\n  Year end:    31 Dec 20X5\n  Fraud:       during 20X5 (in period)\n  Discovered:  February 20X6 (post-YE)\n  Impact:      revenue overstated £45,000\n  FS status:   NOT yet authorised\n\nMisstatement existed at year end -> ADJUSTING\n\nCorrection in year ended 31 Dec 20X5:\n  Dr Revenue        45,000\n    Cr Receivables  45,000 (or as appropriate)\n\nNot a prior period error correction.\nFS amended BEFORE issue, not retrospectively.", "examinerNote": "Key date: 'before FS authorised for issue.' Before authorisation = IAS 10 governs. After = IAS 8 prior period error.", "advanced": "Post-authorisation but pre-AGM: still IAS 10 but with potential reissue. Post-AGM: IAS 8 prior period adjustment applies.", "teacherCommentary": {"concept": "Fraud/error discovered before FS issued = adjusting. Amend directly.", "process": "Fraud in year. Discovered after. FS not issued. Amend current FS.", "everyday": "You wrote December's report. February you spot a £45k error. Fix before submitting."}}, {"qId": "IAS10_A_Q12", "displayIdx": 12, "type": "ot", "questionType": "mcq", "subTopic": "Plan to Discontinue Operation", "difficulty": "medium", "marks": 2, "timeIdeal": 100, "scenario": "Whittlebury Co's year end is 31 March 20X6. On 15 May 20X6, the board approved a plan to discontinue Whittlebury's Hardware Division (about 30% of revenue) with expected restructuring costs of £400,000. FS authorised for issue 30 June 20X6.", "questionText": "How should this plan be treated in the FS for the year ended 31 March 20X6?", "options": [{"letter": "A", "text": "No disclosure required as decision was after year end", "correct": false, "why": "Ignores IAS 10. Material non-adjusting events MUST be disclosed."}, {"letter": "B", "text": "Adjust the year-end FS to reflect Hardware Division impairment", "correct": false, "why": "Wrong. Decision was MADE after year end. No year-end impairment to recognise."}, {"letter": "C", "text": "Disclose in notes as a non-adjusting event", "correct": true, "why": "CORRECT — Kaplan ST: 'Announcing a plan to discontinue an operation' = non-adjusting event. Decision was made AFTER year end. Disclosure required as 30% of revenue is material."}, {"letter": "D", "text": "Reduce retained earnings by £400,000 to reflect expected restructuring", "correct": false, "why": "Restructuring costs are recognised when obligating event occurs (May 20X6). Not added retrospectively to year ended 31 March 20X6."}], "correctAnswer": "C", "explanationLayer1": "Discontinuance decision after year end = non-adjusting. Kaplan ST non-adjusting list.", "explanationLayer3": "Kaplan ST Ch 15 Section 11: 'Announcing a plan to discontinue an operation' listed as non-adjusting example.", "workingShown": "Discontinuance analysis:\n  Year end:           31 March 20X6\n  Decision made:      15 May 20X6 (post-YE)\n  Division:           30% of revenue\n  Restructuring cost: £400,000\n\nDecision did NOT exist at year end.\n-> NON-ADJUSTING EVENT\n\nTreatment:\n  SFP at 31 Mar 20X6: NO adjustment\n  P/L for year ended 31 Mar 20X6: NO restructuring\n  Notes: disclose:\n    (i)  Decision to discontinue Hardware Division\n    (ii) £400,000 estimated cost\n    (iii) Decision date 15 May 20X6\n\nYear ended 31 Mar 20X7: provision recognised", "examinerNote": "Material non-adjusting events MUST be disclosed. Trap A: 'no action at all' is wrong. Non-adjusting = no figure adjustment, but disclosure if material.", "advanced": "IFRS 5 discontinued operations classification requires held-for-sale at year end. Decision after year end -> no retrospective IFRS 5. Discontinued operations classification starts next year.", "teacherCommentary": {"concept": "Discontinuance plan after year end = non-adjusting. Disclose if material.", "process": "Decision in year? No (May vs March). Don't adjust. Material? Yes = disclose.", "everyday": "May decision to close a shop. December books show shop trading. Note for context."}}, {"qId": "IAS10_A_Q13", "displayIdx": 13, "type": "ot", "questionType": "mcq", "subTopic": "Restructuring Plan Announced After Year End", "difficulty": "medium", "marks": 2, "timeIdeal": 100, "scenario": "Tilford Manufacturing plc's year end is 30 June 20X5. On 5 August 20X5, after July 20X5 consultations, the board approved a major restructuring plan involving £200,000 of relocation costs. The plan was publicly announced on 8 August 20X5. FS due for authorisation 30 September 20X5.", "questionText": "How should the restructuring plan be treated in the FS for the year ended 30 June 20X5?", "options": [{"letter": "A", "text": "Recognise £200,000 provision at 30 June 20X5", "correct": false, "why": "Wrong. Decision and announcement both after year end. No restructuring obligation existed at YE."}, {"letter": "B", "text": "Disclose in the notes as a non-adjusting event if material", "correct": true, "why": "CORRECT — Decision not made at year end. Restructuring announced post-YE = non-adjusting. £200,000 material — disclose."}, {"letter": "C", "text": "Adjust retained earnings by £200,000 at 30 June 20X5", "correct": false, "why": "Retrospective adjustment for a post-YE decision not permitted."}, {"letter": "D", "text": "No disclosure as it's forward-looking", "correct": false, "why": "Material non-adjusting events MUST be disclosed under IAS 10. £200,000 is material."}], "correctAnswer": "B", "explanationLayer1": "Restructuring decision after year end = non-adjusting. Disclose if material.", "explanationLayer3": "Kaplan ST Ch 15 Section 11. IAS 37 requires public announcement creating constructive obligation; both occurred after year end.", "workingShown": "Restructuring analysis:\n  Year end:            30 June 20X5\n  Consultations:       July 20X5 (post-YE)\n  Board approval:      5 August 20X5\n  Public announcement: 8 August 20X5\n  Expected cost:       £200,000\n\nAll decisions and announcements post-YE.\nIAS 37 obligation created by announcement -> 8 Aug.\nYear-end obligation: NONE.\n\n-> NON-ADJUSTING EVENT\n\nTreatment:\n  SFP at 30 Jun 20X5: NO provision\n  P/L for year ended 30 Jun 20X5: NO cost\n  Notes: disclose nature and £200,000 effect", "examinerNote": "IAS 37 restructuring provisions need board decision AND public announcement. If both after year end, no YE provision. IAS 10 disclosure fills information gap.", "advanced": "If board decision before YE but announcement after: more nuanced. IAS 37 generally requires both elements before recognising. Pure internal decisions without external commitment don't create the obligation.", "teacherCommentary": {"concept": "Restructuring decided after YE = non-adjusting. Disclose if material.", "process": "Decision date is key. After YE = non-adjusting.", "everyday": "August decision to move offices. June accounts unchanged. Note for next filing."}}, {"qId": "IAS10_A_Q14", "displayIdx": 14, "type": "ot", "questionType": "mcq", "subTopic": "Material Non-Adjusting Event Disclosure", "difficulty": "medium", "marks": 2, "timeIdeal": 90, "scenario": "Marston Co identified a material non-adjusting event after the reporting period. The finance director must prepare the disclosure note under IAS 10.", "questionText": "According to IAS 10, what MUST be disclosed for a material non-adjusting event?", "options": [{"letter": "A", "text": "The nature of the event and an estimate of the financial effect (or a statement that no estimate can be made)", "correct": true, "why": "CORRECT — Kaplan ST Ch 15: 'The note should describe: (i) the nature of the event; (ii) an estimate of the financial effect, or a statement that such an estimate cannot be made.'"}, {"letter": "B", "text": "The nature of the event only", "correct": false, "why": "Incomplete. IAS 10 requires BOTH nature AND estimated financial effect."}, {"letter": "C", "text": "The financial effect only, estimated to the nearest £100", "correct": false, "why": "Financial effect alone insufficient. Precision requirement invented. Need both nature AND effect."}, {"letter": "D", "text": "Nature, effect, parties, and detailed timing explanation", "correct": false, "why": "Goes beyond IAS 10. Only nature and estimated effect required."}], "correctAnswer": "A", "explanationLayer1": "IAS 10 two-part disclosure: nature + financial effect (or statement that no estimate possible).", "explanationLayer3": "Kaplan ST Ch 15 Section 11. Material non-adjusting events: '(i) nature; (ii) estimate of financial effect, or statement that estimate cannot be made.'", "workingShown": "IAS 10 disclosure (material non-adjusting):\n\n  Two-part requirement:\n\n  (i)  THE NATURE\n       What happened?\n       e.g. 'Fire destroyed manufacturing facility'\n\n  (ii) ESTIMATED FINANCIAL EFFECT\n       How much?\n       e.g. 'Losses estimated at £2.5m'\n       OR\n       'A reliable estimate cannot be made'\n\nNOT required by IAS 10:\n  - Identity of all parties\n  - Detailed timeline\n  - Forward-looking projections\n\nMateriality test:\n  Would event influence user decisions?\n  Yes -> disclose. No -> no disclosure.", "examinerNote": "The 'OR statement no estimate possible' fallback is real but rare. Some events (litigation, regulatory changes) genuinely can't be reliably estimated.", "advanced": "The fallback protects users by signalling material pending matter while acknowledging quantification limits. Disclosure still describes nature.", "teacherCommentary": {"concept": "Material non-adjusting: disclose nature + estimated effect (or state cannot estimate).", "process": "Two parts: (i) what happened, (ii) how much (or say can't estimate).", "everyday": "Footnote: 'February fire — estimated £2m loss' (or 'estimate not possible')."}}, {"qId": "IAS10_A_Q15", "displayIdx": 15, "type": "ot", "questionType": "mcq", "subTopic": "Identifying Non-Adjusting Event", "difficulty": "hard", "marks": 2, "timeIdeal": 140, "scenario": "Penforth Co's year end is 30 June 20X5. Between 30 June 20X5 and the date the FS were authorised for issue, the following four events occurred.", "questionText": "Which one of these is NOT an adjusting event?", "options": [{"letter": "A", "text": "A customer owing £8,500 at 30 June 20X5 was declared bankrupt on 10 July 20X5", "correct": false, "why": "IS adjusting. Bankruptcy confirms year-end debt was irrecoverable. Kaplan ST adjusting event."}, {"letter": "B", "text": "A court case for a May 20X5 injury was settled on 15 August 20X5 for £30,000", "correct": false, "why": "IS adjusting. Injury was before year end. Settlement confirms year-end obligation amount."}, {"letter": "C", "text": "On 1 August 20X5, the board announced a major plan to relocate the head office at £500,000", "correct": true, "why": "CORRECT — NOT adjusting. Decision and announcement both AFTER year end. Non-adjusting; disclose if material (£500k clearly material)."}, {"letter": "D", "text": "An audit on 12 July 20X5 discovered an error showing receivables were overstated at year end", "correct": false, "why": "IS adjusting. Kaplan ST: discovery of fraud or errors showing FS are incorrect."}], "correctAnswer": "C", "explanationLayer1": "Identifies one non-adjusting event among three adjusting ones. Test: did condition exist at year end?", "explanationLayer3": "Kaplan ST Ch 15 Section 11. A, B, D all in adjusting examples list. C is a restructuring decision (non-adjusting).", "workingShown": "Classification of each:\n\n  A) Customer bankruptcy 10 Jul (£8,500)\n     Year-end debt at risk: YES\n     -> ADJUSTING: write off £8,500\n\n  B) Court case settled 15 Aug (£30,000)\n     Injury pre-YE (May): YES\n     -> ADJUSTING: adjust provision\n\n  C) Relocation announcement 1 Aug (£500,000)\n     Decision before YE: NO (Aug vs June)\n     -> NON-ADJUSTING: disclose in notes\n\n  D) Audit error discovery 12 Jul\n     Error existed in YE balances: YES\n     -> ADJUSTING: correct receivables\n\n  Answer: C", "examinerNote": "For each event: did condition exist at year end? A: yes (distress already there). B: yes (May injury). D: yes (YE error). C: no (August decision). Only C fails.", "advanced": "£500,000 relocation must still be disclosed as non-adjusting note: nature (head office relocation), cost (£500,000), timing (1 August).", "teacherCommentary": {"concept": "Four events: 3 adjusting + 1 non-adjusting (relocation announcement).", "process": "For each: did condition exist at YE? Yes = adjusting. No = non-adjusting.", "everyday": "Three relate to December. One (relocation) is fresh August decision. That's the odd one out."}}, {"qId": "IAS10_A_Q16", "displayIdx": 16, "type": "ot", "questionType": "mcq", "subTopic": "Going Concern - Catastrophic Fire", "difficulty": "hard", "marks": 2, "timeIdeal": 150, "scenario": "Tilbury Co's year end is 31 December 20X5. On 14 February 20X6, a catastrophic fire destroyed Tilbury's main manufacturing facility — representing 85% of total production capacity. Insurance coverage is inadequate. Management concludes Tilbury can NO LONGER continue as a going concern. FS due for authorisation 30 April 20X6.", "questionText": "How should this catastrophic event be treated in the FS for the year ended 31 December 20X5?", "options": [{"letter": "A", "text": "Standard non-adjusting event — disclose in notes only", "correct": false, "why": "Insufficient. Fire impact undermines going concern. Footnote alone misleads users about basis of FS."}, {"letter": "B", "text": "Treated as adjusting event — revalue all assets at reporting date", "correct": false, "why": "Fire is not adjusting (didn't exist at year end). Asset revaluation is also wrong response. Correct response is more fundamental."}, {"letter": "C", "text": "Trigger fundamental change in basis of preparation — prepare FS on break-up basis", "correct": true, "why": "CORRECT — Kaplan ST Ch 15: 'unless the extent of loss is such that the entity may not be able to continue as a going concern, in which case the basis upon which the financial statements are prepared may need to be questioned.' Going concern fails -> break-up basis."}, {"letter": "D", "text": "No action — going concern is forward-looking not retrospective", "correct": false, "why": "Going concern assessed at time FS prepared and authorised. Known in February (before April authorisation) — FS must reflect this. IAS 1 requires departure when going concern no longer applies."}], "correctAnswer": "C", "explanationLayer1": "Special IAS 10 exception: post-YE event affecting going concern forces fundamental change in basis, not just adjustment.", "explanationLayer3": "Kaplan ST Ch 15 Section 11: catastrophic fire/flood exception within non-adjusting examples list.", "workingShown": "Catastrophic event analysis:\n  Year end:        31 Dec 20X5\n  Fire date:       14 Feb 20X6\n  Impact:          85% of production lost\n  Insurance:       inadequate\n  Going concern:   NO LONGER VALID\n  FS authorised:   30 Apr 20X6 (pending)\n\nNormal rule: post-YE fire = non-adjusting.\n\nEXCEPTION (Kaplan ST verbatim):\n  'Unless the extent of loss is such that the\n  entity may not be able to continue as a going\n  concern, in which case the basis upon which the\n  financial statements are prepared may need to\n  be questioned.'\n\nWhen going concern fails:\n  -> Switch to BREAK-UP BASIS\n  -> Assets at net realisable value\n  -> All liabilities current\n  -> Different disclosures", "examinerNote": "The trick question of IAS 10 — exception buried in non-adjusting examples. Fire 'looks' non-adjusting, but going concern implication overrides everything.", "advanced": "Under IAS 1, going concern failure -> break-up basis. Assets at NRV (not historic cost). All liabilities reclassified current. Normal framework suspended in favour of liquidation-relevant disclosures.", "teacherCommentary": {"concept": "Going concern failure from post-YE event = change basis of preparation. NOT just a footnote.", "process": "Fire normally non-adjusting. But going concern fails = break-up basis throughout.", "everyday": "Small kitchen fire = footnote. Factory burned beyond recovery = total reset. Closing the business."}}, {"qId": "IAS10_A_Q17", "displayIdx": 17, "type": "ot", "questionType": "number", "subTopic": "NRV Write-Down From Subsequent Sale", "difficulty": "hard", "marks": 2, "timeIdeal": 150, "scenario": "Eastview Co's year end is 31 December 20X5. At year end, Eastview held 500 units of Product X at cost of £30 per unit (£15,000 total). After year end but before FS authorisation, the entire 500 units were sold at £18 per unit. The market decline that drove this began in November 20X5, before year end.", "questionText": "Calculate the inventory write-down required in the FS for the year ended 31 December 20X5 (in £).", "numAns": 6000, "tol": 50, "prefix": "£", "correctAnswer": "6000", "explanationLayer1": "NRV adjustment from subsequent sale. Pre-year-end market decline confirms adjusting classification.", "explanationLayer3": "IAS 10 (Kaplan ST Ch 15 Section 11) + IAS 2 lower of cost and NRV.", "workingShown": "NRV write-down:\n  Units:             500 of Product X\n  Cost per unit:     £30\n  Subsequent sale:   £18 per unit\n  Market decline:    began Nov 20X5 (pre-YE)\n\nPre-YE decline -> YE NRV was already £18.\nIAS 2: lower of cost (£30) and NRV (£18) = £18.\n\nWrite-down: 500 x (£30 - £18) = £6,000\n\nJournal in year ended 31 Dec 20X5:\n  Dr Cost of sales (write-down)   6,000\n    Cr Inventory                  6,000\n\nSFP: Inventory £9,000 (was £15,000)\nReduction: £6,000", "examinerNote": "The 'market decline began before year end' hint establishes adjusting classification. Without it, could be ambiguous.", "advanced": "In practice, distinguishing pre-YE vs post-YE market decline is difficult. Auditor looks at price trajectory around year end to determine NRV evidence character.", "teacherCommentary": {"concept": "Pre-YE market decline + subsequent sale below cost = NRV write-down adjusting event.", "process": "£15,000 cost - £9,000 NRV = £6,000 write-down.", "everyday": "Lost value November. Confirmed January sale. December books should show £18/unit value."}}, {"qId": "IAS10_A_Q18", "displayIdx": 18, "type": "ot", "questionType": "number", "subTopic": "Bankruptcy Write-Off", "difficulty": "hard", "marks": 2, "timeIdeal": 130, "scenario": "Whitchurch Co's year end is 31 December 20X5. Trade receivables at 31 December 20X5 included £6,750 owed by Manor Co. On 18 January 20X6 (before FS authorisation), Manor Co was declared insolvent. The liquidator confirmed in writing that none of the £6,750 will be recovered. No prior specific allowance had been made.", "questionText": "What additional amount should be charged to irrecoverable debts expense in the P/L for the year ended 31 December 20X5 (in £)?", "numAns": 6750, "tol": 50, "prefix": "£", "correctAnswer": "6750", "explanationLayer1": "Full write-off where no prior allowance existed. Bankruptcy after year end is adjusting event.", "explanationLayer3": "IAS 10 (Kaplan ST Ch 15 Section 11). 'Bankruptcy confirms year-end debt was irrecoverable.'", "workingShown": "Bankruptcy write-off:\n  Customer debt:     £6,750\n  Prior allowance:   NIL\n  Bankruptcy:        18 Jan 20X6\n  Recovery:          NIL\n\nAdjusting event:\n  Full debt to write off:         £6,750\n  Less: existing allowance:       (£0)\n  Additional expense to P/L:      £6,750\n\nJournal in year ended 31 Dec 20X5:\n  Dr Irrecoverable debts   6,750\n    Cr Trade receivables   6,750", "examinerNote": "If a prior allowance existed (e.g., £2,000), additional expense = £6,750 - £2,000 = £4,750. Always check for prior provisions.", "advanced": "For debts in the GENERAL allowance, treatment is more complex. The general allowance may need reassessment independently of the specific write-off.", "teacherCommentary": {"concept": "Bankruptcy confirms YE debt was bad. No prior allowance = full £6,750 to P/L.", "process": "£6,750 - £0 = £6,750 expense. Adjusting event in 20X5.", "everyday": "Customer owed £6,750 on Dec 31. Bust in January = debt was bad. Write off full amount in December's accounts."}}, {"qId": "IAS10_A_Q19", "displayIdx": 19, "type": "ot", "questionType": "mcq", "subTopic": "Big Co Multiple Events", "difficulty": "hard", "marks": 2, "timeIdeal": 180, "scenario": "Big Co's year end is 30 June 20X6 and the FS were authorised for issue on 18 August 20X6. The following events occurred between these two dates:\n\n  1. Sales of year-end inventory on 2 July 20X6 were at less than cost\n  2. The issue of new equity shares on 4 July 20X6\n  3. A fire in the main warehouse on 8 July 20X6 destroyed a small quantity of inventory\n  4. A major credit customer was declared bankrupt on 10 July 20X6\n  5. All of the share capital of a competitor, Teeny Co, was acquired on 21 July 20X6\n  6. On 1 August 20X6, £500,000 was received in respect of an insurance claim dated 13 February 20X6", "questionText": "Which of these events are adjusting events under IAS 10?", "options": [{"letter": "A", "text": "1, 4 and 6", "correct": true, "why": "CORRECT — Kaplan TYU 3 Big Co solution: (1) NRV evidence = adjusting; (4) confirms year-end debt = adjusting; (6) insurance for pre-YE claim (13 Feb 20X6) = adjusting. (2), (3), (5) non-adjusting."}, {"letter": "B", "text": "1, 2, 4 and 6", "correct": false, "why": "Item 2 (share issue) is NOT adjusting. New equity created after year end."}, {"letter": "C", "text": "1, 2, 5 and 6", "correct": false, "why": "Includes 2 and 5 (both non-adjusting). Misses 4 (bankruptcy, which IS adjusting)."}, {"letter": "D", "text": "1, 4, 5 and 6", "correct": false, "why": "Includes 5 (acquisition of Teeny Co) which is non-adjusting."}], "correctAnswer": "A", "explanationLayer1": "Kaplan TYU 3 Big Co verbatim — the canonical comprehensive IAS 10 classification question.", "explanationLayer3": "Kaplan FA Study Text Ch 15 Section 11 TYU 3 - direct extraction.", "workingShown": "TYU 3 full classification:\n\n  1. Sales below cost\n     -> ADJUSTING (NRV evidence)\n\n  2. Share issue 4 Jul\n     -> NON-ADJUSTING (new equity)\n\n  3. Fire - small quantity\n     -> NON-ADJUSTING (no GC issue)\n\n  4. Major customer bankrupt 10 Jul\n     -> ADJUSTING (YE debt was bad)\n\n  5. Acquisition of Teeny Co 21 Jul\n     -> NON-ADJUSTING (new acquisition)\n\n  6. Insurance claim dated 13 Feb (pre-YE)\n     -> ADJUSTING (confirms YE asset)\n\n  Adjusting events: 1, 4, 6  ->  Answer A", "examinerNote": "Most directly tested IAS 10 scenario in ACCA FA. Memorise. Item 6 critical: claim DATED 13 Feb 20X6 (pre-YE) makes it adjusting. Post-YE claim would be non-adjusting.", "advanced": "For item 6, the insured event occurred 13 February — before the 30 June year end. The receipt confirms a year-end receivable. Post-YE event would mean no year-end asset existed.", "teacherCommentary": {"concept": "Six events. Three adjusting (1, 4, 6). Three non-adjusting (2, 3, 5).", "process": "For each: did underlying condition exist at year end?", "everyday": "Six July things. Three give new info about June (adjust). Three are new July events (note only)."}}, {"qId": "IAS10_A_Q20", "displayIdx": 20, "type": "ot", "questionType": "mcq", "subTopic": "Date of Authorisation Cut-Off", "difficulty": "hard", "marks": 2, "timeIdeal": 120, "scenario": "Stanford Co's year end is 31 December 20X5. The chronology of subsequent events:\n  - 18 March 20X6: Board approves FS for issue\n  - 25 March 20X6: Audit report signed\n  - 5 April 20X6: FS published and distributed\n  - 30 April 20X6: AGM (shareholders approve)", "questionText": "According to IAS 10, what is the relevant cut-off date for considering events after the reporting period?", "options": [{"letter": "A", "text": "31 December 20X5 (the year end)", "correct": false, "why": "Wrong direction. Year end is START of IAS 10 window, not end."}, {"letter": "B", "text": "18 March 20X6 (date the board approved the FS for issue)", "correct": true, "why": "CORRECT — IAS 10 para 3 and Kaplan ST: authorisation for issue is when board approves FS. Board approval = 18 March 20X6."}, {"letter": "C", "text": "30 April 20X6 (date of the AGM)", "correct": false, "why": "AGM is shareholder approval, AFTER authorisation. By AGM, FS already published. IAS 10 window closed earlier."}, {"letter": "D", "text": "25 March 20X6 (date the external auditor signed)", "correct": false, "why": "Audit signing is close to authorisation but IAS 10 refers to board's AUTHORISATION FOR ISSUE — 18 March in this scenario."}], "correctAnswer": "B", "explanationLayer1": "IAS 10 cut-off = directors' authorisation for issue. Not AGM. Not audit signing.", "explanationLayer3": "IAS 10 para 3 / Kaplan ST Ch 15 Section 11.", "workingShown": "IAS 10 timing window:\n\n  31 Dec 20X5: Year end (start)\n         |\n         | <-- IAS 10 window\n         |\n  18 Mar 20X6: BOARD AUTHORISES FOR ISSUE (cut-off)\n         |\n         | <-- Outside IAS 10\n         |\n  25 Mar 20X6: Auditor signs (post-authorisation)\n  5 Apr 20X6:  FS published\n  30 Apr 20X6: AGM\n\nKey insight: 'Authorisation for issue' = BOARD's act.\nAudit signing usually follows board approval.\nShareholder approval at AGM comes later still.", "examinerNote": "Some practices align board approval and audit signing on the same day. Conceptually IAS 10 always refers to directors' authorisation — board's act, not auditor's sign-off.", "advanced": "Events between authorisation and AGM may trigger reissue in some jurisdictions but are technically outside IAS 10 — dealt with under IAS 8 (errors) or via shareholder updates.", "teacherCommentary": {"concept": "Window closes at directors' authorisation. Not AGM. Not audit.", "process": "Find date directors said 'FS ready to issue'. That's the cut-off.", "everyday": "Sealing an envelope. Once sealed, contents fixed. Posting and reading happen later."}}, {"qId": "IAS10_A_Q21", "displayIdx": 21, "type": "ot", "questionType": "mcq", "subTopic": "Dividend Proposed After Year End", "difficulty": "hard", "marks": 2, "timeIdeal": 120, "scenario": "Wessex Co's year end is 31 December 20X5. On 25 February 20X6, the board proposed a final dividend of £80,000 for the year ended 31 December 20X5. FS authorised 5 March 20X6. AGM approval 30 April 20X6. Dividend paid 15 May 20X6.", "questionText": "How should the £80,000 proposed final dividend be treated in the FS for the year ended 31 December 20X5?", "options": [{"letter": "A", "text": "Recognise £80,000 liability and reduce retained earnings at 31 December 20X5", "correct": false, "why": "No obligation existed at 31 Dec 20X5. Kaplan ST Crown Co Note 2: 'dividends are accounted for on a cash paid basis, the proposed ordinary dividend is accounted for only when paid to shareholders.'"}, {"letter": "B", "text": "Disclose in notes as proposed dividend; no liability recognised at 31 December 20X5", "correct": true, "why": "CORRECT — Proposed dividend after YE = non-adjusting. No YE liability. Disclose in notes. Retained earnings reduced when paid."}, {"letter": "C", "text": "Recognise £80,000 as deferred income at 31 December 20X5", "correct": false, "why": "Dividends are equity distributions, not deferred income. Deferred income = cash received but not earned. Misunderstands dividend nature."}, {"letter": "D", "text": "Recognise dividend in OCI for year ended 31 December 20X5", "correct": false, "why": "Dividends NEVER in OCI. They are equity distributions reducing retained earnings when obligation arises."}], "correctAnswer": "B", "explanationLayer1": "Proposed dividend after year end = no liability. Disclose only. Reduce RE when paid.", "explanationLayer3": "Kaplan FA Study Text Ch 15 Section 10 (Crown Co Illustration), Note 2. Also IAS 10 paras 12-13.", "workingShown": "Dividend timeline:\n  Year end:           31 Dec 20X5\n  Dividend proposed:  25 Feb 20X6 (£80,000)\n  FS authorised:      5 Mar 20X6\n  AGM approval:       30 Apr 20X6\n  Payment:            15 May 20X6\n\nAt 31 Dec 20X5:\n  Present obligation? NO\n  Dividend not yet proposed.\n  Shareholders had not approved.\n\nIAS 10 treatment:\n  Proposed AFTER YE = NON-ADJUSTING\n  -> Disclose in notes\n  -> Do NOT recognise as liability\n  -> Do NOT deduct from retained earnings\n\nWhen does dividend reduce RE?\n  Final dividend: when approved by AGM\n  Interim dividend: when declared by board\n  -> In year ended 31 Dec 20X6", "examinerNote": "Frequent ACCA trap. Students 'accrue' dividend to year it relates. But dividend not a liability until unconditional obligation arises. Crown Co Note 2 in Kaplan ST is direct source.", "advanced": "This is counter-intuitive — companies often 'pre-allocate' dividends to a year. IFRS clear: proposed dividend not a liability until unconditional obligation exists.", "teacherCommentary": {"concept": "Dividend proposed AFTER YE = no YE liability. Disclose only. Reduce RE when paid.", "process": "Dividend approved/paid in year just ended? No. Don't recognise. Disclose.", "everyday": "February decision to give £80k. February decision, not December obligation."}}, {"qId": "IAS10_A_Q22", "displayIdx": 22, "type": "ot", "questionType": "mcq", "subTopic": "Investment Sale After Year End", "difficulty": "hard", "marks": 2, "timeIdeal": 130, "scenario": "Bromfield Co held listed shares in Listco at year end 31 December 20X5 at fair value of £80,000. The share price fell sharply due to a market crash that began in January 20X6 (after year end). On 4 February 20X6, Bromfield sold the entire holding for £65,000, before FS authorisation 28 February 20X6.", "questionText": "How should this be reflected in the FS for the year ended 31 December 20X5?", "options": [{"letter": "A", "text": "Reduce carrying amount of investment at 31 December 20X5 to £65,000", "correct": false, "why": "Price fall caused by January 20X6 market crash — AFTER year end. £80,000 was correct YE fair value."}, {"letter": "B", "text": "Recognise £15,000 loss in P/L for year ended 31 December 20X5", "correct": false, "why": "Disposal on 4 February 20X6 — in next period. Loss recognised in year ending 31 Dec 20X6."}, {"letter": "C", "text": "Disclose as non-adjusting event in notes if material", "correct": true, "why": "CORRECT — Share fall caused by post-YE market crash. At 31 Dec 20X5, £80,000 fair value correctly reflected market conditions. Subsequent decline = new condition after YE = non-adjusting. Disclose if material."}, {"letter": "D", "text": "No disclosure as transaction was after year end", "correct": false, "why": "Post-YE transactions ARE relevant if material. IAS 10 requires disclosure of material non-adjusting events. £15,000 loss likely material."}], "correctAnswer": "C", "explanationLayer1": "Post-YE market decline causes the loss — new condition, non-adjusting. Disclose if material.", "explanationLayer3": "IAS 10 / Kaplan ST Ch 15 Section 11. New post-YE conditions = non-adjusting.", "workingShown": "Investment disposal analysis:\n  Year end:        31 Dec 20X5\n  YE fair value:   £80,000\n  Market crash:    began Jan 20X6 (post-YE)\n  Disposal:        4 Feb 20X6\n  Disposal price:  £65,000\n  Loss:            £15,000\n\nWhen did the fall occur?\n  Market crash BEGINNING January 20X6.\n  £80,000 was correct YE fair value.\n  Fall is a NEW post-YE event.\n\n-> NON-ADJUSTING EVENT\n\nYE 31 Dec 20X5:\n  SFP: Investment £80,000 (correct YE)\n  P/L: No loss\n  Notes: disclose nature + £15,000 effect\n\nYear ended 31 Dec 20X6:\n  Disposal recognised when occurred (Feb 20X6)\n  Loss £15,000 in 20X6 P/L", "examinerNote": "Key distinction: when did the cause arise? Market crash post-YE = new conditions = non-adjusting. If decline had started pre-YE, it would be different.", "advanced": "Compare with pre-YE market decline: would suggest YE fair value was overstated. Subsequent disposal would confirm adjustment to YE valuation. Cause and timing matter.", "teacherCommentary": {"concept": "Post-YE market crash = new condition = non-adjusting. YE valuation unchanged.", "process": "When did the fall occur? Post-YE causes = non-adjusting note. Pre-YE causes could be adjusting.", "everyday": "December stock value £80k. January crash. December valuation was right when set."}}, {"qId": "IAS10_A_Q23", "displayIdx": 23, "type": "ot", "questionType": "multi", "subTopic": "Multi-Select Adjusting Events", "difficulty": "hard", "marks": 2, "timeIdeal": 150, "scenario": "Wilton Co's year end is 30 June 20X5. The FS were authorised for issue on 30 September 20X5. The following five events occurred between 30 June and 30 September 20X5.", "questionText": "Which TWO of the following are ADJUSTING events under IAS 10?", "options": [{"letter": "A", "text": "An audit on 15 July 20X5 discovered an error in the year-end financial statements", "correct": true, "why": "CORRECT — Kaplan ST: 'The discovery of fraud or errors showing that the financial statements are incorrect' = adjusting event."}, {"letter": "B", "text": "On 30 August 20X5, Wilton announced an offer to acquire a smaller competitor", "correct": false, "why": "Acquisition decisions after year end = non-adjusting. New transaction in next period."}, {"letter": "C", "text": "On 12 September 20X5, a flood destroyed a small portion of inventory (no going concern issue)", "correct": false, "why": "Small post-YE flood = non-adjusting. Kaplan ST: 'destruction of assets after the reporting date by fire or flood' is non-adjusting unless going concern affected."}, {"letter": "D", "text": "On 1 August 20X5, evidence was received confirming an asset was impaired at the reporting date", "correct": true, "why": "CORRECT — Kaplan ST: 'The receipt of information after the reporting date that indicates that an asset was impaired at the reporting date' = adjusting event."}, {"letter": "E", "text": "The board announced a major restructuring on 15 September 20X5", "correct": false, "why": "Restructuring announcement after YE = non-adjusting (decision and announcement post-YE)."}], "correctOptions": ["A", "D"], "correctAnswer": "A,D", "explanationLayer1": "Multi-select: identify two adjusting events from five. A (error discovery) and D (impairment evidence) both reveal year-end conditions.", "explanationLayer3": "Kaplan ST Ch 15 Section 11 — A and D both listed in adjusting examples. B, C, E in non-adjusting examples.", "workingShown": "Classification of all five:\n\n  A) Audit error discovery 15 Jul\n     Error existed at YE: YES\n     -> ADJUSTING\n\n  B) Acquisition offer announced 30 Aug\n     Pre-YE condition: NO\n     -> NON-ADJUSTING\n\n  C) Flood - small inventory loss 12 Sep\n     Going concern: not affected\n     -> NON-ADJUSTING (Kaplan ST)\n\n  D) Asset impairment evidence 1 Aug\n     Impaired at YE - evidence after\n     -> ADJUSTING\n\n  E) Restructuring announced 15 Sep\n     Decision post-YE\n     -> NON-ADJUSTING\n\n  Adjusting: A, D", "examinerNote": "Multi-select requires identifying EXACTLY two adjusting from five. Test each: did condition exist at year end? Yes = adjusting.", "advanced": "Item D (impairment evidence) is one of the six listed adjusting examples in Kaplan ST. Often appears with specific scenarios — receivable bankruptcy, asset write-down, etc.", "teacherCommentary": {"concept": "Two adjusting (A error, D impairment) from five. Three non-adjusting (B acquisition, C flood, E restructuring).", "process": "Test each: condition at year end? A yes (error in YE balances). D yes (impaired at YE).", "everyday": "July error in June books = fix. August offer to buy a competitor = new chapter. September flood = note only."}}, {"qId": "IAS10_A_Q24", "displayIdx": 24, "type": "ot", "questionType": "number", "subTopic": "Fire Loss With Insurance Recovery", "difficulty": "hard", "marks": 2, "timeIdeal": 150, "scenario": "Pen Co's year end is 31 March 20X6. On 22 March 20X6, a fire destroyed inventory with a carrying value of £55,000. The fire occurred BEFORE the year end. The insurer made a definitive offer of £42,000 on 25 April 20X6, before the FS were authorised for issue on 12 May 20X6.", "questionText": "What is the NET loss to be recognised in the P/L for the year ended 31 March 20X6 (in £)?", "numAns": 13000, "tol": 50, "prefix": "£", "correctAnswer": "13000", "explanationLayer1": "Pre-YE fire = year-end loss. Post-YE insurance offer confirms year-end receivable amount.", "explanationLayer3": "IAS 10 (Kaplan ST Ch 15 Section 11): determination after the reporting date of cost of assets purchased or proceeds from assets sold before the reporting date = adjusting.", "workingShown": "Fire loss with insurance recovery:\n  Year end:           31 March 20X6\n  Fire date:          22 March 20X6 (pre-YE)\n  Inventory destroyed: £55,000 carrying value\n  Insurance offer:    £42,000 (25 Apr 20X6)\n  FS authorised:      12 May 20X6\n\nPre-YE fire = year-end loss recognition.\nInsurance offer after YE confirms YE receivable.\n\nNet loss calculation:\n  Inventory destroyed:    £55,000\n  Insurance recoverable:  (£42,000)\n  Net loss to P/L:        £13,000\n\nJournal in year ended 31 Mar 20X6:\n  Dr Cost of sales (fire loss)  55,000\n    Cr Inventory                55,000\n  Dr Insurance receivable       42,000\n    Cr Cost of sales            42,000\n  Net P/L impact:                £13,000\n\nSFP:\n  Inventory reduced by £55,000\n  Insurance receivable £42,000", "examinerNote": "Fire OCCURRED before year end, so loss is year-end. Insurance OFFER after year end provides evidence of the year-end receivable amount — adjusting event under 'determination after reporting date.'", "advanced": "If insurance recovery had been received before year end, the receivable would already be recognised at the offer amount. The IAS 10 adjustment only crystallises an existing year-end position when post-YE evidence quantifies it.", "teacherCommentary": {"concept": "Pre-YE fire = YE loss. Post-YE insurance confirmation = quantifies YE receivable.", "process": "£55,000 loss - £42,000 insurance = £13,000 net loss to P/L.", "everyday": "Fire on March 22 caused £55k loss. April insurance offer confirms £42k recovery. December's books show net loss £13k."}}, {"qId": "IAS10_A_Q25", "displayIdx": 25, "type": "ot", "questionType": "mcq", "subTopic": "Complex Scenario Classification", "difficulty": "hard", "marks": 2, "timeIdeal": 130, "scenario": "Marston Co's year end is 31 December 20X5. The following events occurred after year end but before FS authorisation:\n\n  - On 4 January 20X6, the bankruptcy of a customer who owed Marston £18,000 at year end was confirmed.\n  - On 8 January 20X6, the company commenced a major capital expenditure programme costing £750,000.", "questionText": "How should these events be treated in the FS for the year ended 31 December 20X5?", "options": [{"letter": "A", "text": "Both adjusting events — write off £18,000 and recognise £750,000 commitment", "correct": false, "why": "Capital expenditure programme commenced after year end is non-adjusting. No £750,000 year-end commitment existed."}, {"letter": "B", "text": "Adjusting: bankruptcy £18,000 write-off. Non-adjusting: capital expenditure (disclose if material)", "correct": true, "why": "CORRECT — Bankruptcy confirms year-end bad debt (adjusting). Capital programme is a new post-YE decision (non-adjusting, disclose if material)."}, {"letter": "C", "text": "Non-adjusting: bankruptcy (disclose only). Adjusting: capital expenditure (£750,000 cash reduction)", "correct": false, "why": "Reversed. Bankruptcy is ADJUSTING. Capital expenditure programme is NON-ADJUSTING."}, {"letter": "D", "text": "Both non-adjusting events; disclose only if material", "correct": false, "why": "Bankruptcy is firmly adjusting under Kaplan ST adjusting examples list. Write-off required, not just disclosure."}], "correctAnswer": "B", "explanationLayer1": "Two events, opposite classifications. Bankruptcy = adjusting; new capex programme = non-adjusting.", "explanationLayer3": "Kaplan ST Ch 15 Section 11. Bankruptcy in adjusting list, capital programme in non-adjusting (major asset purchases).", "workingShown": "Dual classification:\n\nEVENT 1: Customer bankruptcy 4 Jan 20X6\n  Year-end debt:     £18,000\n  Did condition exist at YE? YES (financial distress)\n  -> ADJUSTING EVENT\n\n  Journal in year ended 31 Dec 20X5:\n    Dr Irrecoverable debts  18,000\n      Cr Trade receivables   18,000\n\nEVENT 2: Capital programme commenced 8 Jan 20X6\n  Decision made: post-YE\n  Did condition exist at YE? NO\n  -> NON-ADJUSTING EVENT\n\n  Treatment:\n    SFP: NO change at YE\n    Notes: disclose if material (£750k is material)\n\nAnswer: B (adjusting + non-adjusting respectively)", "examinerNote": "Tests application of IAS 10 to two events simultaneously. Each event assessed independently. Bankruptcy = always adjusting (year-end debt). New capex = always non-adjusting (post-YE decision).", "advanced": "In real-world FS, the disclosure of the capital programme might include planned timing, total commitment, funding source, and operational rationale to give users full picture.", "teacherCommentary": {"concept": "Two events: bankruptcy (adjusting, £18k write-off) + capex programme (non-adjusting, note only).", "process": "Each event assessed separately. Bankruptcy: YE condition. Capex: new decision.", "everyday": "January bankruptcy reveals December bad debt. January capex commitment is new — note only."}}];
+const MTQ={"title": "Bramford plc - Multiple IAS 10 Events", "scenario": "Bramford plc's year end is 31 December 20X5. The financial statements were authorised for issue on 28 February 20X6. The following events occurred between these dates.\n\n(a) On 15 January 20X6, Hartwood Ltd was declared bankrupt. At 31 December 20X5, Hartwood owed Bramford £14,500. The liquidator has confirmed that none of this will be recovered.\n\n(b) Bramford held 800 units of Product Z at year end at cost £35 per unit. On 8 February 20X6, the remaining 800 units were sold to a customer at £22 each (clearance sale). The market decline started before year end.\n\n(c) On 12 February 20X6, Bramford acquired a new factory site for £450,000. The decision and acquisition were entirely post-year-end.\n\n(d) A legal claim against Bramford had been progressing throughout 20X5 (event occurred October 20X5). At 31 December 20X5, the provision was £20,000. On 20 January 20X6, the case was settled for £15,000.", "totalMarks": 10, "parts": [{"part": "(a)", "marks": 3, "prompt": "How much should be written off as an irrecoverable debt in the FS for the year ended 31 December 20X5? (Enter the amount in £)", "numAns": 14500, "tol": 50, "prefix": "£", "modelAnswer": "Bankruptcy after year end = ADJUSTING event.\n\nKaplan ST Ch 15: 'The bankruptcy of a\ncustomer after the reporting date that\nconfirms that a year-end debt is irrecoverable.'\n\nThe full £14,500 was owed at year end.\nLiquidator confirms no recovery.\n\nWrite-off in year ended 31 Dec 20X5:\n  Full amount: £14,500\n\nJournal:\n  Dr Irrecoverable debts   14,500\n    Cr Trade receivables   14,500\n\nAnswer: £14,500"}, {"part": "(b)", "marks": 3, "prompt": "By how much should closing inventory be reduced in the FS for the year ended 31 December 20X5? (Enter the amount in £)", "numAns": 10400, "tol": 50, "prefix": "£", "modelAnswer": "Inventory sold below cost after year end = ADJUSTING.\n\nKaplan ST: 'The sale of inventories after\nthe reporting period at a price lower\nthan cost.' Market decline pre-YE confirms\nYE NRV was already £22.\n\nCalculation:\n  Cost:   800 x £35 = £28,000\n  NRV:    800 x £22 = £17,600\n  Write-down: £28,000 - £17,600 = £10,400\n\nJournal:\n  Dr Cost of sales (write-down)  10,400\n    Cr Inventory                 10,400\n\nAnswer: £10,400"}, {"part": "(c)", "marks": 2, "prompt": "How much should be adjusted in the year-end SFP for the new factory acquisition? (Enter 0 if no adjustment)", "numAns": 0, "tol": 0, "prefix": "£", "modelAnswer": "Major asset purchase after year end = NON-ADJUSTING.\n\nKaplan ST Ch 15: 'Major purchases of assets'\nlisted as non-adjusting example.\n\nDecision and acquisition both post-YE.\nNo year-end condition existed.\n\nSFP at 31 Dec 20X5: NO adjustment\n\nDisclosure required:\n  Nature: factory acquisition\n  Financial effect: £450,000\n  Date: 12 Feb 20X6\n\nAnswer: £0"}, {"part": "(d)", "marks": 2, "prompt": "What should be the provision balance at 31 December 20X5 after considering the post-year-end settlement? (Enter the amount in £)", "numAns": 15000, "tol": 50, "prefix": "£", "modelAnswer": "Court case settled = ADJUSTING event.\n\nKaplan ST: 'The settlement after the\nreporting date of a court case which\nconfirms a year end obligation.'\n\nObligating event: October 20X5 (pre-YE)\n-> obligation existed at YE.\nSettlement on 20 Jan 20X6 = £15,000\n-> confirms YE obligation amount.\n\nAdjust YE provision from £20,000 to £15,000:\n  Reduce provision by £5,000\n  Journal:\n    Dr Provision      5,000\n      Cr Legal expense  5,000\n\nClosing provision at 31 Dec 20X5: £15,000\n\nAnswer: £15,000"}]};
+const STORAGE_KEY = 'fa_v3_ias10_pool_a';
+const TOPIC_NAME = 'IAS 10 Events After the Reporting Period';
+const POOL_NAME = 'Pool A';
+const TOTAL_MINUTES = 60;
+const OT_COUNT = 25;
+let state = {
+  answers: {}, flags: {}, guesses: {}, mtqAnswers: {}, mtqSelf: {},
+  started: false, submitted: false, timerRemaining: TOTAL_MINUTES * 60,
+  currentQ: 0, view: 'home', pausedAt: null, timeStarted: null, timerInterval: null
+};
+function startTimer() { state.timeStarted = Date.now(); state.timerInterval = setInterval(tickTimer, 1000); }
+function rebuildTimer() { if (state.timerInterval) clearInterval(state.timerInterval); state.timerInterval = setInterval(tickTimer, 1000); }
+function tickTimer() {
+  if (state.pausedAt) return;
+  if (state.timerRemaining <= 0) { clearInterval(state.timerInterval); autoSubmit(); return; }
+  state.timerRemaining--;
+  updateTimerDisplay();
+  if (state.timerRemaining % 30 === 0) saveState();
+}
+function updateTimerDisplay() {
+  const el = document.getElementById('timer');
+  const m = Math.floor(state.timerRemaining / 60);
+  const s = state.timerRemaining % 60;
+  el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  el.className = 'timer' + (state.timerRemaining < 120 ? ' critical' : state.timerRemaining < 300 ? ' warning' : '');
+}
+function togglePause() {
+  const btn = document.getElementById('pauseBtn');
+  if (state.pausedAt) { state.pausedAt = null; btn.textContent = 'Pause'; }
+  else { state.pausedAt = Date.now(); btn.textContent = 'Resume'; }
+}
+function autoSubmit() {
+  document.getElementById('timeUpOverlay').classList.add('visible');
+  state.submitted = true; saveState();
+}
+function dismissTimeUp() { document.getElementById('timeUpOverlay').classList.remove('visible'); goToMTQ(); }
+function startShell() {
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('testShell').style.display = 'block';
+  state.started = true;
+  buildNavGrid();
+  showOTView();
+  renderQuestion(state.currentQ);
+  updateTimerDisplay();
+}
+function startFresh() { state.timeStarted = Date.now(); startTimer(); startShell(); }
+function showOTView() {
+  document.getElementById('testView').style.display = 'block';
+  document.getElementById('mtqView').classList.add('section-hidden');
+  document.getElementById('submitView').classList.add('section-hidden');
+  document.getElementById('mtqMarkView').classList.add('section-hidden');
+  document.getElementById('resultsView').classList.add('section-hidden');
+}
+function navPrev() { if (state.currentQ > 0) { state.currentQ--; renderQuestion(state.currentQ); } }
+function navNext() {
+  if (state.currentQ < OT_COUNT - 1) { state.currentQ++; renderQuestion(state.currentQ); }
+  else { goToMTQ(); }
+}
+function goToMTQ() { showSection('mtqView'); renderMTQ(); document.getElementById('subBar').style.display = 'none'; }
+function backToOT() { showSection('testView'); document.getElementById('subBar').style.display = 'flex'; renderQuestion(state.currentQ); }
+function goToSubmit() {
+  showSection('submitView');
+  document.getElementById('otAns').textContent = Object.keys(state.answers).length;
+  document.getElementById('mtqAns').textContent = Object.keys(state.mtqAnswers).length;
+}
+function showSection(id) {
+  ['testView','mtqView','submitView','mtqMarkView','resultsView'].forEach(s => {
+    const el = document.getElementById(s);
+    if (el) { el.style.display = (s === id) ? 'block' : 'none'; el.classList.remove('section-hidden'); }
+  });
+}
+function renderQuestion(idx) {
+  state.currentQ = idx;
+  const q = QBANK[idx];
+  document.getElementById('qpos').textContent = `Question ${idx+1} of ${OT_COUNT}`;
+  document.getElementById('qmarks').textContent = `${q.marks} marks`;
+  document.getElementById('flagBtn').className = state.flags[idx] ? 'flagBtn flagged' : '';
+  document.getElementById('flagBtn').textContent = state.flags[idx] ? '🚩 Flagged' : 'Flag';
+  let html = `<div class="qcard">`;
+  if (q.scenario) html += `<div class="scenario">${q.scenario}</div>`;
+  html += `<div class="qprompt"><strong>Q${idx+1}.</strong> ${q.questionText}</div>`;
+  if (q.questionType === 'mcq') html += buildMCQ(idx, q);
+  else if (q.questionType === 'multi') html += buildMulti(idx, q);
+  else if (q.questionType === 'number') html += buildNumber(idx, q);
+  html += `<div class="guess-row"><label><input type="checkbox" id="guess_${idx}" ${state.guesses[idx]?'checked':''} onchange="toggleGuess(${idx})"> I'm guessing on this one</label></div>`;
+  html += `</div>`;
+  document.getElementById('questionContainer').innerHTML = html;
+  updateNavGrid();
+}
+function buildMCQ(idx, q) {
+  return q.options.map(o => {
+    const sel = state.answers[idx] === o.letter;
+    return `<div class="opt${sel?' selected':''}" onclick="selectMCQ(${idx},'${o.letter}',this)">
+      <input type="radio" name="q${idx}" ${sel?'checked':''} readonly>
+      <span class="opt-letter">${o.letter}</span><span class="opt-text">${o.text}</span></div>`;
+  }).join('');
+}
+function buildMulti(idx, q) {
+  const sel = state.answers[idx] ? state.answers[idx].split(',') : [];
+  let html = `<div class="multi-instr">Select TWO answers</div>`;
+  html += q.options.map(o => {
+    const checked = sel.includes(o.letter);
+    return `<div class="opt${checked?' selected-multi':''}" onclick="toggleMulti(${idx},'${o.letter}',this)">
+      <input type="checkbox" ${checked?'checked':''} readonly>
+      <span class="opt-letter">${o.letter}</span><span class="opt-text">${o.text}</span></div>`;
+  }).join('');
+  return html;
+}
+function buildNumber(idx, q) {
+  const val = state.answers[idx] !== undefined ? state.answers[idx] : '';
+  return `<div class="num-entry"><span class="prefix">${q.prefix||''}  </span>
+    <input type="number" id="numInput_${idx}" value="${val}" placeholder="Enter number" oninput="recordNumber(${idx},this.value)" step="any">
+  </div><div class="num-instr">Enter numeric value only (no commas or currency symbols). Enter 0 if the answer is nil.</div>`;
+}
+function selectMCQ(idx, letter, el) {
+  state.answers[idx] = letter;
+  document.querySelectorAll(`#questionContainer .opt`).forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
+  updateNavGrid(); saveState();
+}
+function toggleMulti(idx, letter, el) {
+  let sel = state.answers[idx] ? state.answers[idx].split(',').filter(Boolean) : [];
+  if (sel.includes(letter)) { sel = sel.filter(l => l !== letter); el.classList.remove('selected-multi'); }
+  else if (sel.length < 2) { sel.push(letter); el.classList.add('selected-multi'); }
+  state.answers[idx] = sel.join(',');
+  updateNavGrid(); saveState();
+}
+function recordNumber(idx, val) { state.answers[idx] = val; updateNavGrid(); saveState(); }
+function toggleFlag() {
+  state.flags[state.currentQ] = !state.flags[state.currentQ];
+  document.getElementById('flagBtn').className = state.flags[state.currentQ] ? 'flagBtn flagged' : '';
+  document.getElementById('flagBtn').textContent = state.flags[state.currentQ] ? '🚩 Flagged' : 'Flag';
+  updateNavGrid();
+}
+function toggleGuess(idx) { state.guesses[idx] = document.getElementById(`guess_${idx}`).checked; saveState(); }
+function renderMTQ() {
+  const m = MTQ;
+  let html = `<div class="qcard"><div class="scenario">${m.scenario}</div><h3 style="color:#5a1e2e;">MTQ — ${m.title} &nbsp;<span style="font-size:14px;font-weight:normal;color:#666;">(${m.totalMarks} marks)</span></h3>`;
+  m.parts.forEach((p, i) => {
+    const val = state.mtqAnswers[i] !== undefined ? state.mtqAnswers[i] : '';
+    html += `<div class="mtq-part"><div class="mtq-part-header"><span class="mtq-part-title">${p.part}</span><span class="mtq-part-marks">${p.marks} marks</span></div>
+    <div style="font-size:15px;font-weight:500;margin-bottom:12px;">${p.prompt}</div>
+    <div class="num-entry"><span class="prefix">${p.prefix||''} </span>
+    <input type="number" value="${val}" placeholder="Enter answer" oninput="saveMTQ(${i},this.value)" step="any">
+    </div></div>`;
+  });
+  html += `<div class="mtq-working-area"><div class="lbl">Working Space</div>
+  <textarea placeholder="Show your working here..." id="mtqWorking">${state.mtqWorking||''}</textarea></div></div>`;
+  document.getElementById('mtqContainer').innerHTML = html;
+}
+function saveMTQ(idx, val) { state.mtqAnswers[idx] = val; saveState(); }
+function submitTest() {
+  if (state.timerInterval) clearInterval(state.timerInterval);
+  state.submitted = true; saveState();
+  showSection('mtqMarkView');
+  renderMTQMark();
+}
+function renderMTQMark() {
+  const m = MTQ;
+  let html = `<div class="qcard"><h3 style="color:#5a1e2e;">Self-Mark the MTQ &mdash; ${m.title}</h3><p style="color:#555;font-size:14px;">Compare your answers to model answers below and award yourself marks honestly.</p>`;
+  m.parts.forEach((p, i) => {
+    const userAns = parseFloat(state.mtqAnswers[i]) || 0;
+    html += `<div class="mtq-part"><div class="mtq-part-header"><span class="mtq-part-title">${p.part}</span><span class="mtq-part-marks">${p.marks} marks</span></div>
+    <div><strong>Your answer:</strong> ${p.prefix}${userAns.toLocaleString()}</div>
+    <div><strong>Model answer:</strong> ${p.prefix}${p.numAns.toLocaleString()}</div>
+    <div class="model-answer-box"><div class="model-label">Working</div><pre>${p.modelAnswer}</pre></div>
+    <div style="margin-top:12px;"><strong>Award yourself:</strong> &nbsp;
+    <button onclick="selfMark(${i},${p.marks})" style="background:#28a745;color:white;border:none;padding:6px 16px;border-radius:4px;cursor:pointer;margin-right:8px;">Full (${p.marks})</button>
+    <button onclick="selfMark(${i},${Math.floor(p.marks/2)})" style="background:#ffc107;color:#000;border:none;padding:6px 16px;border-radius:4px;cursor:pointer;margin-right:8px;">Partial (${Math.floor(p.marks/2)})</button>
+    <button onclick="selfMark(${i},0)" style="background:#dc3545;color:white;border:none;padding:6px 16px;border-radius:4px;cursor:pointer;">Zero</button>
+    <span id="markDisp_${i}" style="margin-left:14px;font-weight:700;color:#5a1e2e;">${state.mtqSelf[i]!==undefined?state.mtqSelf[i]+' pts':''}</span></div>
+    </div>`;
+  });
+  html += `</div>`;
+  document.getElementById('mtqMarkContainer').innerHTML = html;
+}
+function selfMark(idx, pts) { state.mtqSelf[idx] = pts; document.getElementById(`markDisp_${idx}`).textContent = pts + ' pts'; saveState(); }
+function finalizeResults() {
+  const missing = MTQ.parts.filter((p,i) => state.mtqSelf[i] === undefined);
+  if (missing.length > 0) { alert('Please award marks for all MTQ parts first.'); return; }
+  showSection('resultsView');
+  buildResults();
+}
+function buildResults() {
+  let otCorrect=0, otWrong=0, otSkipped=0, otGuessCorrect=0, otMarks=0;
+  QBANK.forEach((q,i) => {
+    const userAns = state.answers[i];
+    const correct = isCorrect(q, userAns);
+    if (!userAns && userAns !== '0') otSkipped++;
+    else if (correct) { otCorrect++; otMarks += q.marks; if(state.guesses[i]) otGuessCorrect++; }
+    else otWrong++;
+  });
+  const mtqMarks = Object.values(state.mtqSelf).reduce((a,b) => a+b, 0);
+  const totalMarks = otMarks + mtqMarks;
+  const maxMarks = OT_COUNT*2 + 10;
+  const pct = Math.round((totalMarks/maxMarks)*100);
+  const timeTaken = TOTAL_MINUTES*60 - state.timerRemaining;
+  const mins = Math.floor(timeTaken/60), secs = timeTaken%60;
+  const grade = pct >= 70 ? '🏆 Pass+' : pct >= 50 ? '✅ Pass' : '⚠️ Below Pass';
+  document.getElementById('scoreBanner').innerHTML = `
+    <div class="score">${totalMarks}/${maxMarks}</div>
+    <div class="pct">${pct}% &mdash; ${grade}</div>
+    <div class="meta">OT: ${otMarks}/50 &nbsp;|&nbsp; MTQ: ${mtqMarks}/10 &nbsp;|&nbsp; Correct: ${otCorrect}/${OT_COUNT} &nbsp;|&nbsp; Time: ${mins}m ${secs}s</div>`;
+  document.getElementById('metricGrid').innerHTML = [
+    {label:'OT Score',value:`${otMarks}/50`},{label:'MTQ Score',value:`${mtqMarks}/10`},
+    {label:'Correct',value:`${otCorrect}/${OT_COUNT}`},{label:'Wrong',value:otWrong},
+    {label:'Skipped',value:otSkipped},{label:'True Accuracy',value:`${otCorrect-otGuessCorrect}/${OT_COUNT} non-guess`}
+  ].map(m=>`<div class="metric-card"><div class="label">${m.label}</div><div class="value">${m.value}</div></div>`).join('');
+  const subtopics = {};
+  QBANK.forEach((q,i) => {
+    const t = q.subTopic;
+    if (!subtopics[t]) subtopics[t] = {correct:0,total:0};
+    subtopics[t].total++;
+    if (isCorrect(q, state.answers[i])) subtopics[t].correct++;
+  });
+  let tableHtml = `<table><tr><th>Sub-topic</th><th>Score</th><th>%</th></tr>`;
+  Object.entries(subtopics).forEach(([t,d]) => {
+    const p = Math.round(d.correct/d.total*100);
+    const cls = p>=70?'':'low';
+    tableHtml += `<tr><td>${t}</td><td>${d.correct}/${d.total}</td><td><span class="pct-bar"><span class="pct-bar-fill ${cls}" style="width:${p}%"></span></span>${p}%</td></tr>`;
+  });
+  tableHtml += `</table>`;
+  document.getElementById('subtopicTable').innerHTML = `<h3 style="margin-top:0;color:#5a1e2e;">Sub-topic Breakdown</h3>${tableHtml}`;
+  let cardsHtml = '<h3 style="color:#5a1e2e;">Question Review</h3>';
+  QBANK.forEach((q,i) => {
+    const userAns = state.answers[i];
+    const correct = isCorrect(q, userAns);
+    const status = !userAns && userAns !== '0' ? 'skipped' : correct ? 'correct' : 'wrong';
+    const statusLabel = status==='correct'?'✓ Correct':status==='wrong'?'✗ Wrong':'— Skipped';
+    let cardHtml = `<div class="result-card ${status==='correct'?'':'wrong'}">
+      <div class="rc-header">
+        <span class="rc-q">Q${i+1} — ${q.subTopic}</span>
+        <div class="rc-tags">
+          <span class="tag diff-${q.difficulty}">${q.difficulty}</span>
+          <span class="tag status-${status}">${statusLabel}</span>
+          ${state.guesses[i]?'<span class="tag guessed">Guessed</span>':''}
+        </div>
+      </div>
+      <div style="font-size:14px;margin-bottom:12px;">${q.questionText}</div>`;
+    if (q.questionType==='number') {
+      cardHtml += `<div class="num-result">
+        <div class="num-result-box ${status==='correct'?'user-correct':'user-wrong'}"><div class="lbl">Your Answer</div><div class="val">${q.prefix||''}${userAns||'—'}</div></div>
+        <div class="num-result-box correct-ref"><div class="lbl">Correct Answer</div><div class="val">${q.prefix||''}${q.numAns.toLocaleString()}</div></div>
+      </div>`;
+    } else {
+      const ansArr = (q.questionType==='multi'?q.correctOptions:[q.correctAnswer]);
+      cardHtml += q.options.map(o => {
+        const isCorrectOpt = ansArr.includes(o.letter);
+        const isUser = q.questionType==='multi' ? (userAns||'').split(',').includes(o.letter) : userAns===o.letter;
+        let cls = '';
+        if (isCorrectOpt) cls = 'correct';
+        else if (isUser && !isCorrectOpt) cls = 'user-wrong';
+        return `<div class="result-opt ${cls}"><strong>${o.letter}.</strong> ${o.text}
+          ${isCorrectOpt?'<span class="badge correct">✓ Correct</span>':''}
+          ${isUser&&!isCorrectOpt?'<span class="badge user-wrong">✗ Your answer</span>':''}
+          <div class="why">${o.why}</div></div>`;
+      }).join('');
+    }
+    cardHtml += `<div class="what-tests"><div class="lbl">What this tests</div>${q.explanationLayer1}</div>`;
+    cardHtml += `<div class="working-block">${q.workingShown}</div>`;
+    if (q.explanationLayer3) cardHtml += `<div class="standard-ref"><div class="lbl">Standard Reference</div>${q.explanationLayer3}</div>`;
+    if (q.examinerNote) cardHtml += `<div class="examiner-note"><div class="lbl">Examiner Note</div>${q.examinerNote}</div>`;
+    if (q.advanced) cardHtml += `<div class="advanced-note"><div class="lbl">Advanced Context</div>${q.advanced}</div>`;
+    if (q.teacherCommentary) {
+      const tc = q.teacherCommentary;
+      cardHtml += `<div class="teacher-commentary"><div class="lbl">Teacher Commentary</div>
+        ${tc.concept?`<div class="tc-row"><span class="tc-label">Concept: </span>${tc.concept}</div>`:''}
+        ${tc.process?`<div class="tc-row"><span class="tc-label">Process: </span>${tc.process}</div>`:''}
+        ${tc.everyday?`<div class="tc-row"><span class="tc-label">Real-world: </span>${tc.everyday}</div>`:''}
+      </div>`;
+    }
+    cardHtml += `</div>`;
+    cardsHtml += cardHtml;
+  });
+  document.getElementById('resultsCardContainer').innerHTML = cardsHtml;
+}
+function isCorrect(q, userAns) {
+  if (!userAns && userAns !== '0' && userAns !== 0) return false;
+  if (q.questionType === 'number') {
+    const ua = parseFloat(userAns);
+    return !isNaN(ua) && Math.abs(ua - q.numAns) <= (q.tol || 0);
+  }
+  if (q.questionType === 'multi') {
+    const ua = (userAns||'').split(',').filter(Boolean).sort().join(',');
+    const ca = (q.correctOptions||[]).sort().join(',');
+    return ua === ca;
+  }
+  return String(userAns).trim() === String(q.correctAnswer).trim();
+}
+function buildNavGrid() {
+  const grid = document.getElementById('navGrid');
+  let html = `<div class="nav-section-label">OT Questions</div>`;
+  for (let i=0; i<OT_COUNT; i++) html += `<div class="nav-cell" id="nc_${i}" onclick="jumpTo(${i})">${i+1}</div>`;
+  html += `<div class="nav-section-label">MTQ</div>`;
+  html += `<div class="nav-cell" id="nc_mtq" onclick="goToMTQ()" style="grid-column:span 4;font-size:11px;">MTQ (10 marks)</div>`;
+  grid.innerHTML = html;
+  updateNavGrid();
+}
+function updateNavGrid() {
+  for (let i=0; i<OT_COUNT; i++) {
+    const el = document.getElementById(`nc_${i}`);
+    if (!el) continue;
+    let cls = 'nav-cell';
+    if (state.answers[i] !== undefined && state.answers[i] !== '') cls += ' answered';
+    if (state.flags[i]) cls += ' flagged';
+    if (i === state.currentQ) cls += ' current';
+    el.className = cls;
+  }
+  document.getElementById('navCount').textContent = `${Object.keys(state.answers).length}/${OT_COUNT}`;
+}
+function jumpTo(idx) { showOTView(); document.getElementById('subBar').style.display = 'flex'; state.currentQ = idx; renderQuestion(idx); }
+let calcExpr = '';
+function toggleCalc() { document.getElementById('calcWidget').classList.toggle('visible'); }
+function calcInput(val) {
+  const d = document.getElementById('calcDisplay');
+  if (val === 'C') { calcExpr = ''; d.value = '0'; return; }
+  if (val === '=') {
+    try { calcExpr = String(eval(calcExpr)); d.value = calcExpr; }
+    catch(e) { d.value = 'Error'; calcExpr = ''; }
+    return;
+  }
+  calcExpr += val;
+  d.value = calcExpr;
+}
+function saveState() {
+  if (state.mtqWorking) { const el = document.getElementById('mtqWorking'); if(el) state.mtqWorking = el.value; }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+function loadState() { try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : null; } catch(e) { return null; } }
+function restartTest() { localStorage.removeItem(STORAGE_KEY); location.reload(); }
+function downloadJSON() {
+  const results = buildResultsObj();
+  const blob = new Blob([JSON.stringify(results, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `fa_ias10_pool_a_${Date.now()}.json`; a.click();
+}
+function buildResultsObj() {
+  let otCorrect=0, otMarks=0;
+  const questions = [];
+  QBANK.forEach((q,i) => {
+    const ua = state.answers[i];
+    const correct = isCorrect(q, ua);
+    const earned = correct ? q.marks : 0;
+    if(correct) { otCorrect++; otMarks += earned; }
+    questions.push({ qId: q.qId, displayIdx: q.displayIdx, subTopic: q.subTopic, difficulty: q.difficulty,
+      marks: q.marks, earned: earned, correct: correct, userAnswer: ua,
+      correctAnswer: q.correctAnswer || (q.correctOptions||[]).join(',') });
+  });
+  const mtqMarks = Object.values(state.mtqSelf||{}).reduce((a,b)=>a+b,0);
+  MTQ.parts.forEach((p,i) => {
+    const awarded = parseInt(state.mtqSelf[i] || 0);
+    questions.push({ qId: 'MTQ_'+p.part, displayIdx: 26+i, subTopic: 'MTQ - '+MTQ.title,
+      difficulty: 'medium', marks: p.marks, earned: awarded, correct: awarded===p.marks, isMTQ: true });
+  });
+  const totalEarned = otMarks + mtqMarks;
+  const totalMax = OT_COUNT*2 + 10;
+  const existing = JSON.parse(localStorage.getItem('fa_v3_db') || '{"topics":{}}');
+  const prior = (existing.topics && existing.topics['IAS 10']) || [];
+  const samePool = prior.filter(a => a.poolName === 'A');
+  return {
+    topic: 'IAS 10',
+    poolName: 'A',
+    attemptNum: samePool.length + 1,
+    completedAt: new Date().toISOString(),
+    timestamp: new Date().toISOString(),
+    totalMarks: totalMax,
+    totalScore: totalEarned,
+    earned: totalEarned,
+    sectionAScore: otMarks,
+    sectionBScore: mtqMarks,
+    percentage: Math.round(totalEarned/totalMax*1000)/10,
+    timeTaken: TOTAL_MINUTES*60 - state.timerRemaining,
+    timeTakenSec: TOTAL_MINUTES*60 - state.timerRemaining,
+    schemaVersion: 3,
+    questions: questions,
+    sourceStorageKey: STORAGE_KEY
+  };
+}
+function syncToDashboard() {
+  const results = buildResultsObj();
+  const pending = JSON.parse(localStorage.getItem('fa_v3_pending_imports') || '[]');
+  pending.push(results);
+  localStorage.setItem('fa_v3_pending_imports', JSON.stringify(pending));
+  alert('Synced to Dashboard! Open the dashboard and refresh to import.');
+}
+function downloadPDF() {
+  document.querySelectorAll('.result-card:not(.wrong)').forEach(el => el.style.display='none');
+  window.print();
+  document.querySelectorAll('.result-card').forEach(el => el.style.display='block');
+}
+window.addEventListener('load', () => {
+  document.getElementById('homeScreen').style.display = 'flex';
+});
+</script>
+</body>
+</html>
