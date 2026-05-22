@@ -345,7 +345,7 @@ function renderQuestion(idx) {
   const q = QBANK[idx];
   const container = document.getElementById('questionContainer');
   document.getElementById('qpos').textContent = `Question ${idx+1} of ${OT_COUNT}`;
-  document.getElementById('qmarks').textContent = `${q.marks} marks · ${q.subTopic}`;
+  document.getElementById('qmarks').textContent = `${q.marks} marks`;
   document.getElementById('flagBtn').className = state.flags[idx] ? 'flagBtn flagged' : '';
   document.getElementById('flagBtn').textContent = state.flags[idx] ? '🚩 Flagged' : 'Flag';
   let html = `<div class="qcard">`;
@@ -622,24 +622,56 @@ function downloadJSON() {
   const results = buildResultsObj();
   const blob = new Blob([JSON.stringify(results, null, 2)], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `fa_intangibles_provisions_pool_a_${Date.now()}.json`; a.click();
+  a.download = `fa_ias3837_pool_a_${Date.now()}.json`; a.click();
 }
 function buildResultsObj() {
   let otCorrect=0, otMarks=0;
-  QBANK.forEach((q,i) => { if(isCorrect(q,state.answers[i])) { otCorrect++; otMarks += q.marks; } });
+  const questions = [];
+  QBANK.forEach((q,i) => {
+    const ua = state.answers[i];
+    const correct = isCorrect(q, ua);
+    const earned = correct ? q.marks : 0;
+    if(correct) { otCorrect++; otMarks += earned; }
+    questions.push({ qId: q.qId, displayIdx: q.displayIdx, subTopic: q.subTopic, difficulty: q.difficulty,
+      marks: q.marks, earned: earned, correct: correct, userAnswer: ua,
+      correctAnswer: q.correctAnswer || (q.correctOptions||[]).join(',') });
+  });
   const mtqMarks = Object.values(state.mtqSelf||{}).reduce((a,b)=>a+b,0);
-  return { topic: TOPIC_NAME, pool: POOL_NAME, storageKey: STORAGE_KEY,
-    date: new Date().toISOString(), totalMarks: otMarks+mtqMarks, maxMarks: OT_COUNT*2+10,
-    otMarks, mtqMarks, otCorrect, answers: state.answers, mtqSelf: state.mtqSelf,
-    timeTaken: TOTAL_MINUTES*60-state.timerRemaining };
+  MTQ.parts.forEach((p,i) => {
+    const awarded = parseInt(state.mtqSelf[i] || 0);
+    questions.push({ qId: 'MTQ_'+p.part, displayIdx: 26+i, subTopic: 'MTQ - '+MTQ.title,
+      difficulty: 'medium', marks: p.marks, earned: awarded, correct: awarded===p.marks, isMTQ: true });
+  });
+  const totalEarned = otMarks + mtqMarks;
+  const totalMax = OT_COUNT*2 + 10;
+  const existing = JSON.parse(localStorage.getItem('fa_v3_db') || '{"topics":{}}');
+  const prior = (existing.topics && existing.topics['IAS 38 + IAS 37']) || [];
+  const samePool = prior.filter(a => a.poolName === 'A');
+  return {
+    topic: 'IAS 38 + IAS 37',
+    poolName: 'A',
+    attemptNum: samePool.length + 1,
+    completedAt: new Date().toISOString(),
+    timestamp: new Date().toISOString(),
+    totalMarks: totalMax,
+    totalScore: totalEarned,
+    earned: totalEarned,
+    sectionAScore: otMarks,
+    sectionBScore: mtqMarks,
+    percentage: Math.round(totalEarned/totalMax*1000)/10,
+    timeTaken: TOTAL_MINUTES*60 - state.timerRemaining,
+    timeTakenSec: TOTAL_MINUTES*60 - state.timerRemaining,
+    schemaVersion: 3,
+    questions: questions,
+    sourceStorageKey: STORAGE_KEY
+  };
 }
 function syncToDashboard() {
   const results = buildResultsObj();
-  const DASHBOARD_KEY = 'fa_dashboard_pending_imports';
-  const pending = JSON.parse(localStorage.getItem(DASHBOARD_KEY) || '[]');
+  const pending = JSON.parse(localStorage.getItem('fa_v3_pending_imports') || '[]');
   pending.push(results);
-  localStorage.setItem(DASHBOARD_KEY, JSON.stringify(pending));
-  alert('Synced to Dashboard! Open FA_Master_Dashboard_v3_1.html on md-acca.github.io to import.');
+  localStorage.setItem('fa_v3_pending_imports', JSON.stringify(pending));
+  alert('Synced to Dashboard! Open the dashboard and refresh to import.');
 }
 function downloadPDF() {
   document.querySelectorAll('.result-card:not(.wrong)').forEach(el => el.style.display='none');
