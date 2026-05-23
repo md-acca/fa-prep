@@ -1315,11 +1315,18 @@ function toast(msg, type = 'success', duration = 3000) {
 
 function totalMarksOf(a) {
   if (typeof a.totalMarks === 'number') return a.totalMarks;
+  if (typeof a.totalPossible === 'number') return a.totalPossible;
+  if (typeof a.sectionAPossible === 'number' || typeof a.sectionBPossible === 'number') {
+    return (a.sectionAPossible || 0) + (a.sectionBPossible || 0);
+  }
   return (a.questions || []).reduce((s, q) => s + (q.marks || 0), 0);
 }
 function earnedOf(a) {
   if (typeof a.totalScore === 'number') return a.totalScore;
   if (typeof a.earned === 'number') return a.earned;
+  if (typeof a.sectionAScore === 'number' || typeof a.sectionBScore === 'number') {
+    return (a.sectionAScore || 0) + (a.sectionBScore || 0);
+  }
   return (a.questions || []).reduce((s, q) => s + (q.earned || 0), 0);
 }
 function pctOf(a) {
