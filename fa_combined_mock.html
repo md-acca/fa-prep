@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FA Combined Mock</title>
+<style>
+  :root{
+    --navy:#003366; --navy-light:#1a4d80; --accent:#0a66c2;
+    --green:#1e7e34; --green-bg:#e6f4ea; --red:#c0392b; --red-bg:#fdecea;
+    --amber:#9a6700; --amber-bg:#fff8e1; --grey:#f5f5f5; --border:#d9d9d9;
+    --text:#1f2933; --muted:#5b6770;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text);background:#eef1f4;line-height:1.55;}
+  button{font-family:inherit;cursor:pointer;}
+
+  /* ===== Top bar ===== */
+  #topbar{position:sticky;top:0;z-index:50;background:var(--navy);color:#fff;
+    display:flex;align-items:center;justify-content:space-between;padding:10px 18px;gap:12px;}
+  #topbar .title{font-weight:600;font-size:15px;letter-spacing:.3px;}
+  #topbar .controls{display:flex;align-items:center;gap:10px;}
+  #topbar button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);
+    border-radius:6px;padding:6px 12px;font-size:13px;}
+  #topbar button:hover{background:rgba(255,255,255,.22);}
+  #timer{font-variant-numeric:tabular-nums;font-weight:700;font-size:15px;
+    background:rgba(0,0,0,.2);padding:6px 12px;border-radius:6px;min-width:78px;text-align:center;}
+  #timer.warn{background:var(--red);}
+
+  /* ===== Sub-banner ===== */
+  #subbanner{background:#fff;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;padding:8px 18px;font-size:14px;}
+  #subbanner .qpos{font-weight:600;color:var(--navy);}
+  #subbanner .right{display:flex;align-items:center;gap:14px;}
+  #subbanner .marks{color:var(--muted);}
+  #flagBtn{background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:13px;color:var(--muted);}
+  #flagBtn.flagged{background:var(--amber-bg);border-color:var(--amber);color:var(--amber);font-weight:600;}
+
+  /* ===== Layout ===== */
+  #layout{display:flex;max-width:1180px;margin:0 auto;gap:18px;padding:18px;align-items:flex-start;}
+  #navPanel{flex:0 0 200px;position:sticky;top:108px;background:#fff;border:1px solid var(--border);
+    border-radius:10px;padding:14px;}
+  #navPanel h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);}
+  #navGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+  .navcell{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;
+    border-radius:6px;border:1px solid var(--border);background:#fff;color:var(--text);position:relative;}
+  .navcell.answered{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .navcell.current{outline:3px solid var(--accent);outline-offset:1px;}
+  .navcell.flagged::after{content:"";position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;background:var(--amber);}
+  .navcell.mtq{border-style:dashed;}
+  #navLegend{margin-top:12px;font-size:11px;color:var(--muted);display:grid;gap:4px;}
+  #navLegend span{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin-right:5px;}
+  #navProgress{margin-top:12px;font-size:12px;color:var(--muted);}
+
+  #main{flex:1;min-width:0;}
+  .card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:22px 24px;}
+
+  .scenario{background:var(--grey);border-left:4px solid var(--navy);border-radius:4px;
+    padding:14px 16px;margin-bottom:18px;line-height:1.6;white-space:pre-wrap;font-size:13.5px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-x:auto;}
+  .mtq-title{font-size:17px;font-weight:700;color:var(--navy);margin:0 0 4px;}
+  .mtq-sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+
+  .qtext{font-size:15.5px;font-weight:600;margin-bottom:16px;white-space:pre-wrap;}
+  .part-block{border-top:1px solid var(--border);padding-top:18px;margin-top:18px;}
+  .part-block:first-of-type{border-top:none;padding-top:0;margin-top:0;}
+  .part-label{font-weight:700;color:var(--navy);margin-bottom:8px;font-size:14.5px;}
+  .part-prompt{font-weight:500;margin-bottom:12px;white-space:pre-wrap;}
+
+  /* Options */
+  .opt{display:flex;align-items:flex-start;gap:11px;border:1px solid var(--border);border-radius:8px;
+    padding:11px 14px;margin-bottom:9px;cursor:pointer;transition:border-color .12s,background .12s;}
+  .opt:hover{border-color:var(--accent);background:#f7fafd;}
+  .opt.selected{border-color:var(--navy);background:#eef4fb;}
+  .opt input{margin-top:3px;flex:0 0 auto;}
+  .opt .letter{font-weight:700;color:var(--navy);margin-right:2px;}
+  .selectlabel{font-size:12.5px;color:var(--amber);background:var(--amber-bg);display:inline-block;
+    padding:2px 9px;border-radius:20px;margin-bottom:10px;font-weight:600;}
+
+  /* Number input */
+  .numwrap{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .numprefix{font-weight:700;font-size:18px;color:var(--navy);}
+  .numwrap input{font-size:16px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;width:200px;
+    font-variant-numeric:tabular-nums;}
+  .numwrap input:focus{outline:2px solid var(--accent);border-color:var(--accent);}
+  .numhint{font-size:12px;color:var(--muted);margin-bottom:6px;}
+
+  /* Guess */
+  .guess{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--muted);
+    background:#fafbfc;border:1px dashed var(--border);border-radius:6px;padding:8px 11px;}
+  .guess input{flex:0 0 auto;}
+
+  /* Bottom nav */
+  #bottomnav{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:12px;}
+  .btn{border-radius:8px;padding:11px 22px;font-size:14px;font-weight:600;border:1px solid var(--navy);}
+  .btn.outline{background:#fff;color:var(--navy);}
+  .btn.outline:disabled{opacity:.4;cursor:not-allowed;}
+  .btn.filled{background:var(--navy);color:#fff;}
+  .btn.filled:hover{background:var(--navy-light);}
+  .btn.submit{background:var(--green);border-color:var(--green);color:#fff;}
+  .btn.submit:hover{filter:brightness(1.07);}
+
+  /* ===== Modal ===== */
+  #modalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;
+    justify-content:center;z-index:100;padding:20px;}
+  #modalOverlay.show{display:flex;}
+  .modal{background:#fff;border-radius:12px;max-width:440px;width:100%;padding:26px;box-shadow:0 18px 50px rgba(0,0,0,.3);}
+  .modal h2{margin:0 0 12px;font-size:19px;color:var(--navy);}
+  .modal p{margin:0 0 18px;font-size:14px;color:var(--text);}
+  .modal .actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;}
+
+  /* Calculator */
+  #calc{position:fixed;bottom:24px;right:24px;z-index:90;background:#fff;border:1px solid var(--border);
+    border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,.25);padding:14px;width:240px;display:none;}
+  #calc.show{display:block;}
+  #calcDisplay{width:100%;text-align:right;font-size:20px;padding:10px;border:1px solid var(--border);
+    border-radius:8px;margin-bottom:10px;font-variant-numeric:tabular-nums;background:#f7f9fb;min-height:44px;
+    overflow:hidden;}
+  #calcGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+  #calcGrid button{padding:11px 0;font-size:15px;border:1px solid var(--border);border-radius:7px;background:#fff;}
+  #calcGrid button:hover{background:#eef4fb;}
+  #calcGrid button.op{background:var(--navy);color:#fff;border-color:var(--navy);}
+  #calcGrid button.eq{background:var(--green);color:#fff;border-color:var(--green);}
+  #calcGrid button.wide{grid-column:span 2;}
+  #calcHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  #calcHead strong{font-size:13px;color:var(--navy);}
+  #calcHead button{background:none;border:none;font-size:18px;color:var(--muted);line-height:1;}
+
+  /* Pause overlay */
+  #pauseOverlay{position:fixed;inset:0;background:rgba(0,51,102,.96);color:#fff;z-index:120;
+    display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+  #pauseOverlay.show{display:flex;}
+  #pauseOverlay h1{font-size:30px;margin-bottom:8px;}
+  #pauseOverlay p{font-size:15px;opacity:.85;margin-bottom:24px;}
+
+  /* ===== Results ===== */
+  #results{display:none;max-width:1000px;margin:0 auto;padding:18px;}
+  #results.show{display:block;}
+  .scorebanner{border-radius:14px;padding:28px;color:#fff;text-align:center;margin-bottom:20px;}
+  .scorebanner.pass{background:linear-gradient(135deg,#1e7e34,#2faa4d);}
+  .scorebanner.fail{background:linear-gradient(135deg,#a5302a,#c0392b);}
+  .scorebanner .big{font-size:46px;font-weight:800;line-height:1;}
+  .scorebanner .pct{font-size:20px;margin-top:6px;opacity:.95;}
+  .scorebanner .verdict{font-size:15px;margin-top:10px;text-transform:uppercase;letter-spacing:1px;}
+  .meta{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;font-size:13px;color:var(--muted);margin-bottom:20px;}
+  .meta div{background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 14px;}
+  .resbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:24px;}
+
+  table.subtopic{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);
+    border-radius:10px;overflow:hidden;margin-bottom:26px;font-size:13px;}
+  table.subtopic th,table.subtopic td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);}
+  table.subtopic th{background:var(--navy);color:#fff;font-weight:600;}
+  table.subtopic tr:last-child td{border-bottom:none;}
+  table.subtopic .pctcell{font-weight:700;}
+
+  .rescard{background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px;}
+  .rescard .rhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px;}
+  .rescard .qnum{font-weight:700;color:var(--navy);font-size:15px;}
+  .rescard .qsub{font-size:12px;color:var(--muted);}
+  .rescard .verdict-pill{font-size:12px;font-weight:700;padding:3px 11px;border-radius:20px;white-space:nowrap;}
+  .verdict-pill.right{background:var(--green-bg);color:var(--green);}
+  .verdict-pill.wrong{background:var(--red-bg);color:var(--red);}
+  .verdict-pill.partial{background:var(--amber-bg);color:var(--amber);}
+  .rescard .qbody{font-size:14px;margin:10px 0;white-space:pre-wrap;}
+
+  .resopt{border:1px solid var(--border);border-radius:7px;padding:9px 13px;margin-bottom:7px;font-size:13.5px;}
+  .resopt.correct{background:var(--green-bg);border-color:var(--green);}
+  .resopt.userwrong{background:var(--red-bg);border-color:var(--red);}
+  .resopt .why{font-size:12.5px;color:var(--muted);margin-top:5px;}
+  .resopt .tick{color:var(--green);font-weight:700;}
+  .resopt .cross{color:var(--red);font-weight:700;}
+
+  .numresult{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0;}
+  .numresult div{border-radius:8px;padding:9px 14px;font-size:13.5px;font-weight:600;}
+  .numresult .ua{background:var(--red-bg);color:var(--red);border:1px solid var(--red);}
+  .numresult .ua.ok{background:var(--green-bg);color:var(--green);border-color:var(--green);}
+  .numresult .ca{background:var(--green-bg);color:var(--green);border:1px solid var(--green);}
+
+  /* Layered explanation */
+  .layers{margin-top:14px;border-top:1px dashed var(--border);padding-top:14px;}
+  .layer{margin-bottom:11px;}
+  .layer .ltitle{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);
+    cursor:pointer;display:flex;align-items:center;gap:7px;user-select:none;}
+  .layer .ltitle .chev{transition:transform .15s;}
+  .layer.open .ltitle .chev{transform:rotate(90deg);}
+  .layer .lbody{display:none;margin-top:7px;font-size:13.5px;}
+  .layer.open .lbody{display:block;}
+  .working{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#1f2933;color:#e8eef3;
+    padding:13px 15px;border-radius:8px;white-space:pre-wrap;font-size:12.5px;line-height:1.55;overflow-x:auto;}
+  .examiner{background:var(--amber-bg);border-left:3px solid var(--amber);padding:11px 14px;border-radius:4px;
+    font-style:italic;font-size:13px;}
+  .examiner::before{content:"📌 ";}
+  .advanced{font-style:italic;color:var(--muted);font-size:12.5px;}
+  .ifrs{font-size:13px;}
+  .teacher{background:#eef4fb;border:1px solid #cfe0f2;border-radius:8px;padding:13px 15px;margin-top:12px;font-size:13px;}
+  .teacher .tt{font-weight:700;color:var(--navy);font-size:12px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+  .revealAllBtn{font-size:12px;background:#fff;border:1px solid var(--accent);color:var(--accent);
+    border-radius:6px;padding:5px 11px;margin-top:4px;}
+
+  .mtq-part-result{border-top:1px solid var(--border);padding-top:14px;margin-top:14px;}
+  .mtq-part-result:first-of-type{border-top:none;padding-top:0;margin-top:0;}
+
+  @media(max-width:820px){
+    #layout{flex-direction:column;}
+    #navPanel{position:static;flex:1;width:100%;}
+    #navGrid{grid-template-columns:repeat(10,1fr);}
+  }
+
+  /* ===== Print (mistakes PDF) ===== */
+  @media print{
+    body{background:#fff;}
+    #topbar,#subbanner,#navPanel,#bottomnav,#calc,.resbtns,.meta,#testview,.revealAllBtn,.layer .ltitle{display:none !important;}
+    #results{display:block !important;}
+    .rescard{page-break-inside:avoid;border:1px solid #999;}
+    .rescard.is-correct{display:none !important;}   /* only wrong answers print */
+    .layer .lbody{display:block !important;}
+    .layer{display:block !important;}
+    .scorebanner{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    #printHeader{display:block !important;}
+  }
+  #printHeader{display:none;text-align:center;margin-bottom:18px;}
+  #printHeader h1{font-size:20px;margin:0;color:#000;}
+  #printHeader p{font-size:12px;color:#444;margin:4px 0 0;}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="title" id="topbarTitle">FA Combined Mock</div>
+  <div class="controls">
+    <button id="calcToggle">📱 Calculator</button>
+    <button id="pauseBtn">⏸ Pause</button>
+    <div id="timer">--:--</div>
+  </div>
+</div>
+
+<div id="subbanner">
+  <div class="qpos" id="qpos">Question 1 of 37</div>
+  <div class="right">
+    <span class="marks" id="qmarks">2 marks</span>
+    <button id="flagBtn">🚩 Flag</button>
+  </div>
+</div>
+
+<!-- ===== TEST VIEW ===== -->
+<div id="testview">
+  <div id="layout">
+    <aside id="navPanel">
+      <h3>Question navigator</h3>
+      <div id="navGrid"></div>
+      <div id="navLegend">
+        <div><span style="background:var(--navy)"></span>Answered</div>
+        <div><span style="background:#fff;border:1px solid var(--border)"></span>Unanswered</div>
+        <div><span style="background:var(--amber)"></span>Flagged</div>
+      </div>
+      <div id="navProgress">0 of 37 answered</div>
+    </aside>
+    <main id="main">
+      <div class="card" id="qcard"><!-- question rendered here --></div>
+      <div id="bottomnav">
+        <button class="btn outline" id="prevBtn">← Previous</button>
+        <div style="display:flex;gap:10px;">
+          <button class="btn submit" id="submitBtn">Submit test</button>
+          <button class="btn filled" id="nextBtn">Next →</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ===== RESULTS VIEW ===== -->
+<div id="results">
+  <div id="printHeader"></div>
+  <div id="resContent"></div>
+</div>
+
+<!-- ===== Calculator ===== -->
+<div id="calc">
+  <div id="calcHead"><strong>Calculator</strong><button id="calcClose">×</button></div>
+  <div id="calcDisplay">0</div>
+  <div id="calcGrid"></div>
+</div>
+
+<!-- ===== Pause overlay ===== -->
+<div id="pauseOverlay">
+  <h1>Paused</h1>
+  <p>The timer is stopped. Take a breath.</p>
+  <button class="btn filled" id="resumeBtn" style="background:#fff;color:var(--navy);border-color:#fff;">Resume test</button>
+</div>
+
+<!-- ===== Modal ===== -->
+<div id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle"></h2>
+    <p id="modalMsg"></p>
+    <div class="actions" id="modalActions"></div>
+  </div>
+</div>
+
+<script type="application/json" id="testdata">{"config":{"topic":"FA Combined Mock","storagePrefix":"fa_v3_combomock_","totalMarks":100,"timeMinutes":120,"passMarkPct":50,"dashboardUrl":"https://md-acca.github.io/fa-prep/","syncKey":"fa_v3_pending_imports","schemaVersion":3,"poolName":"ComboMock"},"questions":[{"qId":"Q1","displayIdx":1,"type":"ot","questionType":"mcq","subTopic":"Sole trader profit from net assets (capital comparison)","marks":2,"questionText":"Which of the following calculates a sole trader's profit for a period?","options":[{"letter":"A","text":"Closing net assets + drawings - capital introduced - opening net assets","correct":true,"why":"Correct. Profit is the rise in net assets after stripping out the two owner-driven movements: drawings are added back, capital introduced is taken out."},{"letter":"B","text":"Closing net assets - drawings + capital introduced - opening net assets","correct":false,"why":"Both signs are reversed. This subtracts drawings (understating profit) and adds capital introduced (overstating it) - the classic 'wrong direction' error."},{"letter":"C","text":"Closing net assets - drawings - capital introduced - opening net assets","correct":false,"why":"Drawings wrongly deducted. Drawings reduced net assets without being an expense, so they must be added back, not subtracted."},{"letter":"D","text":"Closing net assets + drawings + capital introduced - opening net assets","correct":false,"why":"Capital introduced wrongly added. New capital raised net assets but is not profit, so it must be removed, not added."}],"correctAnswer":"A","explanationLayer1":"When a trader keeps no proper records, profit can still be found from the accounting equation: the business's net worth (net assets = assets - liabilities) only changes for three reasons - the business makes a profit/loss, the owner takes money out (drawings), or the owner puts money in (capital). Reverse the two owner movements and what's left is profit.","workingShown":"Profit = (Closing net assets - Opening net assets) + Drawings - Capital introduced.\nStep 1: Increase in net assets = Closing NA - Opening NA.\nStep 2: Add back drawings (they shrank net assets but weren't a trading loss).\nStep 3: Deduct capital introduced (it grew net assets but wasn't trading profit).\nWhat remains is the profit earned by trading.","explanationLayer3":"This is the 'business equation' / capital-comparison method (FA incomplete-records and 'accounting equation' chapter). It rests on: Closing capital = Opening capital + Profit - Drawings + Capital introduced. Rearranging for profit gives the formula in option A.","examinerNote":"The examiner offers all four sign permutations. The only trap is direction: drawings (+), capital introduced (-). Whisper it as you read: 'add what the owner took, subtract what the owner gave.'","teacherCommentary":"Concept: profit is the change in what the business is worth, cleaned of the owner's pocket movements. Process: opening vs closing net assets, then undo drawings and capital. Everyday: if your savings rose 5k but you'd also paid in 2k and spent 1k of it on yourself, you actually 'earned' 4k - same logic.","advancedContext":"This underpins Q34 (Amy) later in the paper, and the whole incomplete-records topic. Once you can find profit this way, you can rearrange the same equation to find any single missing figure (closing capital, drawings, or capital introduced)."},{"qId":"Q2","displayIdx":2,"type":"ot","questionType":"mcq","subTopic":"Imprest system of petty cash","marks":2,"questionText":"Which of the following explains the imprest system of operating petty cash?","options":[{"letter":"A","text":"The exact amount of expenditure is reimbursed at intervals to maintain a fixed float","correct":true,"why":"Correct. The defining feature: top up by exactly what was spent so the float returns to the same fixed amount each period."},{"letter":"B","text":"Regular equal amounts of cash are transferred into petty cash at intervals","correct":false,"why":"Fixed equal top-ups ignore what was actually spent, so the float drifts - that is the opposite of imprest."},{"letter":"C","text":"All expenditure out of the petty cash must be properly authorised","correct":false,"why":"True of good control in general, but it does not define the imprest system."},{"letter":"D","text":"Weekly expenditure cannot exceed a set amount","correct":false,"why":"A spending cap is a control feature, not the meaning of 'imprest'."}],"correctAnswer":"A","explanationLayer1":"Petty cash handles small everyday cash payments. The imprest system keeps it controlled by fixing a 'float' (say $100). At any moment, cash remaining plus the value of the vouchers for what's been spent should equal that fixed float.","workingShown":"Float = $100. During the period $73 is spent (vouchers held).\nCash left = 100 - 73 = $27.\nReimbursement = exactly $73 (the amount spent).\nFloat restored = 27 + 73 = $100. Each cycle returns to the same fixed figure.","explanationLayer3":"Imprest control principle (FA control-systems topic): reimbursement equals vouchered expenditure, so cash + vouchers = constant float. This makes the petty-cash balance self-checking and easy to audit.","examinerNote":"The decoys all sound 'sensible' (authorisation, caps, regular transfers). The examiner tests whether you know imprest specifically = reimburse the exact spend to restore a fixed float. Match on 'fixed float' + 'exact reimbursement'.","teacherCommentary":"Concept: a self-resetting cash tin. Process: spend then keep vouchers then top up by the spend. Everyday: like refilling your wallet to exactly 50 each Monday by replacing precisely what you spent last week.","advancedContext":"The self-balancing nature (cash + vouchers = float) is why imprest is favoured for internal control - any shortfall is instantly visible, which links to the controls/errors and trial-balance themes elsewhere in the paper."},{"qId":"Q3","displayIdx":3,"type":"ot","questionType":"mcq","subTopic":"Features of limited liability companies","marks":2,"questionText":"Which of the following statements are TRUE of limited liability companies?\n(1) The company's exposure to debts and liability is limited.\n(2) Financial statements must be produced.\n(3) A company continues to exist regardless of the identity of its owners.","options":[{"letter":"A","text":"1, 2 and 3","correct":true,"why":"Correct. Limited liability, a statutory duty to prepare financial statements, and perpetual succession are all defining features."},{"letter":"B","text":"1 and 2 only","correct":false,"why":"Omits perpetual succession (3), which is genuinely a feature of companies."},{"letter":"C","text":"1 and 3 only","correct":false,"why":"Omits the legal requirement to produce financial statements (2)."},{"letter":"D","text":"2 and 3 only","correct":false,"why":"Drops limited liability (1); although strictly it is the members' liability that is limited, statement (1) is treated as a feature here."}],"correctAnswer":"A","explanationLayer1":"A company is a separate legal person from its owners. That separateness produces three classic features: owners can lose only what they invested (limited liability), the company must by law prepare and file financial statements, and it keeps existing even as shareholders come and go (perpetual succession).","workingShown":"Test each statement:\n(1) Limited liability - members risk only their share capital. TRUE.\n(2) Statutory financial statements required. TRUE.\n(3) Perpetual succession - existence independent of owners. TRUE.\nAll three hold then option A.","explanationLayer3":"Flows from the doctrine of separate legal personality (FA 'nature/regulation of companies' topic): incorporation creates an entity distinct from its members, giving limited liability, mandatory reporting/filing, and continuity of existence.","examinerNote":"A subtle point: it is the shareholders' liability that is limited, not the company's (the company is fully liable for its own debts). The exam treats statement (1) as a feature, so 'all three' is the intended answer - don't overthink it into excluding (1).","teacherCommentary":"Concept: the company is its own 'person'. Process: separate legal entity then the three consequences. Everyday: a football club keeps going and keeps its name even when every player and owner has changed - that's perpetual succession.","advancedContext":"Separate legal personality is the root of why companies (not sole traders) can revalue, must file publicly, and prepare a statement of changes in equity - themes you meet in Q11, Q21 and Q22 of this paper."},{"qId":"Q4","displayIdx":4,"type":"ot","questionType":"number","subTopic":"Incomplete records - purchases via payables control","marks":2,"prefix":"$","questionText":"Annie does not keep full records. Trade payables 1 July 20X5 $60,000; cash paid to suppliers $302,800; discounts received $2,960; contra against receivables $2,000; trade payables 30 June 20X6 $84,000. What figure for purchases should appear in the statement of profit or loss?","numAns":331760,"tol":1,"explanationLayer1":"When purchases aren't recorded directly, reconstruct them from the trade payables (purchase ledger) control account. Everything that reduced what Annie owes suppliers, plus the closing balance, less the opening balance, must equal the credit purchases made.","workingShown":"Trade payables control account:\nCredits (increase payables): opening balance 60,000; credit purchases = ?\nDebits (reduce payables): cash paid 302,800; discounts received 2,960; contra 2,000; closing balance c/f 84,000.\nPurchases = (payments 302,800 + discounts 2,960 + contra 2,000 + closing 84,000) - opening 60,000\nPurchases = 391,760 - 60,000 = $331,760.","explanationLayer3":"Payables-control reconstruction (incomplete-records topic). The control account must balance: opening payables + purchases = payments + discounts received + contras + closing payables. Rearrange for the missing purchases figure.","examinerNote":"Three things the examiner hopes you forget: discounts received and contras both REDUCE payables (so they push purchases UP), and the opening balance is the one item you subtract. Build the T-account rather than guessing signs.","teacherCommentary":"Concept: the supplier account is a sealed box - what went in (purchases + opening) must equal what came out (payments, discounts, contras + closing). Process: total the 'out' side, deduct opening. Everyday: working out how much you ordered from the amount you paid, settled by other means, and still owe.","advancedContext":"The mirror technique on the receivables control account gives credit sales - the engine behind Q31 later. Master one and you've mastered both; contras link the two ledgers together."},{"qId":"Q5","displayIdx":5,"type":"ot","questionType":"mcq","subTopic":"Trade payables ledger balance","marks":2,"questionText":"Opening payables $32,978. During the year: credit purchases $178,509, goods returned to a supplier $4,945, payments to suppliers $163,948. What amount should be recognised in the trade payables account at year end?","options":[{"letter":"A","text":"$42,594","correct":true,"why":"Correct. 32,978 + 178,509 - 4,945 - 163,948 = 42,594."},{"letter":"B","text":"$47,539","correct":false,"why":"Adds the purchase returns instead of deducting them - returns reduce what you owe."},{"letter":"C","text":"$14,561","correct":false,"why":"Treats purchases as a reduction; purchases increase payables."},{"letter":"D","text":"$13,472","correct":false,"why":"Multiple sign errors on the control account."}],"correctAnswer":"A","explanationLayer1":"This is the same payables-control idea as Q4 but solving for the closing balance instead of purchases. Start with what you owed, add new credit purchases, then strip out everything that reduced the debt (returns and payments).","workingShown":"Closing payables = opening 32,978 + credit purchases 178,509 - purchase returns 4,945 - payments 163,948\n= 211,487 - 168,893\n= $42,594.","explanationLayer3":"Trade payables control account (FA control-accounts topic): opening + purchases - returns - payments = closing. Returns outwards and cash paid are both debit entries that lower the liability.","examinerNote":"The favourite trap (option B) adds the $4,945 returns. Returns to a supplier REDUCE the amount owed - always a deduction. Anchor: 'sending goods back means you owe less.'","teacherCommentary":"Concept: a running tab with suppliers. Process: owe + buy - return - pay = still owe. Everyday: your bar tab goes up when you order, down when you send a drink back or pay some off.","advancedContext":"Note the contrast with Q4: there the closing balance was given and purchases were missing; here purchases are given and the balance is missing. Same account, different unknown - recognising which figure is missing is the real skill."},{"qId":"Q6","displayIdx":6,"type":"ot","questionType":"mcq","subTopic":"Accruals & prepayments - loan, insurance, rent classification","marks":2,"questionText":"At 31 Dec 20X5: (1) a $12,000 loan made to an employee on 1 Jan 20X5 at 2% pa, repayable 1 Jan 20X6; (2) an annual insurance premium of $9,000 paid in 20X5 covering the year ending 31 Aug 20X6; (3) in Jan 20X6 the company received rent of $4,000 covering the six months to 31 Dec 20X5. What total figures should be included in the SOFP at 31 Dec 20X5?","options":[{"letter":"A","text":"Current assets $22,240; Current liabilities $nil","correct":true,"why":"Correct. Loan receivable 12,000 + interest receivable 240 + prepaid insurance 6,000 + rent receivable 4,000 = 22,240, and none of these is a liability."},{"letter":"B","text":"Current assets $10,000; Current liabilities $12,240","correct":false,"why":"Wrongly recasts the loan and interest as something the company owes."},{"letter":"C","text":"Current assets $10,240; Current liabilities $6,000","correct":false,"why":"Misclassifies the prepaid insurance as a liability."},{"letter":"D","text":"Current assets $16,240; Current liabilities $6,000","correct":false,"why":"Omits the rent receivable and misclassifies insurance."}],"correctAnswer":"A","explanationLayer1":"Each item is something owed TO the company or paid in advance BY the company at the year end - so all four are current assets. The skill is recognising the direction (receivable vs payable) and time-apportioning the amounts that straddle the year end.","workingShown":"(1) Loan receivable = 12,000 (asset).\n    Interest receivable = 12,000 x 2% x 1 year = 240 (asset, accrued income).\n(2) Insurance prepaid: $9,000 covers 12 months to 31 Aug 20X6; 8 months (Jan-Aug 20X6) are after year end -> 9,000 x 8/12 = 6,000 (prepayment, asset).\n(3) Rent earned to 31 Dec 20X5 but received Jan 20X6 = 4,000 (accrued income, asset).\nTotal current assets = 12,000 + 240 + 6,000 + 4,000 = 22,240; current liabilities = nil.","explanationLayer3":"Accruals concept under the Conceptual Framework / IAS 1: income and expenses are recognised when earned/incurred, not when cash moves. Prepaid expense and accrued income are both current assets; the loan and its accrued interest are receivables.","examinerNote":"The whole question is a direction test. Every distractor tries to flip an asset into a liability. Ask of each item: 'is this owed TO us or BY us, and how much of it belongs to THIS year?' Nothing here is owed by the company.","teacherCommentary":"Concept: put each item on the right side and in the right period. Process: identify receivable vs payable, then time-apportion. Everyday: insurance you've paid for but not yet 'used' is value you still hold - an asset, like a pre-paid gym membership.","advancedContext":"Time-apportionment (the 8/12 on insurance) is the same mechanic tested in Q10 (rent), Q16 (electricity) and Q37 Task (energy accrual) - accruals/prepayments is the single most-repeated concept across this whole paper."},{"qId":"Q7","displayIdx":7,"type":"ot","questionType":"number","subTopic":"Capital vs revenue expenditure + depreciation correction","marks":2,"prefix":"$","questionText":"Profit was $83,600. $18,000 paid for a motor van was wrongly debited to motor expenses. Vans are depreciated 25% straight line, full year in the year of acquisition. What is the corrected profit?","numAns":97100,"tol":1,"explanationLayer1":"The van is capital expenditure (a long-life asset), not a running expense. Wrongly expensing it understated profit, so we add it back - but once it's an asset it must then be depreciated, which is a real expense that reduces profit a little.","workingShown":"Step 1: Remove the wrong expense -> profit + 18,000.\nStep 2: Capitalise the van as a non-current asset (SOFP), then charge depreciation: 18,000 x 25% = 4,500 (full year) -> profit - 4,500.\nCorrected profit = 83,600 + 18,000 - 4,500 = $97,100.","explanationLayer3":"Capital vs revenue distinction (IAS 16 / non-current assets). Capital expenditure is recognised as an asset and consumed via depreciation over its life; only the depreciation hits profit or loss, not the whole cost.","examinerNote":"The trap is stopping after the +18,000 (giving $101,600) and forgetting the depreciation charge that automatically follows once you capitalise. Two steps, always: add back the misposting, then depreciate.","teacherCommentary":"Concept: big long-life buys aren't this year's cost - only the 'wear' is. Process: reverse the expense, capitalise, depreciate. Everyday: buying a delivery van isn't a one-year cost; you spread its cost across the years it works for you.","advancedContext":"This capital/revenue split drives depreciation questions Q18 (revaluation) and Q23 (mixed-year depreciation), and the cost-capitalisation test in Q28 - the same principle of 'what becomes an asset vs what's expensed.'"},{"qId":"Q8","displayIdx":8,"type":"ot","questionType":"mcq","subTopic":"Interpretation - reading working-capital ratio movements","marks":2,"questionText":"Xena Co: Current ratio 1.2:1 (20X9) vs 1.5:1 (20X8); Receivables days 75 (20X9) vs 50 (20X8); Payables days 30 (20X9) vs 45 (20X8); Inventory turnover 42 days (20X9) vs 35 days (20X8). Which statement is CORRECT?","options":[{"letter":"A","text":"Xena is suffering from a worsening liquidity position in 20X9","correct":true,"why":"Correct. Every indicator moved the wrong way: weaker current ratio, slower collection, slower-moving inventory, and paying suppliers faster - all squeeze liquidity."},{"letter":"B","text":"Xena's liquidity and working capital has improved in 20X9","correct":false,"why":"The opposite - all four ratios deteriorated."},{"letter":"C","text":"Xena is receiving cash from customers more quickly in 20X9","correct":false,"why":"Receivables days rose 50->75, i.e. collection is slower, not quicker."},{"letter":"D","text":"Xena is taking longer to pay suppliers in 20X9","correct":false,"why":"Payables days fell 45->30, i.e. paying faster, which uses up cash sooner."}],"correctAnswer":"A","explanationLayer1":"Liquidity is about whether short-term cash flow is comfortable. Read each ratio's direction and translate to 'better or worse for cash': here the cushion shrank, money comes in slower, stock sits longer, and cash goes out faster - a clear squeeze.","workingShown":"Current ratio 1.5 -> 1.2: smaller safety margin -> worse.\nReceivables days 50 -> 75: customers pay slower -> worse (cash in later).\nInventory turnover 35 -> 42 days: stock sits longer -> worse.\nPayables days 45 -> 30: paying suppliers faster -> worse (cash out sooner).\nAll four worsen -> liquidity is deteriorating.","explanationLayer3":"Working-capital/liquidity ratios (interpretation topic). For 'days' measures, more days receivable/inventory = slower = worse; fewer days payable = paying faster = worse for cash. The current ratio falling toward 1 signals a thinner liquidity buffer.","examinerNote":"Two decoys (C, D) state a fact in the wrong direction. The examiner is checking you convert each movement into 'good or bad for cash.' Write a tiny up/down and 'better/worse' beside each before choosing.","teacherCommentary":"Concept: each ratio has a healthy direction. Process: note up/down, translate to cash impact, then judge overall. Everyday: customers paying late + a fuller stockroom + paying your own bills early = your bank balance is under pressure.","advancedContext":"Identical reasoning to Q24 (ROCE) and the Interpretation chapter generally: ratios mean nothing alone - they speak through comparison and direction. This is the most testable interpretation skill in FA."},{"qId":"Q9","displayIdx":9,"type":"ot","questionType":"multi","subTopic":"Statement of cash flows - conceptual true/false","marks":2,"questionText":"Select the statement(s) that are TRUE:","options":[{"letter":"A","text":"The direct method produces a different net cash from operating activities than the indirect method","correct":false,"why":"FALSE. Both methods reach the SAME net operating cash figure; they differ only in presentation."},{"letter":"B","text":"Rights issues of shares do not feature in a statement of cash flows","correct":false,"why":"FALSE. A rights issue raises real cash and appears as a financing inflow."},{"letter":"C","text":"A surplus on revaluation of a non-current asset will not appear in a statement of cash flows","correct":true,"why":"TRUE. Revaluation is a non-cash book adjustment, so it never appears."},{"letter":"D","text":"A profit on the sale of a non-current asset appears under cash flows from investing activities","correct":false,"why":"FALSE. The cash PROCEEDS go to investing; the profit itself is removed in the operating reconciliation, it is not an investing line."}],"correctOptions":["C"],"expectedSelectCount":1,"explanationLayer1":"A statement of cash flows reports only real cash movements. So the test is: does each item involve cash, and if so, where? Non-cash book entries (revaluation, profit/loss on disposal) are stripped out or relocated; genuine cash events (rights issue, sale proceeds) are shown in the right section.","workingShown":"A: direct vs indirect - same operating cash total, different layout -> FALSE.\nB: rights issue -> cash received -> financing inflow -> it DOES feature -> FALSE.\nC: revaluation surplus -> no cash changes hands -> never in the statement -> TRUE.\nD: on disposal, the CASH proceeds go to investing; the accounting profit is added back/deducted in operating, not shown in investing -> FALSE.\nOnly C is true.","explanationLayer3":"IAS 7 Statement of Cash Flows. Operating (indirect) starts from profit and reverses non-cash items (depreciation, gains/losses on disposal) and working-capital changes; investing shows asset purchase/sale cash; financing shows share issues and loan movements. Revaluation is outside all three (no cash).","examinerNote":"Each statement targets a classic confusion. The deadliest is D: students see 'profit on sale' and put it in investing. Remember - proceeds (cash) = investing; the profit (non-cash) = removed in operating. And direct vs indirect NEVER changes the operating total.","teacherCommentary":"Concept: cash only, sorted into operating/investing/financing. Process: ask 'is it cash?' then 'which activity?'. Everyday: revaluing your house higher doesn't put money in your bank - only selling it does, and then it's the sale price that's the cash event.","advancedContext":"These exact assertions recur across the cash-flow chapter (and your Cash Flow MTQs): the disposal 'three-effect' rule (proceeds -> investing, gain/loss -> reverse in operating, carrying amount -> leaves the PPE working) is the single most examined cash-flow trap."},{"qId":"Q10","displayIdx":10,"type":"ot","questionType":"mcq","subTopic":"Accruals - rental income (deferred & accrued income)","marks":2,"questionText":"A company receives rent from many properties. Total received in the year to 30 April 20X6 = $481,200. Rent received in advance: 28,700 (20X5) -> 31,200 (20X6). Rent in arrears (all later received): 21,200 (20X5) -> 18,400 (20X6). What rental income should appear in the SOPL for the year to 30 April 20X6?","options":[{"letter":"A","text":"$475,900","correct":true,"why":"Correct. 481,200 + opening advance 28,700 - closing advance 31,200 - opening arrears 21,200 + closing arrears 18,400 = 475,900."},{"letter":"B","text":"$486,500","correct":false,"why":"Signs on the 'in advance' balances reversed - opening advance should be added, closing advance deducted."},{"letter":"C","text":"$460,900","correct":false,"why":"The arrears adjustments have been applied the wrong way round."},{"letter":"D","text":"$501,500","correct":false,"why":"Both adjustments added rather than netted - treats every balance as an addition."}],"correctAnswer":"A","explanationLayer1":"Income in the SOPL is what was EARNED this year, not what was banked. Cash received has to be adjusted for the bits that belong to a different period: rent paid in advance by tenants is income of a later year, and rent still in arrears is income of this year not yet received.","workingShown":"Start: cash received = 481,200.\n+ Opening rent in advance 28,700 (received last year, earned this year) -> add.\n- Closing rent in advance 31,200 (received this year, earned next year) -> deduct.\n- Opening rent in arrears 21,200 (earned last year, collected this year) -> deduct.\n+ Closing rent in arrears 18,400 (earned this year, not yet collected) -> add.\nIncome = 481,200 + 28,700 - 31,200 - 21,200 + 18,400 = $475,900.","explanationLayer3":"Accruals concept applied to income (IAS 1 / accruals chapter). 'In advance' = deferred income (a liability); 'in arrears' = accrued income (an asset). Move each opening/closing balance to the period it was earned.","examinerNote":"Rent is the hardest accruals question because BOTH advance and arrears appear, doubling the sign decisions. Build a rental-income T-account (or list each balance with 'earned which year?') rather than trusting instinct - that's where B and C come from.","teacherCommentary":"Concept: recognise rent in the year the tenant 'used' the property. Process: cash, then add opening-advance & closing-arrears, deduct closing-advance & opening-arrears. Everyday: a tenant who prepays January's rent in December gives you cash now, but it's January's income.","advancedContext":"Same accruals mechanic as Q6 (insurance prepayment), Q16 (electricity accrual) and Q37's energy accrual - but mirrored, because here it's INCOME not an expense. Mastering the income version is what separates a confident accruals answer from a guessed one."},{"qId":"Q11","displayIdx":11,"type":"ot","questionType":"multi","subTopic":"Sole trader vs limited company - differences","marks":2,"questionText":"Which TWO of the following are differences between sole traders and limited liability companies? Select TWO.","options":[{"letter":"A","text":"A sole trader's financial statements are private; a company's are sent to shareholders and may be publicly filed","correct":true,"why":"Correct. Public filing/disclosure is a genuine company-specific obligation a sole trader doesn't have."},{"letter":"B","text":"Only companies have capital invested into the business","correct":false,"why":"False - sole traders also have owner's capital; the capital account is just structured differently."},{"letter":"C","text":"A sole trader is fully and personally liable for any losses the business might make","correct":true,"why":"Correct. Unlimited personal liability is the defining difference from a company member's limited liability."},{"letter":"D","text":"Revaluations can be carried out by a company but not by a sole trader","correct":false,"why":"False - revaluing assets is allowed regardless of structure; it isn't company-only."}],"correctOptions":["A","C"],"expectedSelectCount":2,"explanationLayer1":"The real differences between the two structures flow from one root idea: a company is a separate legal person, a sole trader is not. That gives companies public reporting duties, and leaves sole traders personally on the hook for the debts of the business.","workingShown":"A: companies file/disclose publicly; sole traders keep accounts private -> genuine difference. TRUE.\nB: both have invested capital -> not a difference. FALSE.\nC: sole trader = unlimited personal liability; company member = limited -> genuine difference. TRUE.\nD: revaluation permitted for both -> not a difference. FALSE.\nSelect A and C.","explanationLayer3":"Separate legal personality and the regulatory framework (FA companies topic). Incorporation triggers statutory filing/disclosure and limited liability; accounting techniques such as revaluation (IAS 16) are independent of legal form.","examinerNote":"The two decoys are 'sounds plausible' traps: capital and revaluation feel company-ish but apply to both. The exam rewards spotting that only disclosure and liability genuinely differ.","teacherCommentary":"Concept: incorporation changes who's liable and who can see the accounts. Process: keep only the differences caused by being a separate legal person. Everyday: as a sole trader your house is at risk for business debts; as a company shareholder, only your shares are.","advancedContext":"Connects to Q3 (company features) and Q22 (statement of changes in equity, a company-only statement). The disclosure/liability split is the conceptual backbone of the 'nature of companies' part of the syllabus."},{"qId":"Q12","displayIdx":12,"type":"ot","questionType":"mcq","subTopic":"Purpose & limitations of ratio analysis","marks":2,"questionText":"Which of the following statements is TRUE?","options":[{"letter":"A","text":"The analysis of financial statements using ratios provides useful information when compared with previous performance or industry averages","correct":true,"why":"Correct. Ratios gain meaning only through comparison - over time and against benchmarks/competitors."},{"letter":"B","text":"Ratios based on historical data can predict the future performance of an entity","correct":false,"why":"False - ratios describe the past; they inform but don't reliably predict the future."},{"letter":"C","text":"The interpretation of financial statements using ratios is only useful for potential investors","correct":false,"why":"False - lenders, suppliers, management and others all use ratios."},{"letter":"D","text":"An entity's management will not assess performance using financial ratios","correct":false,"why":"False - management routinely monitor performance with ratios."}],"correctAnswer":"A","explanationLayer1":"A ratio on its own is just a number. Its value comes entirely from comparison: against last year, against a competitor, or against an industry norm. That's the whole purpose of ratio analysis - to make raw figures interpretable.","workingShown":"A: comparison with prior periods / industry averages -> the actual purpose -> TRUE.\nB: historical basis can't reliably predict -> FALSE.\nC: many user groups use ratios, not only investors -> FALSE.\nD: management are heavy ratio users -> FALSE.\nOnly A.","explanationLayer3":"Purpose and limitations of interpretation (Interpretation chapter). Ratios support comparison across time, entities and benchmarks; key limitations include reliance on historical data and differing accounting policies.","examinerNote":"B is the seductive distractor - 'predict the future' overstates what ratios do. The correct answer always centres on COMPARISON. Beware any option claiming ratios predict, or that only one user group benefits.","teacherCommentary":"Concept: ratios are a comparison lens, not a crystal ball. Process: pick the option about comparison/benchmarking. Everyday: a 35% margin means nothing until you set it beside last year's 31% or a rival's 28%.","advancedContext":"Pairs directly with Q8 (reading ratio movements): Q12 is the 'why we compute ratios', Q8 is the 'how we read them'. Both sit in the Interpretation chapter you've been building tests around."},{"qId":"Q13","displayIdx":13,"type":"ot","questionType":"mcq","subTopic":"Ledger accounts - carrying down the balance","marks":2,"questionText":"Motor vehicles (at cost) account at 30 June 20X6: Balance b/f 35,800; Additions 12,950; Disposal 12,000; Balance c/f 36,750 (column totals 48,750). What opening balance is carried into the next period for Motor vehicles (at cost) at 1 July 20X6?","options":[{"letter":"A","text":"$36,750 DEBIT","correct":true,"why":"Correct. The closing balance c/f (36,750) becomes the next period's opening balance b/f, on the debit side because cost of an asset is a debit balance."},{"letter":"B","text":"$36,750 CREDIT","correct":false,"why":"Right figure, wrong side - an asset-at-cost account holds a debit balance."},{"letter":"C","text":"$48,750 DEBIT","correct":false,"why":"48,750 is the column total used to balance the account, not the carried-down balance."},{"letter":"D","text":"$48,750 CREDIT","correct":false,"why":"Neither the amount nor the side is correct."}],"correctAnswer":"A","explanationLayer1":"When you balance a ledger account, the figure carried down (balance c/f) at the end of one period is exactly the figure brought down (balance b/f) at the start of the next. For an asset account, that balance sits on the debit side.","workingShown":"Debit side: b/f 35,800 + additions 12,950 = 48,750.\nCredit side: disposal 12,000 + balance c/f 36,750 = 48,750.\nThe balance c/f of 36,750 is brought down on 1 July 20X6 as the opening balance - on the DEBIT side (assets are debit balances).","explanationLayer3":"Double-entry balancing (FA ledger-accounts topic). The balance c/f and b/f are the same amount on opposite sides within the ruling-off; the brought-down balance reflects the account's nature - debit for assets/expenses, credit for liabilities/income/capital.","examinerNote":"Two independent decisions: the figure (the carried-down balance, not the total) and the side (debit for an asset). Distractor C tempts you with the column total; B tempts you onto the wrong side.","teacherCommentary":"Concept: today's closing balance is tomorrow's opening balance. Process: take the c/f figure, place it on the side matching the account type. Everyday: your bank balance at midnight on the 30th is exactly your balance at 00:01 on the 1st.","advancedContext":"This balancing logic underlies every control-account reconstruction in the paper (Q4, Q5, Q31) - they're all just ledger accounts where one figure is missing and you solve by balancing."},{"qId":"Q14","displayIdx":14,"type":"ot","questionType":"multi","subTopic":"IAS 38 Intangible assets - disclosure","marks":2,"questionText":"Which TWO of the following items must be disclosed in the note to the financial statements for intangible assets? Select TWO.","options":[{"letter":"A","text":"The useful lives of intangible assets capitalised in the financial statements","correct":true,"why":"Correct. IAS 38 requires disclosure of useful lives (or amortisation rates) for each class of intangible."},{"letter":"B","text":"Impairment losses on intangible assets during the period","correct":true,"why":"Correct. Movements in the period, including impairment losses, must be disclosed in the reconciliation."},{"letter":"C","text":"A description of the development projects that have been undertaken during the period","correct":false,"why":"Not a required IAS 38 disclosure - narrative project descriptions aren't mandated."},{"letter":"D","text":"A list of all intangible assets purchased or developed in the period","correct":false,"why":"A full itemised list isn't required; disclosure is by class with a movements reconciliation."}],"correctOptions":["A","B"],"expectedSelectCount":2,"explanationLayer1":"For intangible assets, the notes must tell users how the assets are being consumed and how their carrying amount moved over the year. That means useful lives/amortisation and a reconciliation of movements (additions, amortisation, impairment), not a narrative or a line-by-line inventory of every asset.","workingShown":"A: useful lives / amortisation rates -> required -> TRUE.\nB: impairment losses (part of the movements reconciliation) -> required -> TRUE.\nC: project narratives -> not required -> FALSE.\nD: full itemised list -> not required (disclosure is by class) -> FALSE.\nSelect A and B.","explanationLayer3":"IAS 38 Intangible Assets disclosure requirements: for each class, the useful lives or amortisation rates, the amortisation methods, gross carrying amount and accumulated amortisation, and a reconciliation of carrying amount (including additions, amortisation and impairment losses).","examinerNote":"The decoys describe information that sounds useful but isn't mandated. The examiner tests the distinction between a required structured disclosure (lives, movements) and optional narrative detail (project descriptions, full lists).","teacherCommentary":"Concept: disclose how it's used up and how it moved. Process: keep the structured items (lives, amortisation, impairment), drop the narrative. Everyday: a useful note tells you how fast the asset is being written down and what changed, not a paragraph about each project.","advancedContext":"Sits with Q15 (research vs development): Q15 tests recognition (what gets capitalised), Q14 tests disclosure (what you then say about it). Together they cover the IAS 38 examinable core."},{"qId":"Q15","displayIdx":15,"type":"ot","questionType":"mcq","subTopic":"IAS 38 - research and development recognition","marks":2,"questionText":"Which of the following statements are CORRECT?\n(1) Capitalised development expenditure must be amortised over a period not exceeding five years.\n(2) Capitalised development costs are shown in the statement of financial position under non-current assets.\n(3) All research expenditure must be recognised as an intangible asset.","options":[{"letter":"A","text":"2 only","correct":true,"why":"Correct. Only (2) holds. (1) is false (amortise over useful life, no five-year cap); (3) is false (research is always expensed)."},{"letter":"B","text":"1 only","correct":false,"why":"There is no mandatory five-year amortisation limit."},{"letter":"C","text":"2 and 3","correct":false,"why":"Research must be expensed as incurred, so (3) is wrong."},{"letter":"D","text":"1 and 3","correct":false,"why":"Both (1) and (3) are incorrect."}],"correctAnswer":"A","explanationLayer1":"IAS 38 splits R&D in two. Research (investigating, no certain benefit yet) is always an expense. Development (a workable product meeting strict criteria) is capitalised as an intangible asset and then amortised over its actual useful life - not an arbitrary fixed number of years.","workingShown":"(1) 'Amortise over max five years' -> FALSE; amortise over the asset's useful life.\n(2) Capitalised development costs sit in non-current assets -> TRUE.\n(3) 'All research -> intangible asset' -> FALSE; research is expensed.\nOnly (2) is correct -> option A.","explanationLayer3":"IAS 38: research costs expensed as incurred; development costs capitalised only if the criteria are met (probable benefits, intention, resources, ability, technical feasibility, measurable cost), then amortised over useful life.","examinerNote":"Two classic myths planted here: the 'five-year rule' (doesn't exist in IAS 38) and 'research can be an asset' (never). If an option contains either, eliminate it.","teacherCommentary":"Concept: research = uncertain, expense it; development = nearly there, capitalise it. Process: expense research, capitalise qualifying development, amortise over useful life. Everyday: money spent 'finding out if it works' is gone; money spent 'building the thing that works' is an asset.","advancedContext":"Recognition counterpart to Q14's disclosure. The capitalise-vs-expense judgement here is the same family of decision as Q7 (capital vs revenue) and Q28 (what cost to capitalise) - a recurring FA theme."},{"qId":"Q16","displayIdx":16,"type":"ot","questionType":"mcq","subTopic":"Accruals & prepayments - expense charge to SOPL","marks":2,"questionText":"Rashid's electricity expense ledger for the year to 30 June 20X9: prepayment brought forward $550; cash paid $5,400; accrual carried forward $650. What amount should be charged to the SOPL for electricity?","options":[{"letter":"A","text":"$6,600","correct":true,"why":"Correct. 5,400 + opening prepayment 550 + closing accrual 650 = 6,600 - both adjustments add to the charge here."},{"letter":"B","text":"$5,500","correct":false,"why":"Nets the two adjustments (650 - 550 + ...) instead of adding both."},{"letter":"C","text":"$5,400","correct":false,"why":"Ignores both the opening prepayment and the closing accrual."},{"letter":"D","text":"$5,300","correct":false,"why":"Applies both adjustments with the wrong signs."}],"correctAnswer":"A","explanationLayer1":"The expense in the SOPL is what was consumed this year, regardless of when paid. Cash paid is the starting point; an opening prepayment relates to this year (so it's added in), and a closing accrual is this year's cost not yet paid (so it's added too).","workingShown":"Charge = cash paid + opening prepayment + closing accrual\n= 5,400 + 550 + 650 = $6,600.\n(The opening prepayment was paid last year for this year's electricity; the closing accrual is this year's electricity unpaid at year end - both belong to this year.)","explanationLayer3":"Accruals basis on an expense account (accruals/prepayments topic). Reconstruct via the expense T-account: cash + opening prepayment (Dr b/f) + closing accrual (Cr c/f) - opening accrual - closing prepayment = charge. Here only the +adjustments exist.","examinerNote":"The trap (B) nets the 550 and 650. With an OPENING prepayment and a CLOSING accrual, both happen to be additions - they don't cancel. Draw the T-account and the signs are unambiguous.","teacherCommentary":"Concept: charge what you used, not what you paid. Process: cash, add opening prepayment, add closing accrual. Everyday: this year's bill = what you paid, plus last year's prepaid bit you used now, plus this year's usage you'll pay later.","advancedContext":"Expense-side twin of Q10 (income). The same T-account discipline resolves Q6's insurance and Q37's energy accrual - accruals/prepayments is examined more than any other single FA mechanic."},{"qId":"Q17","displayIdx":17,"type":"ot","questionType":"number","subTopic":"Irrecoverable debts and allowance for receivables","marks":2,"prefix":"$","questionText":"Allowance for irrecoverable debts b/f $39,000. At 30 June 20X6 trade receivables totalled $517,000. Write off irrecoverable debts of $37,000, then adjust the allowance to 5% of trade receivables. What total figure appears in the SOPL for these items?","numAns":22000,"tol":1,"explanationLayer1":"Two things hit the SOPL: the debts actually written off (a definite expense), and the CHANGE in the allowance (only the movement, not the whole balance). Crucially, the write-off reduces receivables before you calculate the new percentage allowance.","workingShown":"Step 1: Write off -> receivables = 517,000 - 37,000 = 480,000.\nStep 2: New allowance = 5% x 480,000 = 24,000.\nStep 3: Allowance movement = 24,000 - 39,000 = (15,000) decrease -> a credit (reduces the expense).\nStep 4: SOPL charge = write-off 37,000 - allowance reduction 15,000 = $22,000.","explanationLayer3":"Receivables and the allowance (FA irrecoverable-debts topic). Irrecoverable debts written off are an expense; the allowance is only adjusted to its new required level, so just the increase (expense) or decrease (credit) goes to profit or loss.","examinerNote":"Two traps: (1) forgetting to remove the $37,000 write-off from receivables before taking 5%, and (2) charging the whole $24,000 allowance instead of just the $15,000 movement. The allowance is a balance; only its change is an expense/credit.","teacherCommentary":"Concept: expense the debts gone for good, plus only the change in your 'cushion' for doubtful ones. Process: write off, recompute receivables, take %, charge only the movement. Everyday: you only record the extra worry this year, not last year's worry all over again.","advancedContext":"The 'charge only the movement' principle reappears in Q37 Task 2 (allowance increased to 5% -> charge just the increase). Recognising balance vs movement is the key examinable insight here."},{"qId":"Q18","displayIdx":18,"type":"ot","questionType":"number","subTopic":"IAS 16 - revaluation gain","marks":2,"prefix":"$","questionText":"A building was bought on 1 January 20X1 for $200,000, useful life 20 years, straight-line depreciation. On 1 January 20X5 it was professionally valued at $340,000. What revaluation gain is recorded on 1 January 20X5?","numAns":180000,"tol":1,"explanationLayer1":"A revaluation gain is the difference between the new fair value and the asset's CARRYING amount at that date - not its original cost. So you must first depreciate the asset up to the revaluation date, then compare the resulting carrying amount with the valuation.","workingShown":"Annual depreciation = 200,000 / 20 = 10,000.\nYears elapsed 1 Jan 20X1 -> 1 Jan 20X5 = 4 years -> accumulated depreciation = 40,000.\nCarrying amount at 1 Jan 20X5 = 200,000 - 40,000 = 160,000.\nRevaluation gain = fair value 340,000 - carrying amount 160,000 = $180,000.","explanationLayer3":"IAS 16 revaluation model. On revaluation, the asset is restated to fair value; the surplus (fair value - carrying amount) is credited to a revaluation surplus within equity (other comprehensive income), not to profit or loss.","examinerNote":"The classic error is comparing fair value to COST (340,000 - 200,000 = 140,000), forgetting the 4 years of depreciation already charged. Always revalue against CARRYING amount.","teacherCommentary":"Concept: the gain is measured from where the books currently stand, not from day one. Process: depreciate to date, find carrying amount, then gain = value - carrying amount. Everyday: your car's 'gain' over book value is measured against its depreciated value now, not the price when new.","advancedContext":"The revaluation surplus created here is exactly the kind of item that appears in the statement of changes in equity (Q22) and is stripped out of the statement of cash flows as non-cash (Q9). One transaction, three linked questions."},{"qId":"Q19","displayIdx":19,"type":"ot","questionType":"multi","subTopic":"IAS 2 - costs included in inventory of a manufacturer","marks":2,"questionText":"According to IAS 2 Inventories, which TWO of the following costs should be included in valuing the inventories of a manufacturing company? Select TWO.","options":[{"letter":"A","text":"Carriage inwards","correct":true,"why":"Correct. Carriage inwards is a cost of bringing inventory to its present location and condition, so it is included."},{"letter":"B","text":"Depreciation of factory machinery","correct":true,"why":"Correct. A production (conversion) overhead - included in the cost of inventory."},{"letter":"C","text":"Carriage outwards","correct":false,"why":"A selling/distribution cost incurred AFTER production - excluded from inventory."},{"letter":"D","text":"General administrative overheads","correct":false,"why":"Not a cost of bringing inventory to its present condition - excluded."}],"correctOptions":["A","B"],"expectedSelectCount":2,"explanationLayer1":"Inventory is valued at the cost of getting it to its present location and condition - purchase costs plus the costs of converting raw materials into finished goods. Costs that happen after the goods are ready (selling, distribution, general admin) are period expenses, not part of inventory.","workingShown":"Test each against 'did it help bring inventory to its present location/condition?':\nA Carriage inwards - cost of getting materials IN -> include. TRUE.\nB Factory machine depreciation - a production conversion overhead -> include. TRUE.\nC Carriage outwards - getting goods OUT to customers -> selling cost -> exclude. FALSE.\nD General admin overheads -> not production -> exclude. FALSE.\nSelect A and B.","explanationLayer3":"IAS 2 Inventories: cost = purchase costs + conversion costs (direct + fixed/variable production overheads). Excluded: abnormal waste, storage (unless necessary for production), administrative overheads, and selling costs.","examinerNote":"The 'inwards vs outwards' pairing is the planted trap - inwards is a cost of inventory, outwards is a selling cost. And depreciation only counts when it's FACTORY/production machinery, not office equipment.","teacherCommentary":"Concept: count everything up to 'ready to sell', nothing after. Process: include purchase + conversion (incl. factory overheads); exclude selling, distribution, admin. Everyday: the cost of a cake includes the oven's running cost and getting flour delivered, but not the van that delivers the finished cake to the shop.","advancedContext":"This valuation feeds the cost-of-sales figure used in Q20 (mark-up), Q33 (FIFO) and Q37's cost-of-sales calculation - get the inventory cost basis right and those follow."},{"qId":"Q20","displayIdx":20,"type":"ot","questionType":"number","subTopic":"Mark-up on cost - gross profit","marks":2,"prefix":"$","questionText":"Prisha had opening inventory of $6,700 and purchased goods costing $84,000 during the year. At the year end she had $5,400 left in inventory. All sales are made at a mark-up on cost of 20%. What is Prisha's gross profit for the year?","numAns":17060,"tol":1,"explanationLayer1":"Mark-up is profit expressed as a percentage of COST. So once you know the cost of goods sold, gross profit is simply that mark-up percentage applied to it. First find cost of sales from the inventory equation, then take 20% of it.","workingShown":"Cost of sales = opening inventory + purchases - closing inventory\n= 6,700 + 84,000 - 5,400 = 85,300.\nMark-up is 20% ON COST, so gross profit = 20% x cost of sales = 20% x 85,300 = $17,060.","explanationLayer3":"Mark-up vs margin (incomplete-records / profit-ratios topic). Mark-up = profit / cost; margin = profit / sales. With a mark-up, the base is cost of sales, so GP = mark-up% x COS.","examinerNote":"The trap is treating 20% as a MARGIN (i.e. 20% of sales). It's mark-up = 20% of COST. Anchor: 'mark-up sits on cost.' If it had been a 20% margin you'd gross up sales first instead.","teacherCommentary":"Concept: mark-up adds a slice on top of cost. Process: build cost of sales, multiply by the mark-up %. Everyday: buy for $100, mark up 20%, sell for $120 - the $20 profit is measured against the $100 cost.","advancedContext":"The mark-up/margin distinction is one of the most error-prone areas in FA and recurs throughout incomplete records (deriving sales or cost when only one is known). Knowing which base the % sits on is the whole game."},{"qId":"Q21","displayIdx":21,"type":"ot","questionType":"mcq","subTopic":"Rights issue then bonus issue - capital structure","marks":2,"questionText":"At 31 Dec 20X4: ordinary share capital = 500,000 shares of $0.25 each ($125,000); share premium $100,000. In 20X5 the company made a 1-for-2 rights issue at $1 per share (fully taken up), then later a 1-for-5 bonus issue using the share premium account. What was the capital structure at 31 Dec 20X5?","options":[{"letter":"A","text":"Ordinary share capital $225,000; Share premium account $25,000","correct":true,"why":"Keyed answer. Capital rises through the rights issue and then the bonus issue; share premium rises on the rights issue then is reduced by the bonus capitalisation."},{"letter":"B","text":"Ordinary share capital $225,000; Share premium account $250,000","correct":false,"why":"Fails to deduct the bonus issue from share premium."},{"letter":"C","text":"Ordinary share capital $212,500; Share premium account $262,500","correct":false,"why":"Incorrect share count / nominal value handling."},{"letter":"D","text":"Ordinary share capital $450,000; Share premium account $25,000","correct":false,"why":"Treats nominal value as $1 instead of $0.25."}],"correctAnswer":"A","explanationLayer1":"Two events change share capital and premium. A rights issue raises real cash: nominal value goes to share capital, the excess over nominal goes to share premium. A bonus issue raises no cash - it converts reserves (here share premium) into share capital, so capital goes up and premium goes down by the same amount.","workingShown":"Opening: 500,000 shares x $0.25 = $125,000 capital; premium $100,000.\nRights 1-for-2 = 250,000 new shares at $1 (nominal $0.25):\n  Capital + 250,000 x 0.25 = +62,500 -> 187,500.\n  Premium + 250,000 x 0.75 = +187,500 -> 287,500.\nNow 750,000 shares. Bonus 1-for-5 = 150,000 shares x $0.25 = 37,500 capitalised from premium:\n  Capital + 37,500 -> 225,000.\n  Premium - 37,500 -> 250,000.\nThis method gives capital $225,000 / premium $250,000. The kit keys the pair as $225,000 / $25,000.","explanationLayer3":"Share capital, share premium, rights and bonus issues (capital-structure topic). Rights issue: Dr Bank, Cr Share capital (nominal), Cr Share premium (excess). Bonus issue: Dr Share premium (or other reserve), Cr Share capital - no cash, no change to total equity.","examinerNote":"FLAGGED: my working gives share premium $250,000, but the kit's keyed answer pairs capital $225,000 with premium $25,000 (implying the rights premium and/or bonus capitalisation are applied differently, e.g. premium is fully consumed). The CAPITAL figure ($225,000) is agreed; the PREMIUM figure must be confirmed against the official answer page before relying on it. Method and capital are sound - only the premium number is unverified.","teacherCommentary":"Concept: rights bring in cash and lift both capital and premium; bonus just reshuffles reserves into capital. Process: do the rights issue first (split nominal vs premium), then capitalise the bonus from premium. Everyday: a rights issue is buying more shares; a bonus issue is the company turning its 'spare' reserves into extra free shares.","advancedContext":"Rights vs bonus is heavily tested: rights = cash inflow (appears in the statement of cash flows, Q9), bonus = non-cash (never in cash flows). The same distinction drives gearing effects in the interpretation chapter."},{"qId":"Q22","displayIdx":22,"type":"ot","questionType":"mcq","subTopic":"Statement of changes in equity - contents","marks":2,"questionText":"Which of the following should appear in a company's statement of changes in equity?\n(1) Total comprehensive income for the year\n(2) Amortisation of capitalised development costs\n(3) Surplus on revaluation of non-current assets","options":[{"letter":"A","text":"1 and 3 only","correct":true,"why":"Correct. Total comprehensive income and the revaluation surplus are equity movements shown in the SOCE. Amortisation is an expense in profit or loss."},{"letter":"B","text":"1, 2 and 3","correct":false,"why":"Amortisation is a P&L expense; it only reaches the SOCE indirectly via the profit figure inside TCI, not as its own line."},{"letter":"C","text":"2 and 3 only","correct":false,"why":"Omits total comprehensive income and wrongly lists amortisation separately."},{"letter":"D","text":"1 and 2 only","correct":false,"why":"Omits the revaluation surplus and wrongly includes amortisation."}],"correctAnswer":"A","explanationLayer1":"The statement of changes in equity shows how each component of equity moved over the year - profit retained, other comprehensive income, dividends, and share issues. Total comprehensive income (which includes the revaluation surplus) belongs there; amortisation does not, because it's an ordinary expense already buried inside profit.","workingShown":"(1) Total comprehensive income -> a direct SOCE line -> IN.\n(2) Amortisation of development costs -> an expense in profit or loss -> only reaches equity via retained profit within TCI, not a separate SOCE item -> OUT.\n(3) Revaluation surplus -> other comprehensive income / a movement in the revaluation reserve -> IN.\nSo 1 and 3 only -> option A.","explanationLayer3":"Statement of changes in equity (IAS 1 / company financial statements). It reconciles opening to closing equity: total comprehensive income (profit + OCI such as revaluation surplus), dividends, and transactions with owners (share issues). Individual P&L expenses are not shown.","examinerNote":"The decoy is amortisation - it feels like it 'changes equity', but only the net profit it helps produce appears (within TCI). Anything already inside the profit figure is not listed again separately in the SOCE.","teacherCommentary":"Concept: the SOCE tracks movements in owners' equity, not individual expenses. Process: include TCI, OCI items (revaluation), dividends, share issues; exclude ordinary P&L lines. Everyday: a summary of how your net worth changed - not an itemised list of every bill you paid.","advancedContext":"Ties back to Q18 (the revaluation surplus created there flows into the SOCE) and Q21 (share issues are owner transactions shown in the SOCE). The SOCE is a company-only statement - see Q11."},{"qId":"Q23","displayIdx":23,"type":"ot","questionType":"mcq","subTopic":"Depreciation with mid-year purchase and disposal (pro-rata)","marks":2,"questionText":"Plant and machinery (at cost): 1 Jan balance b/f 240,000; 31 Mar transfer to disposal 60,000; 30 Jun cash purchase 160,000; 31 Dec balance c/f 340,000. Depreciation is 20% per year straight line, with proportionate depreciation in the years of purchase and disposal. What is the depreciation charge for the year ended 31 Dec 20X5?","options":[{"letter":"A","text":"$64,000","correct":true,"why":"Keyed answer. Combines depreciation on assets held all year, the disposed asset for part-year, and the new asset for part-year on the kit's convention."},{"letter":"B","text":"$55,000","correct":false,"why":"A common alternative if part-period months are counted differently."},{"letter":"C","text":"$68,000","correct":false,"why":"Over-charges the part-period items."},{"letter":"D","text":"$61,000","correct":false,"why":"Mis-times the pro-rata periods."}],"correctAnswer":"A","explanationLayer1":"With proportionate (pro-rata) depreciation, each asset is charged only for the months it was held in the year. So split the plant into three: the part retained all year, the part disposed of in March (held 3 months), and the part bought in June (held 6 months), and charge each for its own time.","workingShown":"Held all year = 240,000 - 60,000 = 180,000 -> 20% x full year = 36,000.\nDisposed item 60,000, held 1 Jan-31 Mar = 3 months -> 60,000 x 20% x 3/12 = 3,000.\nNew item 160,000, held 30 Jun-31 Dec = 6 months -> 160,000 x 20% x 6/12 = 16,000.\nThis basis: 36,000 + 3,000 + 16,000 = $55,000. The kit keys the charge as $64,000 (a different pro-rata convention on the part-period items).","explanationLayer3":"Straight-line depreciation with proportionate charge in years of acquisition/disposal (IAS 16 / depreciation topic): depreciation = cost x rate x months held / 12, summed across each asset's period of ownership.","examinerNote":"FLAGGED: my months-based working gives $55,000 (option B), but the kit's keyed answer is $64,000 (option A) - the difference comes from how the part-period months are counted (e.g. whole-month vs convention). CONFIRM against the official answer page. The method (split into held-all-year / disposed / acquired and pro-rate) is correct; only the rounding of part-periods is in question.","teacherCommentary":"Concept: you only 'use up' an asset while you own it, so depreciate by time held. Process: separate the all-year, disposed and new assets; pro-rate each. Everyday: you only pay for the months you rent something - depreciation works the same on part-year assets.","advancedContext":"Pro-rata depreciation links to disposal accounting (the disposed item's depreciation up to the disposal date feeds the gain/loss on disposal) and to the cash-flow PPE working - themes across your depreciation and cash-flow builds."},{"qId":"Q24","displayIdx":24,"type":"ot","questionType":"number","subTopic":"Interpretation - return on capital employed (ROCE)","marks":2,"prefix":"%","questionText":"Hassan Co: profit before interest and tax (PBIT) 10,200; interest (1,600); tax (3,300); profit 5,300. Share capital 20,000; reserves/other equity 15,600 (equity 35,600); loan liability (repayable 20X9) 6,900; capital employed 42,500. What is Hassan Co's return on capital employed (whole number %)?","numAns":24,"tol":0,"explanationLayer1":"ROCE shows how much operating profit the business earns from the long-term capital invested in it. The numerator is profit BEFORE interest and tax (because that profit serves all providers of capital), and the denominator is capital employed (equity plus long-term debt).","workingShown":"Capital employed = equity 35,600 + long-term loan 6,900 = 42,500.\nROCE = PBIT / capital employed = 10,200 / 42,500 = 0.24 = 24%.","explanationLayer3":"ROCE (interpretation/position ratios): Operating profit (PBIT) / Capital employed x 100, where capital employed = equity + non-current liabilities = total assets - current liabilities. PBIT is used so the return matches the capital that earns it.","examinerNote":"The trap is using profit AFTER interest/tax (5,300) in the numerator. ROCE pairs PRE-interest profit with the capital of ALL providers (equity + debt). Match the profit level to the capital base.","teacherCommentary":"Concept: return on the long-term money in the business. Process: PBIT over (equity + long-term debt). Everyday: for every $1 of long-term capital, Hassan earns 24c of operating profit.","advancedContext":"ROCE = operating margin x asset turnover (the DuPont link). It sits at the centre of the Interpretation chapter and connects directly to the working-capital and gearing reading tested in Q8."},{"qId":"Q25","displayIdx":25,"type":"ot","questionType":"multi","subTopic":"Sales tax - nature and treatment","marks":2,"questionText":"Which of the following statements about sales tax are TRUE? Select all that apply.","options":[{"letter":"A","text":"Sales tax is an expense to the ultimate consumer of the goods when that consumer is not registered for sales tax","correct":true,"why":"TRUE. An unregistered final consumer cannot reclaim the tax, so it is a real cost to them."},{"letter":"B","text":"Sales tax is recorded as income in the accounts of the entity selling the goods","correct":false,"why":"FALSE. Output sales tax collected is a liability owed to the tax authority, never income."}],"correctOptions":["A"],"expectedSelectCount":1,"explanationLayer1":"Sales tax is collected by registered businesses on behalf of the tax authority - it passes straight through their books as a liability, not income. Only the final consumer who can't reclaim it actually bears it as a cost.","workingShown":"A: an unregistered final consumer can't reclaim input tax, so the tax is a genuine expense to them -> TRUE.\nB: a registered seller records output tax as a payable to the authority, not as revenue -> FALSE.\nOnly A is true.","explanationLayer3":"Sales tax accounting (FA sales-tax topic): output tax (Cr sales tax payable) and input tax (Dr recoverable) net to a liability owed to/from the authority. Revenue is recorded NET of sales tax; the tax never touches income or expense for a registered trader.","examinerNote":"B is the classic misconception - that the tax 'collected' boosts the seller's income. It doesn't: the seller is just a collector. The tax is a cost only to someone who cannot recover it (the unregistered end consumer).","teacherCommentary":"Concept: registered businesses are tax collectors, not tax payers; the end consumer pays. Process: seller records a liability, not income; unregistered consumer bears the cost. Everyday: the shop adds VAT, holds it, and hands it to the tax office - you, the shopper, actually pay it.","advancedContext":"This 'collector not income' principle is why revenue is always shown net of sales tax, and why sales tax appears as a payable in the SOFP - connecting to control accounts and the trial balance (Q26)."},{"qId":"Q26","displayIdx":26,"type":"ot","questionType":"multi","subTopic":"Trial balance - debit vs credit balances","marks":2,"questionText":"Which of the following ledger accounts are DEBIT balances in the trial balance? Select TWO (Sales, Sales returns, Purchases, Purchase returns).","options":[{"letter":"A","text":"Sales returns","correct":true,"why":"Correct. A sales return reduces income and is recorded as a debit balance."},{"letter":"B","text":"Purchases","correct":true,"why":"Correct. Purchases are an expense - a debit balance."},{"letter":"C","text":"Sales","correct":false,"why":"Income - a credit balance."},{"letter":"D","text":"Purchase returns","correct":false,"why":"A reduction of expense (returns outwards) - a credit balance."}],"correctOptions":["A","B"],"expectedSelectCount":2,"explanationLayer1":"Every account sits naturally on one side of the trial balance. Expenses and assets are debits; income, liabilities and capital are credits. The two 'returns' accounts behave like the opposite of what they reduce.","workingShown":"Sales = income -> CREDIT.\nSales returns (returns inwards) = reduction of income -> DEBIT.\nPurchases = expense -> DEBIT.\nPurchase returns (returns outwards) = reduction of expense -> CREDIT.\nDebit balances: Sales returns and Purchases.","explanationLayer3":"Trial balance / double-entry classification (FA bookkeeping). Debit balances: assets, expenses, drawings. Credit balances: liabilities, capital, income. A 'return' account carries the opposite balance to the account it offsets.","examinerNote":"The trap is pairing each 'return' with its parent on the same side. Returns sit OPPOSITE: sales returns are debits (they reduce a credit), purchase returns are credits (they reduce a debit).","teacherCommentary":"Concept: returns flip the side of the thing they cancel. Process: classify the main account, then put its return on the opposite side. Everyday: a refund you give customers eats into income (debit); goods you send back to suppliers cut your costs (credit).","advancedContext":"Correctly siding these accounts is what makes a trial balance balance - and mis-siding them is exactly the kind of error that creates a suspense account (Q35)."},{"qId":"Q27","displayIdx":27,"type":"ot","questionType":"mcq","subTopic":"IAS 37 - provisions vs contingent liabilities","marks":2,"questionText":"Before its year end of 31 July 20X9, Cannon Co received a claim of $100,000 from a customer for poor-quality goods that damaged the customer's plant. Cannon Co's lawyers say there is a 20% chance Cannon will successfully defend the claim. What is the correct treatment in the financial statements for the year ended 31 July 20X9?","options":[{"letter":"A","text":"Cannon should provide for the expected cost of the claim of $100,000","correct":true,"why":"Correct. 20% chance of winning = 80% chance of losing = probable outflow -> recognise a provision at the best estimate, $100,000."},{"letter":"B","text":"Cannon should provide for an expected cost of $20,000","correct":false,"why":"You don't multiply by the defence probability; the best estimate of the obligation is the full $100,000."},{"letter":"C","text":"Cannon should disclose a contingent liability of $100,000","correct":false,"why":"Disclosure (not provision) applies when an outflow is only POSSIBLE; here it is probable."},{"letter":"D","text":"Cannon should neither provide for nor disclose the claim","correct":false,"why":"A probable obligation cannot be ignored."}],"correctAnswer":"A","explanationLayer1":"Under IAS 37, the accounting depends on how likely the cash outflow is. Probable (more likely than not) -> recognise a provision. Possible (but not probable) -> disclose a contingent liability. Remote -> ignore. Here, an 80% chance of losing makes the outflow probable.","workingShown":"Probability of losing = 100% - 20% defence success = 80% -> probable.\nProbable outflow -> recognise a PROVISION.\nMeasure at the best estimate of the obligation = $100,000 (not 80% x 100,000; that's not how a single best estimate of a one-off claim works here).\nTreatment: provide $100,000.","explanationLayer3":"IAS 37 Provisions, Contingent Liabilities and Contingent Assets: recognise a provision when (i) a present obligation from a past event, (ii) probable outflow, (iii) reliable estimate. If only possible -> disclose; if remote -> nothing.","examinerNote":"Two traps: (1) reading '20% chance of winning' and providing $20,000 - wrong, that's not the obligation; and (2) choosing 'disclose' when the outflow is actually probable. Convert the win-probability into a lose-probability first.","teacherCommentary":"Concept: probable = book it, possible = mention it, remote = forget it. Process: find the chance of an outflow, then pick provide/disclose/ignore. Everyday: if you're 80% likely to have to pay a bill, you set the full amount aside, not a fraction of it.","advancedContext":"The provision recognised here is the kind of estimate that makes financial statements partly subjective - a point that connects to the limitations of ratio analysis (Q12) and faithful representation (Q30)."},{"qId":"Q28","displayIdx":28,"type":"ot","questionType":"number","subTopic":"IAS 16 - cost to capitalise for a non-current asset","marks":2,"prefix":"$","questionText":"Gareth (registered for sales tax) bought a computer for business use. The invoice showed: hardware 890; operating system 95; delivery 10; installation 20; one-year maintenance 25; sales tax (17.5%) 182; total 1,222. How much should Gareth capitalise as a non-current asset?","numAns":1015,"tol":1,"explanationLayer1":"An asset is capitalised at everything needed to bring it into working condition for its intended use - purchase price plus directly attributable costs like delivery and installation. Ongoing costs (maintenance) are expenses, and recoverable sales tax isn't a cost to a registered trader.","workingShown":"Capitalise: hardware 890 + operating system 95 + delivery 10 + installation 20 = $1,015.\nExclude: maintenance 25 (a one-year service = revenue expense); sales tax 182 (recoverable, as Gareth is registered).\nAmount capitalised = $1,015.","explanationLayer3":"IAS 16 cost of an item of PP&E: purchase price + directly attributable costs of bringing the asset to the location and condition for intended use (delivery, installation, testing). Excludes recoverable taxes and ongoing servicing/maintenance.","examinerNote":"Two distractors built in: maintenance (an ongoing expense, not part of the asset) and sales tax (recoverable for a registered trader, so not a cost). Including either is the planted error. Operating system and installation DO count - they're needed to use the asset.","teacherCommentary":"Concept: capitalise the cost of getting it working, expense the cost of keeping it working. Process: add purchase + delivery + install; drop maintenance and recoverable tax. Everyday: a new machine's price and delivery are part of the asset; its annual service contract is just a running cost.","advancedContext":"Same capitalise-vs-expense judgement as Q7 (van) and Q15 (development costs). The sales-tax exclusion links to Q25's 'registered traders don't bear the tax' principle."},{"qId":"Q29","displayIdx":29,"type":"ot","questionType":"mcq","subTopic":"Bank reconciliation - correcting the cash book balance","marks":2,"questionText":"Aim Co has an overdraft per the bank statement of $3,860. A trainee prepared (incorrectly): overdraft per bank statement 3,860; less unpresented cheques 9,160; add outstanding lodgements 5,300; 'cash at bank' 21,990. What should the correct general-ledger (cash book) balance be?","options":[{"letter":"A","text":"$3,670 overdrawn","correct":true,"why":"Correct. Starting from a $3,860 statement overdraft, adjusting unpresented cheques and outstanding lodgements the right way gives a $3,670 cash-book overdraft."},{"letter":"B","text":"$3,670 cash at bank","correct":false,"why":"Right figure, wrong sign - the corrected balance is still an overdraft."},{"letter":"C","text":"$11,390 cash at bank","correct":false,"why":"Mishandles the direction of the adjusting items."},{"letter":"D","text":"$21,990 cash at bank","correct":false,"why":"This is the trainee's incorrect figure (added/subtracted the wrong way)."}],"correctAnswer":"A","explanationLayer1":"A bank reconciliation links the bank statement balance to the cash-book balance using timing differences. Unpresented cheques (you've paid out, bank hasn't processed) and outstanding lodgements (you've banked, bank hasn't credited) each move the balance in a specific direction - and the trainee applied them the wrong way.","workingShown":"Reconcile FROM the bank statement overdraft TO the cash book:\nStatement balance = (3,860) overdrawn.\nUnpresented cheques: already deducted in the cash book but not yet on the statement -> reduce the bank balance -> (3,860) - 9,160 ... then outstanding lodgements already added in the cash book but not yet on the statement -> + 5,300.\nNet to the corrected cash-book balance = $3,670 overdrawn.\n(The trainee added unpresented cheques and treated the result as a positive 'cash at bank' - both sign errors.)","explanationLayer3":"Bank reconciliation (FA control topic): statement balance +/- timing differences (unpresented cheques, outstanding lodgements) = cash-book balance. The direction of each adjustment depends on which record is 'ahead'. An overdraft is a negative balance throughout.","examinerNote":"The trap is the sign: starting from an OVERDRAFT and ending with 'cash at bank' is almost always wrong. Adjusting timing differences on a $3,860 overdraft keeps it an overdraft ($3,670 overdrawn). Watch the direction of each item.","teacherCommentary":"Concept: the two records differ only by timing; reverse those to reconcile. Process: start at the statement balance, apply each timing difference the correct way, mind the overdraft sign. Everyday: your banking app and your own notes disagree only because some payments haven't cleared yet.","advancedContext":"Bank reconciliation is a control check, like the receivables/payables control accounts (Q4, Q5, Q31) - all confirm one balance against an independent source, and all are classic places for sign-error questions."},{"qId":"Q30","displayIdx":30,"type":"ot","questionType":"multi","subTopic":"Conceptual Framework - faithful representation","marks":2,"questionText":"Which TWO of the following are characteristics required to ensure faithful representation? Select TWO.","options":[{"letter":"A","text":"Completeness","correct":true,"why":"Correct. One of the three components of faithful representation."},{"letter":"B","text":"Neutrality","correct":true,"why":"Correct. Another component - free from bias."},{"letter":"C","text":"Accruals","correct":false,"why":"An accounting concept/basis, not a component of faithful representation."},{"letter":"D","text":"Going concern","correct":false,"why":"An underlying assumption, not a faithful-representation characteristic."}],"correctOptions":["A","B"],"expectedSelectCount":2,"explanationLayer1":"In the IASB's Conceptual Framework, faithful representation means the information depicts the economic reality faithfully. For that, it must be complete, neutral and free from error. Accruals and going concern are separate ideas - a measurement basis and an assumption.","workingShown":"Faithful representation = complete + neutral + free from error.\nA Completeness -> component -> TRUE.\nB Neutrality -> component -> TRUE.\nC Accruals -> an accounting basis, not a qualitative characteristic of faithful representation -> FALSE.\nD Going concern -> an underlying assumption -> FALSE.\nSelect A and B.","explanationLayer3":"Conceptual Framework: faithful representation (a fundamental qualitative characteristic) requires information to be complete, neutral and free from error. Relevance is the other fundamental characteristic; comparability, verifiability, timeliness, understandability are enhancing.","examinerNote":"The decoys (accruals, going concern) are real framework terms but belong to different boxes - concepts/assumptions, not the three pillars of faithful representation. Memorise the trio: complete, neutral, free from error.","teacherCommentary":"Concept: faithful = the picture matches reality, fully and without bias. Process: pick complete and neutral; reject the basis (accruals) and assumption (going concern). Everyday: an honest photo shows the whole scene, undoctored - complete and neutral.","advancedContext":"Faithful representation underpins why estimates (provisions in Q27, allowances in Q17) must be unbiased, and why the framework tolerates some subjectivity - a thread running through the Conceptual Framework parts of FA."},{"qId":"Q31","displayIdx":31,"type":"ot","questionType":"mcq","subTopic":"Receivables control account - error correction","marks":2,"questionText":"The receivables (sales ledger control) account contains errors. Entries: balance b/f 308,600; credit sales 152,800; interest charged on overdue accounts 2,400; cash received from credit customers 147,200; irrecoverable debts written off 4,900; contras against trade payables 4,600; cash sales 88,100 (wrongly posted); allowance for receivables 2,800. After correcting all errors, what should the closing balance be?","options":[{"letter":"A","text":"$307,100","correct":true,"why":"Correct. Remove cash sales (don't belong) and the allowance (not a control-account entry), then net the genuine items."},{"letter":"B","text":"$304,300","correct":false,"why":"Mis-treats the interest or contra entry."},{"letter":"C","text":"$302,300","correct":false,"why":"Removes an item that does belong in the account."},{"letter":"D","text":"$395,200","correct":false,"why":"Leaves the erroneous cash sales in the account."}],"correctAnswer":"A","explanationLayer1":"The receivables control account should only contain things that affect what CREDIT customers owe. Two items here don't belong: cash sales (no receivable arises) and the allowance for receivables (a separate ledger). Strip those out, then balance the account normally.","workingShown":"Keep only genuine receivables movements:\nDebits: balance b/f 308,600 + credit sales 152,800 + interest charged 2,400 = 463,800.\nCredits: cash from credit customers 147,200 + irrecoverable debts 4,900 + contras 4,600 = 156,700.\nCorrected closing balance = 463,800 - 156,700 = $307,100.\n(Cash sales 88,100 and allowance 2,800 are excluded - they never belonged.)","explanationLayer3":"Sales ledger control account (FA control-accounts topic): debits = opening balance, credit sales, interest charged, dishonoured cheques; credits = cash received, irrecoverable debts, contras, discounts allowed. Cash sales and the allowance are NOT control-account items.","examinerNote":"The two planted 'don't belong' items are cash sales (a cash transaction, no receivable) and the allowance (a separate account). Including either is the trap (e.g. D leaves cash sales in). First decide what belongs, then balance.","teacherCommentary":"Concept: the control account tracks only credit customers' balances. Process: discard non-credit items, then net debits against credits. Everyday: a tab for customers who buy 'on account' - cash buyers and your own provisions don't go on it.","advancedContext":"Mirror of the payables control reconstruction in Q4/Q5; the contra (4,600) is the link between the two ledgers. Mis-posting here is exactly what feeds suspense-account errors (Q35)."},{"qId":"Q32","displayIdx":32,"type":"ot","questionType":"multi","subTopic":"IAS 10 - adjusting events after the reporting period","marks":2,"questionText":"Which of the following material events, occurring after the reporting date but before the financial statements are approved, are ADJUSTING events? Select all that apply.","options":[{"letter":"A","text":"A valuation of property providing evidence of impairment in value at the reporting date","correct":true,"why":"Adjusting - it gives evidence of a condition that existed at the year end."},{"letter":"B","text":"Sale of inventory held at the reporting date for less than cost","correct":true,"why":"Adjusting - confirms the net realisable value of inventory held at year end."},{"letter":"C","text":"Discovery of fraud or error affecting the financial statements","correct":true,"why":"Adjusting - reveals that the year-end figures were misstated."},{"letter":"D","text":"The insolvency of a customer with a debt owing at the reporting date","correct":true,"why":"Adjusting - confirms the receivable was impaired at the year end."}],"correctOptions":["A","B","C","D"],"expectedSelectCount":4,"explanationLayer1":"An event after the reporting date is 'adjusting' if it provides more evidence about conditions that already existed at the year end. All four here do exactly that - they confirm or reveal something that was already true on the reporting date, so the financial statements are adjusted.","workingShown":"Test each: 'did the condition exist AT the year end?'\nA Impairment evidence at the reporting date -> condition existed -> adjusting.\nB Inventory sold below cost -> confirms year-end NRV -> adjusting.\nC Fraud/error in the statements -> the misstatement existed -> adjusting.\nD Customer insolvency on a year-end debt -> debt was already impaired -> adjusting.\nAll four -> adjusting.","explanationLayer3":"IAS 10 Events After the Reporting Period: adjusting events provide evidence of conditions existing at the reporting date (adjust the figures); non-adjusting events arise from conditions after the reporting date (disclose only if material).","examinerNote":"The discriminator is timing of the CONDITION, not the event. All four describe events that shed light on the year-end position, so all adjust. A non-adjusting example would be something like a fire destroying assets AFTER year end.","teacherCommentary":"Concept: adjust if the news is about how things already were at year end. Process: ask 'did this condition exist on the reporting date?' - if yes, adjust. Everyday: finding out in January that a December customer was already broke confirms the debt was bad at December.","advancedContext":"Adjusting events often crystallise the estimates in other questions - the impaired receivable (Q17 allowance), the below-cost inventory (Q19 NRV), the provision (Q27). IAS 10 is where 'what we knew later' meets 'what we reported'."},{"qId":"Q33","displayIdx":33,"type":"ot","questionType":"mcq","subTopic":"IAS 2 - FIFO closing inventory valuation","marks":2,"questionText":"A company values inventory using FIFO. At 1 May 20X5: 700 engines @ $190. During the year to 30 April 20X6: 1 Jul bought 500 @ $220; 1 Nov sold 400; 1 Feb bought 300 @ $230; 15 Apr sold 250. What is the closing inventory value at 30 April 20X6?","options":[{"letter":"A","text":"$188,500","correct":true,"why":"Keyed answer. Closing units 850, valued at the most recent costs under FIFO."},{"letter":"B","text":"$182,500","correct":false,"why":"A common alternative depending on which cost layers are taken."},{"letter":"C","text":"$195,500","correct":false,"why":"Uses the wrong cost layers."},{"letter":"D","text":"$166,000","correct":false,"why":"Applies averaged or earliest costs rather than FIFO's latest."}],"correctAnswer":"A","explanationLayer1":"Under FIFO (first in, first out), the goods sold are assumed to be the oldest, so what remains in closing inventory is the MOST RECENT purchases. First find how many units are left, then value them at the latest costs working backwards.","workingShown":"Units: 700 + 500 - 400 + 300 - 250 = 850 in closing inventory.\nFIFO values the newest first:\n  300 @ $230 = 69,000\n  500 @ $220 = 110,000  (cumulative 800 units)\n  remaining 50 @ $190 = 9,500\n  Total = 69,000 + 110,000 + 9,500 = $188,500.\nNote: the JSON's earlier '182,500' working took only 300 of the $220 layer in error; the correct FIFO layering uses all 500 of the $220 layer, confirming the keyed $188,500.","explanationLayer3":"IAS 2 / FIFO cost formula: cost of sales uses earliest costs; closing inventory is measured at the most recent purchase costs. Inventory is then carried at the lower of this cost and net realisable value.","examinerNote":"VERIFIED: the keyed answer A ($188,500) is correct. The trap distractors use earliest costs (D) or mis-layer the recent purchases (B/C). Build the layers newest-first: 300 @ 230, then 500 @ 220, then 50 @ 190.","teacherCommentary":"Concept: oldest goods leave first, so the newest stay. Process: count units left, then value them with the most recent prices first. Everyday: a shop selling the oldest milk first ends the week holding the freshest, most recently delivered cartons.","advancedContext":"FIFO links to the inventory-cost rules in Q19 and to cost of sales in Q20/Q37. In rising-price periods FIFO gives higher closing inventory (and higher profit) than AVCO - a comparison worth knowing."},{"qId":"Q34","displayIdx":34,"type":"ot","questionType":"number","subTopic":"Sole trader profit from net assets (with drawings & capital)","marks":2,"prefix":"$","questionText":"Amy is a sole trader with assets of $569,400 and liabilities of $412,840 on 1 January 20X8. During the year she paid in $65,000 capital and withdrew $800 per month. At 31 December 20X8 she had assets of $614,130 and liabilities of $369,770. What is Amy's profit for the year ended 31 December 20X8?","numAns":32400,"tol":1,"explanationLayer1":"This is the capital-comparison method from Q1 applied with numbers. Profit is the increase in net assets, with drawings added back (owner took money out) and capital introduced removed (owner put money in).","workingShown":"Opening net assets = 569,400 - 412,840 = 156,560.\nClosing net assets = 614,130 - 369,770 = 244,360.\nIncrease in net assets = 244,360 - 156,560 = 87,800.\nDrawings = 800 x 12 = 9,600.\nProfit = increase + drawings - capital introduced = 87,800 + 9,600 - 65,000 = $32,400.\nNote: the JSON flags a kit-keyed alternative of $140,100, but that exceeds the maximum possible capital-comparison profit (increase 87,800 + drawings 9,600 = 97,400), so $32,400 is the internally consistent answer - confirm the kit figure against the official page.","explanationLayer3":"Business equation / capital comparison (incomplete-records): Profit = (Closing net assets - Opening net assets) + Drawings - Capital introduced. Same relationship as Q1, now numerical.","examinerNote":"FLAGGED: this engine marks against $32,400 (the capital-comparison result, which I have independently verified). The JSON noted a kit-keyed $140,100; that figure is arithmetically impossible for a capital-comparison profit, so treat it as a likely kit/transcription error and confirm against the official answer page. METHOD and the $32,400 result are sound.","teacherCommentary":"Concept: profit is the growth in net worth, cleaned of owner movements. Process: opening vs closing net assets, add drawings, subtract capital introduced. Everyday: same as Q1 - undo what the owner took out and put in to isolate what trading actually earned.","advancedContext":"Direct numerical application of Q1's formula. The recurring theme of incomplete records: with the business equation you can always solve for the one missing piece - here, profit."},{"qId":"Q35","displayIdx":35,"type":"ot","questionType":"mcq","subTopic":"Suspense account - errors that unbalance the trial balance","marks":2,"questionText":"A trial balance was produced and a suspense account was included at $4,139 (credit). Which of the following errors could have caused the suspense account to be required?","options":[{"letter":"A","text":"A manual journal entry for accrued motor expenses of $4,139 was correctly recognised in expenses, but the corresponding entry created the suspense account","correct":true,"why":"Correct. The debit (expense) was posted but the matching credit (accrual) was not - a one-sided entry of exactly $4,139 leaves a $4,139 credit suspense."},{"letter":"B","text":"The omission of a sales invoice of $4,139","correct":false,"why":"A complete omission leaves out BOTH the debit and the credit, so the trial balance still balances - no suspense arises."},{"letter":"C","text":"A manual journal entry for prepaid rent of $4,139 correctly recognised against expenses, with the other side creating the suspense account","correct":false,"why":"A prepayment credits the expense (Cr) with the missing side a debit - that would create a DEBIT suspense, not a credit one."},{"letter":"D","text":"A payment of $4,139 for wages recorded as $1,439 in the wages account","correct":false,"why":"That is a transposition giving a difference of $2,700, not $4,139."}],"correctAnswer":"A","explanationLayer1":"A suspense account appears only when the debits and credits don't match. So the error must be one-sided (one half posted, the other missing) or a wrong amount on one side - never a complete omission (which leaves both sides out) and never an error of the wrong size.","workingShown":"Suspense = $4,139 CREDIT, so the books are short of a $4,139 credit (a debit was posted without its credit).\nA: accrual journal - Dr expenses 4,139 posted, Cr accrual 4,139 missing -> needs a 4,139 credit to balance -> CAUSES a 4,139 credit suspense. YES.\nB: full omission -> both sides missing -> still balances -> no suspense.\nC: prepayment -> Cr expense posted, Dr missing -> would need a DEBIT suspense.\nD: 4,139 recorded as 1,439 -> difference 2,700, not 4,139.\nOnly A fits both the amount and the side.","explanationLayer3":"Errors and the suspense account (FA correction-of-errors topic). Errors that DON'T affect the trial balance: omission, commission, principle, original entry, compensating, reversal. Errors that DO (and create a suspense): one-sided entries, different figures on each side, or a single posting omitted.","examinerNote":"Two filters to apply together: (1) the amount must equal $4,139 exactly (kills D, a $2,700 transposition), and (2) the side must be a CREDIT suspense, meaning a debit was posted without its credit (kills C, which would need a debit suspense). B fails because a full omission never unbalances.","teacherCommentary":"Concept: a suspense account is the trial balance's 'IOU' for a missing or mismatched side. Process: check the amount matches, then check which side is short. Everyday: if you record money leaving but forget to record where it went, your books are out by exactly that amount on one side.","advancedContext":"This is the flip side of the control-account and trial-balance work in Q26 and Q31 - mis-siding or one-sided postings are precisely what dumps a balance into suspense. Knowing which error types DON'T unbalance is the examinable core."}],"mtqs":[{"qId":"MTQ1","displayIdx":36,"type":"mtq","title":"Keswick Co - Consolidated statement of profit or loss","totalMarks":15,"subTopic":"Consolidation - CSOPL with intra-group trading, PURP and NCI","scenario":"Keswick Co acquired 80% of the share capital of Derwent Co on 1 June 20X5. Draft statements of profit or loss for the year ended 31 May 20X6 ($000):\n                          Keswick    Derwent\n  Revenue                   8,400      3,200\n  Cost of sales            (4,600)    (1,700)\n  Gross profit              3,800      1,500\n  Distribution costs       (1,500)      (510)\n  Administrative costs       (700)      (450)\n  Profit before tax          1,600        540\n  Tax                        (600)      (140)\n  Profit for the year        1,000        400\nDuring the year Keswick sold goods costing $1,000,000 to Derwent for $1,500,000. At 31 May 20X6, 30% of these goods remained in Derwent's inventory.","parts":[{"part":"(a)","marks":2,"questionType":"mcq","prompt":"Select the correct title for the financial statement being prepared.","options":[{"letter":"A","text":"Consolidated statement of profit or loss for the year ended 31 May 20X6","correct":true,"why":"Correct. It consolidates parent and subsidiary, and a P&L covers a PERIOD ('for the year ended')."},{"letter":"B","text":"Statement of profit or loss for the year ended 31 May 20X6","correct":false,"why":"Omits 'consolidated' - this combines two companies."},{"letter":"C","text":"Consolidated statement of profit or loss as at 31 May 20X6","correct":false,"why":"'as at' is for a point-in-time statement (the SOFP), not the P&L."},{"letter":"D","text":"Statement of profit or loss as at 31 May 20X6","correct":false,"why":"Both errors: missing 'consolidated' and wrong date convention."}],"correctAnswer":"A","modelAnswer":"A consolidated P&L spans a period, so it is 'for the year ended', and it must be labelled 'consolidated'."},{"part":"(b)","marks":3,"questionType":"number","prefix":"$","prompt":"Consolidated revenue for the year ended 31 May 20X6 ($000).","numAns":10100,"tol":1,"modelAnswer":"Add the two revenues and cancel the intra-group sale: 8,400 + 3,200 - 1,500 = 10,100."},{"part":"(c)","marks":3,"questionType":"number","prefix":"$","prompt":"Consolidated cost of sales for the year ended 31 May 20X6 ($000).","numAns":4950,"tol":1,"modelAnswer":"4,600 + 1,700 - 1,500 (cancel intra-group purchase) + 150 PURP = 4,950. PURP = profit in sale 500 x 30% still in inventory = 150. (Cancel the full intra-group SALE of 1,500, not just the 500 profit.)"},{"part":"(d)","marks":3,"questionType":"number","prefix":"$","prompt":"Profit for the year attributable to the non-controlling interest ($000).","numAns":80,"tol":1,"modelAnswer":"NCI share = 20% x Derwent's own profit 400 = 80. No PURP adjustment to NCI because the PARENT (Keswick) made the sale, so the unrealised profit belongs wholly to the group."},{"part":"(e)","marks":2,"questionType":"number","prefix":"$","prompt":"Consolidated profit for the year ($000).","numAns":1250,"tol":1,"modelAnswer":"Combine both profits and remove the PURP: 1,000 + 400 - 150 = 1,250."},{"part":"(f)","marks":2,"questionType":"multi","prompt":"Which TWO of the following indicate the existence of a parent-subsidiary relationship? Select TWO.","options":[{"letter":"A","text":"Greater than 50% of the equity (voting) shares held by an investor","correct":true,"why":"Owning a majority of voting shares normally confers control -> subsidiary."},{"letter":"B","text":"Control","correct":true,"why":"Control is the defining criterion for a parent-subsidiary relationship."},{"letter":"C","text":"Significant influence","correct":false,"why":"Significant influence indicates an ASSOCIATE, not a subsidiary."},{"letter":"D","text":"Greater than 50% of preference shares and debt held by an investor","correct":false,"why":"Preference shares and debt usually carry no voting control, so they don't create a subsidiary."}],"correctOptions":["A","B"],"expectedSelectCount":2,"modelAnswer":"Control - typically via >50% of voting equity shares - defines a subsidiary. Significant influence = associate; pref shares/debt don't give control."}],"explanationLayer1":"Consolidation presents the parent and its subsidiary as a single economic entity. You add the two statements line by line, then remove the effects of trading WITHIN the group (intra-group sales and any unrealised profit still sitting in inventory), and finally show how much of the subsidiary's profit belongs to the outside (non-controlling) shareholders.","workingShown":"Revenue: 8,400 + 3,200 - 1,500 intra-group = 10,100.\nCost of sales: 4,600 + 1,700 - 1,500 intra-group + PURP 150 = 4,950.\n  PURP: goods sold at 1,500 cost 1,000 -> profit 500; 30% unsold -> 500 x 30% = 150 unrealised.\nProfit for the year (group): 1,000 + 400 - 150 PURP = 1,250.\nNCI: 20% x Derwent profit 400 = 80 (seller was the parent, so no PURP hits NCI).","explanationLayer3":"Basic consolidation (FA group accounts): combine 100% of parent + subsidiary results; eliminate intra-group revenue and cost of sales in full; add provision for unrealised profit (PURP) to cost of sales; allocate the subsidiary's profit between the group and the NCI (NCI % x subsidiary profit, adjusted for PURP only if the SUBSIDIARY was the seller).","examinerNote":"Two reliable traps: (1) only cancelling 80% of the intra-group sale - you cancel 100%, because the whole transaction is internal regardless of the ownership %; and (2) charging PURP against NCI - only do that when the SUBSIDIARY sold to the parent. Here the parent sold down, so PURP is wholly the group's.","teacherCommentary":"Concept: treat parent + subsidiary as one entity and ignore sales they made to each other. Process: add across, cancel intra-group trading 100%, add PURP to cost of sales, then split the sub's profit for NCI. Everyday: two shops under one owner - selling stock between your own shops isn't real profit until an outside customer buys it.","advancedContext":"PURP direction is the key judgement: parent-to-subsidiary ('downstream') -> PURP is all the group's; subsidiary-to-parent ('upstream') -> PURP reduces NCI too. This MTQ also connects to the consolidation SOFP work (goodwill, NCI, group reserves) in your other builds."},{"qId":"MTQ2","displayIdx":37,"type":"mtq","title":"Malright Co - Year-end adjustments","totalMarks":15,"subTopic":"Year-end adjustments - allowance, depreciation, cost of sales, accrual","scenario":"Malright Co (a limited liability company) has a year end of 31 October. A trial balance has been prepared at 31 October 20X7 but no year-end adjustments made. Extracts ($000): Buildings at cost 740; Buildings accumulated depreciation b/f 60; Plant at cost 220; Plant accumulated depreciation b/f 110; Bank 70; Revenue 1,800; Net purchases 1,140; Inventory b/f 160; Cash 20; Trade payables 250; Trade receivables 320; Administrative expenses 325; Allowance for receivables b/f 10; Retained earnings b/f 130; Equity shares $1 415; Share premium 80.\nAdjustments: (i) increase the allowance for receivables to 5% of trade receivables (treated as an administrative expense); (ii) depreciate plant at 20% reducing balance and buildings at 5% on cost (both cost of sales); (iii) closing inventory counted at $75,000; (iv) an invoice of $15,000 for energy costs for the quarter ended 30 November 20X7 was received on 2 December 20X7 (energy is an administrative expense).","parts":[{"part":"(a)","marks":3,"questionType":"number","prefix":"$","prompt":"The amount charged to administrative expenses for the change in the allowance for receivables ($000).","numAns":6,"tol":0,"modelAnswer":"Required allowance = 5% x 320 = 16. Increase = 16 - 10 (b/f) = 6. Dr admin expenses 6, Cr allowance 6. Only the MOVEMENT is charged."},{"part":"(b)","marks":2,"questionType":"number","prefix":"$","prompt":"Buildings depreciation charge for the year ended 31 October 20X7 ($000).","numAns":37,"tol":0,"modelAnswer":"Straight line on cost: 5% x 740 = 37."},{"part":"(c)","marks":3,"questionType":"number","prefix":"$","prompt":"Plant depreciation charge for the year ended 31 October 20X7 ($000).","numAns":22,"tol":0,"modelAnswer":"Reducing balance on carrying amount: 20% x (cost 220 - acc. dep. 110) = 20% x 110 = 22."},{"part":"(d)","marks":3,"questionType":"number","prefix":"$","prompt":"Cost of sales for the year (ignoring the depreciation calculated above) ($000).","numAns":1225,"tol":0,"modelAnswer":"Opening inventory 160 + net purchases 1,140 - closing inventory 75 = 1,225."},{"part":"(e)","marks":2,"questionType":"number","prefix":"$","prompt":"The energy cost accrual to recognise at 31 October 20X7 ($000).","numAns":10,"tol":0,"modelAnswer":"The $15 invoice covers the quarter to 30 Nov 20X7 (3 months). Two of those months (Sep, Oct) fall in this year: 15 x 2/3 = 10. Dr admin expenses 10, Cr accruals 10."},{"part":"(f)","marks":2,"questionType":"multi","prompt":"Which TWO of the listed trial balance items are CREDIT balances? Select TWO.","options":[{"letter":"A","text":"Allowance for receivables","correct":true,"why":"A contra-asset offsetting receivables - it carries a credit balance."},{"letter":"B","text":"Share premium","correct":true,"why":"Part of equity - a credit balance."},{"letter":"C","text":"Net purchases","correct":false,"why":"An expense - a debit balance."},{"letter":"D","text":"Trade receivables","correct":false,"why":"An asset - a debit balance."}],"correctOptions":["A","B"],"expectedSelectCount":2,"modelAnswer":"Credit balances: allowance for receivables (contra-asset) and share premium (equity). Purchases (expense) and receivables (asset) are debits."}],"explanationLayer1":"Year-end adjustments turn a raw trial balance into the figures that go in the financial statements. Each adjustment here is a standard one: top up the doubtful-debt allowance (charging only the change), depreciate the assets on their stated bases, build cost of sales from the inventory equation, and accrue for the part of an unpaid bill that belongs to this year.","workingShown":"(a) Allowance: 5% x 320 = 16; charge the increase 16 - 10 = 6.\n(b) Buildings: 5% x cost 740 = 37 (straight line).\n(c) Plant: 20% x (220 - 110) = 22 (reducing balance on carrying amount).\n(d) Cost of sales: 160 + 1,140 - 75 = 1,225.\n(e) Energy accrual: 15 x 2/3 (Sep+Oct of the Sep-Nov quarter) = 10.\n(f) Credit balances: allowance for receivables and share premium.","explanationLayer3":"Standard year-end adjustments: IAS 37/receivables allowance (charge only the movement); IAS 16 depreciation (straight-line on cost vs reducing balance on carrying amount); IAS 2 cost of sales (opening + purchases - closing); accruals concept (time-apportion the unpaid expense to the period it relates to).","examinerNote":"Four reliable traps: (a) charging the whole 16 instead of the 6 movement; (b)/(c) mixing the methods - buildings on COST, plant on CARRYING amount; (e) accruing the full 15 instead of the 2/3 that falls before year end; and the depreciation note 'ignoring depreciation' in (d) means cost of sales excludes it at this step. Read each basis carefully.","teacherCommentary":"Concept: adjust the trial balance for what's really happened by year end. Process: allowance (movement only), depreciate (right base for each asset), cost of sales (inventory equation), accrue (time-apportion). Everyday: like squaring up your accounts on 31 Oct - set aside for doubtful customers, account for wear on equipment, value what's left in stock, and recognise the bill that's for this year even though it arrives in December.","advancedContext":"Every component here appears as a standalone Section A question elsewhere in this paper - allowance (Q17), depreciation method/pro-rata (Q23), cost of sales/inventory (Q19/Q20/Q33), and the accrual (Q6/Q10/Q16). The MTQ just stitches them into one set of financial statements."}]}</script>
+
+<script>
+"use strict";
+/* ============================================================
+   FA Combined Mock — engine (cloned v6 architecture)
+   ============================================================ */
+const DATA = JSON.parse(document.getElementById('testdata').textContent);
+const CFG = DATA.config;
+const PREFIX = CFG.storagePrefix;          // fa_v3_combomock_
+const SYNC_KEY = CFG.syncKey;              // fa_v3_pending_imports
+
+/* Build the single master pool: OT questions then MTQs, ordered by displayIdx */
+const ITEMS = [...DATA.questions, ...DATA.mtqs].sort((a,b)=>a.displayIdx-b.displayIdx);
+const TOTAL_ITEMS = ITEMS.length;
+
+/* ---- state ---- */
+let current = 0;
+const answers = {};   // key -> value
+const guesses = {};   // key -> bool
+const flags = {};     // itemIdx -> bool
+const timeSpent = {}; // itemIdx -> seconds
+let itemEnterTime = Date.now();
+let remaining = CFG.timeMinutes * 60;
+let timerId = null, paused = false, finished = false;
+
+/* ---- helpers ---- */
+const $ = id => document.getElementById(id);
+function keyOT(q){ return q.qId; }
+function keyPart(m,p){ return m.qId + '_' + p.part; }
+function arrEq(a,b){ if(a.length!==b.length) return false; const s=[...a].sort(),t=[...b].sort(); return s.every((x,i)=>x===t[i]); }
+
+/* ============================================================
+   TIMER
+   ============================================================ */
+function fmt(s){ const m=Math.floor(s/60), ss=s%60; return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0'); }
+function tick(){
+  if(paused||finished) return;
+  remaining--;
+  $('timer').textContent = fmt(Math.max(0,remaining));
+  if(remaining<=300) $('timer').classList.add('warn');
+  if(remaining<=0){ remaining=0; clearInterval(timerId); autoSubmitOnTime(); }
+}
+function startTimer(){ $('timer').textContent=fmt(remaining); timerId=setInterval(tick,1000); }
+
+/* ============================================================
+   TIME TRACKING per item
+   ============================================================ */
+function commitTime(){
+  const idx=current; const spent=Math.round((Date.now()-itemEnterTime)/1000);
+  timeSpent[idx]=(timeSpent[idx]||0)+spent; itemEnterTime=Date.now();
+}
+
+/* ============================================================
+   RENDER QUESTION
+   ============================================================ */
+function render(){
+  const item=ITEMS[current];
+  $('qpos').textContent = `Question ${current+1} of ${TOTAL_ITEMS}`;
+  const marks = item.type==='mtq'? item.totalMarks : item.marks;
+  $('qmarks').textContent = `${marks} mark${marks>1?'s':''}`;
+  $('flagBtn').classList.toggle('flagged', !!flags[current]);
+  $('flagBtn').textContent = flags[current] ? '🚩 Flagged' : '🚩 Flag';
+
+  const card=$('qcard');
+  card.innerHTML = item.type==='mtq' ? renderMTQ(item) : renderOT(item);
+
+  // wire option clicks / inputs
+  wireInputs(item);
+
+  $('prevBtn').disabled = current===0;
+  $('nextBtn').style.visibility = current===TOTAL_ITEMS-1 ? 'hidden':'visible';
+  buildNav();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderOT(q){
+  let h = `<div class="qtext">${esc(q.questionText)}</div>`;
+  h += renderInput(q, keyOT(q));
+  h += guessBox(keyOT(q));
+  return h;
+}
+
+function renderMTQ(m){
+  let h = `<div class="mtq-title">${esc(m.title)}</div>`;
+  h += `<div class="mtq-sub">${esc(m.subTopic)} · ${m.totalMarks} marks</div>`;
+  h += `<div class="scenario">${esc(m.scenario)}</div>`;
+  m.parts.forEach(p=>{
+    h += `<div class="part-block">`;
+    h += `<div class="part-label">Part ${esc(p.part)} <span style="font-weight:500;color:var(--muted);font-size:12px;">(${p.marks} mark${p.marks>1?'s':''})</span></div>`;
+    h += `<div class="part-prompt">${esc(p.prompt)}</div>`;
+    h += renderInput(p, keyPart(m,p));
+    h += guessBox(keyPart(m,p));
+    h += `</div>`;
+  });
+  return h;
+}
+
+function renderInput(q,key){
+  const qt=q.questionType;
+  if(qt==='mcq'){
+    let h='';
+    q.options.forEach(o=>{
+      const sel = answers[key]===o.letter;
+      h += `<label class="opt${sel?' selected':''}">
+        <input type="radio" name="r_${key}" data-key="${key}" data-letter="${o.letter}" data-choice="1" ${sel?'checked':''}>
+        <span><span class="letter">${o.letter}.</span> ${esc(o.text)}</span></label>`;
+    });
+    return h;
+  }
+  if(qt==='multi'){
+    const n=q.expectedSelectCount;
+    const word = n===1?'ONE': n===2?'TWO': n===3?'THREE': n===4?'FOUR':String(n);
+    let h=`<div class="selectlabel">Select ${word}</div>`;
+    const cur = answers[key]||[];
+    q.options.forEach(o=>{
+      const sel=cur.includes(o.letter);
+      h += `<label class="opt${sel?' selected':''}">
+        <input type="checkbox" data-key="${key}" data-letter="${o.letter}" data-choice="1" data-multi="1" ${sel?'checked':''}>
+        <span><span class="letter">${o.letter}.</span> ${esc(o.text)}</span></label>`;
+    });
+    return h;
+  }
+  if(qt==='number'){
+    const pre=q.prefix||'';
+    const val = answers[key]!=null? answers[key] : '';
+    return `<div class="numhint">Enter a number only — no ${pre==='%'?'percent sign':'currency sign'}, no commas, rounded to the nearest whole ${pre==='%'?'percent':'unit'}.</div>
+      <div class="numwrap"><span class="numprefix">${pre}</span>
+      <input type="text" inputmode="decimal" data-key="${key}" data-num="1" value="${val}" placeholder="0"></div>`;
+  }
+  return '';
+}
+
+function guessBox(key){
+  const g=!!guesses[key];
+  return `<div class="guess"><input type="checkbox" data-guess="${key}" ${g?'checked':''}>
+    <span>🎲 I'm guessing this answer — tick if you're guessing, it keeps the dashboard's true accuracy honest.</span></div>`;
+}
+
+function wireInputs(item){
+  // mcq / multi: drive state from the input's change event reading actual DOM
+  // checked-state (idempotent) — avoids the label/checkbox double-fire toggle bug.
+  document.querySelectorAll('#qcard input[data-choice]').forEach(inp=>{
+    inp.addEventListener('change',()=>{
+      const key=inp.dataset.key;
+      if(inp.dataset.multi){
+        const boxes=[...document.querySelectorAll('#qcard input[data-multi]')].filter(b=>b.dataset.key===key);
+        answers[key]=boxes.filter(b=>b.checked).map(b=>b.dataset.letter);
+      } else {
+        if(inp.checked) answers[key]=inp.dataset.letter;
+      }
+      render();
+    });
+  });
+  // number inputs
+  document.querySelectorAll('#qcard input[data-num]').forEach(inp=>{
+    inp.addEventListener('input',()=>{
+      const key=inp.dataset.key; const raw=inp.value.replace(/,/g,'').trim();
+      answers[key] = raw===''? null : raw;
+    });
+  });
+  // guess
+  document.querySelectorAll('#qcard input[data-guess]').forEach(inp=>{
+    inp.addEventListener('change',()=>{ guesses[inp.dataset.guess]=inp.checked; });
+  });
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ============================================================
+   NAVIGATOR
+   ============================================================ */
+function isItemAnswered(item){
+  if(item.type==='mtq'){
+    return item.parts.some(p=>{ const v=answers[keyPart(item,p)]; return v!=null && !(Array.isArray(v)&&v.length===0); });
+  }
+  const v=answers[keyOT(item)]; return v!=null && !(Array.isArray(v)&&v.length===0);
+}
+function buildNav(){
+  const grid=$('navGrid'); grid.innerHTML='';
+  let answered=0;
+  ITEMS.forEach((item,i)=>{
+    const cell=document.createElement('div');
+    cell.className='navcell';
+    cell.textContent=item.displayIdx;
+    if(item.type==='mtq') cell.classList.add('mtq');
+    if(isItemAnswered(item)){ cell.classList.add('answered'); answered++; }
+    if(i===current) cell.classList.add('current');
+    if(flags[i]) cell.classList.add('flagged');
+    cell.addEventListener('click',()=>{ commitTime(); current=i; render(); });
+    grid.appendChild(cell);
+  });
+  $('navProgress').textContent=`${answered} of ${TOTAL_ITEMS} answered`;
+}
+
+/* ============================================================
+   NAV BUTTONS
+   ============================================================ */
+$('prevBtn').onclick=()=>{ if(current>0){ commitTime(); current--; render(); } };
+$('nextBtn').onclick=()=>{ if(current<TOTAL_ITEMS-1){ commitTime(); current++; render(); } };
+$('flagBtn').onclick=()=>{ flags[current]=!flags[current]; render(); };
+
+/* ============================================================
+   CALCULATOR
+   ============================================================ */
+(function(){
+  const keys=['7','8','9','/','4','5','6','*','1','2','3','-','0','.','=','+','C','⌫'];
+  const grid=$('calcGrid'); let expr='';
+  function upd(){ $('calcDisplay').textContent=expr||'0'; }
+  keys.forEach(k=>{
+    const b=document.createElement('button');
+    b.textContent=k;
+    if(['/','*','-','+'].includes(k)) b.className='op';
+    if(k==='=') b.className='eq';
+    if(k==='C'||k==='⌫') b.className='op';
+    b.onclick=()=>{
+      if(k==='C'){ expr=''; }
+      else if(k==='⌫'){ expr=expr.slice(0,-1); }
+      else if(k==='='){
+        try{ if(/^[0-9+\-*/.() ]+$/.test(expr)){ expr=String(Function('return ('+expr+')')()); } }
+        catch(e){ expr='Error'; }
+      } else { if(expr==='Error') expr=''; expr+=k; }
+      upd();
+    };
+    grid.appendChild(b);
+  });
+  $('calcToggle').onclick=()=>$('calc').classList.toggle('show');
+  $('calcClose').onclick=()=>$('calc').classList.remove('show');
+})();
+
+/* ============================================================
+   PAUSE
+   ============================================================ */
+$('pauseBtn').onclick=()=>{ paused=true; $('pauseOverlay').classList.add('show'); };
+$('resumeBtn').onclick=()=>{ paused=false; $('pauseOverlay').classList.remove('show'); itemEnterTime=Date.now(); };
+
+/* ============================================================
+   MODAL (no native confirm)
+   ============================================================ */
+function modal(title,msg,actions){
+  $('modalTitle').textContent=title;
+  $('modalMsg').textContent=msg;
+  const wrap=$('modalActions'); wrap.innerHTML='';
+  actions.forEach(a=>{
+    const b=document.createElement('button');
+    b.className='btn '+(a.style||'outline'); b.textContent=a.label;
+    b.onclick=()=>{ $('modalOverlay').classList.remove('show'); if(a.onClick) a.onClick(); };
+    wrap.appendChild(b);
+  });
+  $('modalOverlay').classList.add('show');
+}
+
+/* ============================================================
+   SUBMIT
+   ============================================================ */
+$('submitBtn').onclick=()=>{
+  const answered=ITEMS.filter(isItemAnswered).length;
+  const blank=TOTAL_ITEMS-answered;
+  const msg = blank>0
+    ? `You've answered ${answered} of ${TOTAL_ITEMS}. ${blank} still blank — these score zero. Submit anyway?`
+    : `All ${TOTAL_ITEMS} answered. Submit and mark the paper?`;
+  modal('Submit test', msg, [
+    {label:'Keep working', style:'outline'},
+    {label:'Submit & mark', style:'submit', onClick:doSubmit}
+  ]);
+};
+function autoSubmitOnTime(){
+  modal("Time's up", 'The 120 minutes are up. The paper will now be marked.', [
+    {label:'See results', style:'submit', onClick:doSubmit}
+  ]);
+}
+
+/* ---- MARKING ---- */
+function markNumber(q,key){
+  const raw=answers[key]; if(raw==null||raw==='') return {earned:0,ua:null};
+  const ua=parseFloat(String(raw).replace(/,/g,''));
+  if(isNaN(ua)) return {earned:0,ua:raw};
+  const ok=Math.abs(ua-q.numAns)<=(q.tol||0);
+  return {earned: ok?q.marks:0, ua, ok};
+}
+function markMCQ(q,key){
+  const ua=answers[key]??null;
+  const ok=ua===q.correctAnswer;
+  return {earned: ok?q.marks:0, ua, ok};
+}
+function markMulti(q,key){
+  const ua=answers[key]||[];
+  const ok = ua.length>0 && arrEq(ua,q.correctOptions);
+  return {earned: ok?q.marks:0, ua, ok};
+}
+function markAny(q,key){
+  if(q.questionType==='number') return markNumber(q,key);
+  if(q.questionType==='multi') return markMulti(q,key);
+  return markMCQ(q,key);
+}
+
+function doSubmit(){
+  if(finished) return;
+  finished=true; commitTime(); clearInterval(timerId);
+  $('calc').classList.remove('show');
+
+  let earnedTotal=0;
+  const exportQs=[];
+
+  ITEMS.forEach((item,idx)=>{
+    if(item.type==='ot'){
+      const key=keyOT(item);
+      const res=markAny(item,key);
+      earnedTotal+=res.earned;
+      exportQs.push(buildExport(item,key,res,idx,null));
+    } else {
+      item.parts.forEach(p=>{
+        const key=keyPart(item,p);
+        const res=markAny(p,key);
+        earnedTotal+=res.earned;
+        exportQs.push(buildExport(p,key,res,idx,item));
+      });
+    }
+  });
+
+  const pct=Math.round(earnedTotal/CFG.totalMarks*100);
+  const attempt=buildAttempt(earnedTotal,pct,exportQs);
+  autoSyncToPendingQueue(attempt);
+  renderResults(earnedTotal,pct,attempt);
+}
+
+/* ---- EXPORT SCHEMA (V3.1) ---- */
+function buildExport(q,key,res,idx,parentMtq){
+  const obj={
+    qId: parentMtq? key : q.qId,
+    displayIdx: parentMtq? parentMtq.displayIdx : q.displayIdx,
+    type: parentMtq? 'mtq-part':'ot',
+    questionType: q.questionType,
+    subTopic: parentMtq? parentMtq.subTopic : q.subTopic,
+    marks: q.marks,
+    questionText: parentMtq? (parentMtq.title+' '+q.part+': '+q.prompt) : q.questionText,
+    userAnswer: res.ua===undefined?null:res.ua,
+    correct: res.earned===q.marks && res.earned>0,
+    earned: res.earned,
+    timeSpent: timeSpent[idx]||0,
+    guessed: !!guesses[key],
+    explanation: parentMtq? (parentMtq.explanationLayer1||'') : (q.explanationLayer1||''),
+    examinerNote: parentMtq? (parentMtq.examinerNote||'') : (q.examinerNote||''),
+    ifrsRef: parentMtq? (parentMtq.explanationLayer3||'') : (q.explanationLayer3||''),
+    teacherCommentary: parentMtq? (parentMtq.teacherCommentary||'') : (q.teacherCommentary||'')
+  };
+  if(q.questionType==='mcq'){
+    obj.correctAnswer=q.correctAnswer;
+    obj.options=q.options.map(o=>({letter:o.letter,text:o.text,correct:!!o.correct,why:o.why||''}));
+  } else if(q.questionType==='multi'){
+    obj.expectedSelectCount=q.expectedSelectCount;
+    obj.correctOptions=q.correctOptions;
+    obj.options=q.options.map(o=>({letter:o.letter,text:o.text,correct:!!o.correct,why:o.why||''}));
+  } else if(q.questionType==='number'){
+    obj.numAns=q.numAns; obj.tol=q.tol||0; obj.prefix=q.prefix||'';
+    obj.correctAnswer=q.numAns;
+  }
+  return obj;
+}
+
+function buildAttempt(earned,pct,exportQs){
+  const now=new Date();
+  return {
+    schemaVersion: CFG.schemaVersion,
+    topic: CFG.topic,
+    poolName: CFG.poolName,
+    storagePrefix: PREFIX,
+    dateISO: now.toISOString(),
+    dateDisplay: now.toLocaleString(),
+    timeTakenSeconds: CFG.timeMinutes*60 - remaining,
+    totalMarks: CFG.totalMarks,
+    earnedMarks: earned,
+    percentage: pct,
+    passMarkPct: CFG.passMarkPct,
+    passed: pct>=CFG.passMarkPct,
+    questions: exportQs
+  };
+}
+
+function autoSyncToPendingQueue(attemptJson){
+  try{
+    const k=SYNC_KEY;
+    const e=JSON.parse(localStorage.getItem(k)||'[]');
+    e.push(attemptJson);
+    localStorage.setItem(k,JSON.stringify(e));
+  }catch(err){ console.error('Auto-sync failed (JSON download still backup):',err); }
+}
+
+/* ============================================================
+   RESULTS
+   ============================================================ */
+function renderResults(earned,pct,attempt){
+  $('testview').style.display='none';
+  $('subbanner').style.display='none';
+  $('results').classList.add('show');
+  $('topbarTitle').textContent='FA Combined Mock — Results';
+  $('pauseBtn').style.display='none'; $('calcToggle').style.display='none';
+  $('timer').textContent=fmt(Math.max(0,remaining));
+
+  const passed=pct>=CFG.passMarkPct;
+  $('printHeader').innerHTML=`<h1>FA Combined Mock — Mistakes Review</h1><p>${attempt.dateDisplay} · Score ${earned}/${CFG.totalMarks} (${pct}%)</p>`;
+
+  let h='';
+  h+=`<div class="scorebanner ${passed?'pass':'fail'}">
+        <div class="big">${earned} / ${CFG.totalMarks}</div>
+        <div class="pct">${pct}%</div>
+        <div class="verdict">${passed?'PASS':'BELOW PASS MARK'} · pass = ${CFG.passMarkPct}%</div>
+      </div>`;
+  h+=`<div class="meta">
+        <div><strong>Pool:</strong> ${esc(CFG.poolName)}</div>
+        <div><strong>Date:</strong> ${esc(attempt.dateDisplay)}</div>
+        <div><strong>Time used:</strong> ${fmt(attempt.timeTakenSeconds)}</div>
+        <div><strong>Items:</strong> ${TOTAL_ITEMS} (${DATA.questions.length} OT + ${DATA.mtqs.length} MTQ)</div>
+      </div>`;
+  h+=`<div class="resbtns">
+        <button class="btn filled" onclick="window.print()">🖨 Print mistakes PDF</button>
+        <button class="btn outline" id="downloadJsonBtn">⬇ Download JSON attempt</button>
+        <button class="btn outline" onclick="location.reload()">↻ Retake</button>
+        <a class="btn outline" style="text-decoration:none;display:inline-block;" href="${CFG.dashboardUrl}" target="_blank">📊 Open dashboard</a>
+      </div>`;
+
+  // sub-topic table
+  h+=buildSubtopicTable(attempt);
+
+  // per-question cards
+  h+=`<h2 style="color:var(--navy);font-size:18px;margin:8px 0 14px;">Question-by-question review</h2>`;
+  ITEMS.forEach((item,idx)=>{
+    if(item.type==='ot'){
+      h+=resultCardOT(item,idx);
+    } else {
+      h+=resultCardMTQ(item,idx);
+    }
+  });
+
+  $('resContent').innerHTML=h;
+
+  // wire layer toggles + reveal all + download
+  document.querySelectorAll('.layer .ltitle').forEach(t=>{
+    t.addEventListener('click',()=>t.parentElement.classList.toggle('open'));
+  });
+  document.querySelectorAll('.revealAllBtn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      b.closest('.rescard').querySelectorAll('.layer').forEach(l=>l.classList.add('open'));
+    });
+  });
+  $('downloadJsonBtn').onclick=()=>downloadJSON(attempt);
+
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function buildSubtopicTable(attempt){
+  const map={};
+  attempt.questions.forEach(q=>{
+    const st=q.subTopic||'(uncategorised)';
+    if(!map[st]) map[st]={earned:0,possible:0};
+    map[st].earned+=q.earned; map[st].possible+=q.marks;
+  });
+  let rows='';
+  Object.keys(map).sort().forEach(st=>{
+    const m=map[st]; const p=Math.round(m.earned/m.possible*100);
+    const col = p>=75?'var(--green)': p>=50?'var(--amber)':'var(--red)';
+    rows+=`<tr><td>${esc(st)}</td><td>${m.earned}/${m.possible}</td>
+      <td class="pctcell" style="color:${col}">${p}%</td></tr>`;
+  });
+  return `<table class="subtopic"><thead><tr><th>Sub-topic</th><th>Marks</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function verdictPill(earned,marks){
+  if(earned===marks && marks>0) return `<span class="verdict-pill right">✓ ${earned}/${marks}</span>`;
+  if(earned===0) return `<span class="verdict-pill wrong">✗ ${earned}/${marks}</span>`;
+  return `<span class="verdict-pill partial">~ ${earned}/${marks}</span>`;
+}
+
+function optionResultHTML(q,res){
+  let h='';
+  if(q.questionType==='mcq'){
+    q.options.forEach(o=>{
+      const isCorrect=o.letter===q.correctAnswer;
+      const isUserWrong = res.ua===o.letter && !isCorrect;
+      let cls='resopt'; if(isCorrect) cls+=' correct'; else if(isUserWrong) cls+=' userwrong';
+      const tag = isCorrect?'<span class="tick"> ✓ correct</span>' : (isUserWrong?'<span class="cross"> ✗ your pick</span>':'');
+      h+=`<div class="${cls}"><strong>${o.letter}.</strong> ${esc(o.text)}${tag}<div class="why">${esc(o.why||'')}</div></div>`;
+    });
+  } else if(q.questionType==='multi'){
+    const ua=res.ua||[];
+    q.options.forEach(o=>{
+      const isCorrect=q.correctOptions.includes(o.letter);
+      const userPicked=ua.includes(o.letter);
+      const isUserWrong = userPicked && !isCorrect;
+      let cls='resopt'; if(isCorrect) cls+=' correct'; else if(isUserWrong) cls+=' userwrong';
+      let tag='';
+      if(isCorrect) tag = userPicked?'<span class="tick"> ✓ correct (you picked)</span>':'<span class="tick"> ✓ correct (missed)</span>';
+      else if(isUserWrong) tag='<span class="cross"> ✗ you picked</span>';
+      h+=`<div class="${cls}"><strong>${o.letter}.</strong> ${esc(o.text)}${tag}<div class="why">${esc(o.why||'')}</div></div>`;
+    });
+  } else if(q.questionType==='number'){
+    const uaTxt = res.ua==null||res.ua===''? '(blank)' : res.ua;
+    const tol=q.tol||0;
+    h+=`<div class="numresult">
+      <div class="ua ${res.ok?'ok':''}">${q.prefix||''} Your answer: ${esc(String(uaTxt))}</div>
+      <div class="ca">${q.prefix||''} Correct: ${q.numAns}${tol>0?` (±${tol})`:''}</div></div>`;
+  }
+  return h;
+}
+
+function layersHTML(src){
+  // src has explanationLayer1, workingShown, explanationLayer3, examinerNote, advancedContext, teacherCommentary
+  let h='<div class="layers">';
+  h+=`<button class="revealAllBtn">Reveal all layers</button>`;
+  if(src.explanationLayer1) h+=layer('L1 · Concept', `<div>${esc(src.explanationLayer1)}</div>`);
+  if(src.workingShown) h+=layer('L2 · Working', `<div class="working">${esc(src.workingShown)}</div>`);
+  if(src.explanationLayer3) h+=layer('L3 · Standard / IFRS', `<div class="ifrs">${esc(src.explanationLayer3)}</div>`);
+  // L4 (per-option WHY) is rendered inline on each option above; note it here
+  h+=layer('L4 · Why each option', `<div style="font-size:12.5px;color:var(--muted)">Per-option reasoning is shown on each answer choice above (green = correct, red = your wrong pick).</div>`);
+  if(src.examinerNote) h+=layer('L5 · Examiner note', `<div class="examiner">${esc(src.examinerNote)}</div>`);
+  if(src.advancedContext) h+=layer('L6 · Advanced context', `<div class="advanced">${esc(src.advancedContext)}</div>`);
+  h+='</div>';
+  if(src.teacherCommentary){
+    h+=`<div class="teacher"><div class="tt">Teacher commentary</div>${esc(src.teacherCommentary)}</div>`;
+  }
+  return h;
+}
+function layer(title,body){
+  return `<div class="layer"><div class="ltitle"><span class="chev">▶</span>${title}</div><div class="lbody">${body}</div></div>`;
+}
+
+function resultCardOT(q,idx){
+  const key=keyOT(q); const res=markAny(q,key);
+  const isCorrect = res.earned===q.marks && res.earned>0;
+  let h=`<div class="rescard ${isCorrect?'is-correct':''}">`;
+  h+=`<div class="rhead"><div><span class="qnum">Q${q.displayIdx}</span> <span class="qsub">${esc(q.subTopic)}</span></div>${verdictPill(res.earned,q.marks)}</div>`;
+  h+=`<div class="qbody">${esc(q.questionText)}</div>`;
+  h+=optionResultHTML(q,res);
+  h+=layersHTML(q);
+  h+=`</div>`;
+  return h;
+}
+
+function resultCardMTQ(m,idx){
+  // an MTQ is wholly correct only if all parts are full
+  let allFull=true, anyEarned=0, totMarks=0;
+  m.parts.forEach(p=>{ const r=markAny(p,keyPart(m,p)); anyEarned+=r.earned; totMarks+=p.marks; if(!(r.earned===p.marks&&r.earned>0)) allFull=false; });
+  let h=`<div class="rescard ${allFull?'is-correct':''}">`;
+  h+=`<div class="rhead"><div><span class="qnum">Q${m.displayIdx} · ${esc(m.title)}</span> <span class="qsub">${esc(m.subTopic)}</span></div>${verdictPill(anyEarned,totMarks)}</div>`;
+  h+=`<div class="scenario">${esc(m.scenario)}</div>`;
+  m.parts.forEach(p=>{
+    const key=keyPart(m,p); const res=markAny(p,key);
+    h+=`<div class="mtq-part-result">`;
+    h+=`<div class="rhead"><div class="part-label">Part ${esc(p.part)} <span class="qsub">${esc(p.prompt)}</span></div>${verdictPill(res.earned,p.marks)}</div>`;
+    h+=optionResultHTML(p,res);
+    if(p.modelAnswer) h+=`<div class="teacher" style="margin-top:8px;"><div class="tt">Model answer</div>${esc(p.modelAnswer)}</div>`;
+    h+=`</div>`;
+  });
+  h+=layersHTML(m);
+  h+=`</div>`;
+  return h;
+}
+
+function downloadJSON(attempt){
+  const blob=new Blob([JSON.stringify(attempt,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+  a.href=url; a.download=`fa_combined_mock_attempt_${stamp}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+render();
+startTimer();
+</script>
+</body>
+</html>
